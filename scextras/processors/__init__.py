@@ -16,8 +16,14 @@ def clean_spaces(value):
 
 
 def make_absolute_url(val, loader_context):
-    response = loader_context.get('response')
-    return urljoin(response.url, val)
+    base_url = loader_context.get('base_url')
+    if base_url is None:
+        response = loader_context.get('response')
+        if response is None:
+            raise AttributeError('You must provide a base_url or a response '
+                                 'to the loader context')
+        base_url = response.url
+    return urljoin(base_url, val)
 
 
 def remove_query_params(value):
