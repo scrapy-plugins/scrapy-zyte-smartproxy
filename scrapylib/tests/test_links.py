@@ -1,5 +1,5 @@
 import unittest
-from scextras.links import follow_links
+from scrapylib.links import follow_links
 from scrapy.http import Request
 
 class LinkMock(object):
