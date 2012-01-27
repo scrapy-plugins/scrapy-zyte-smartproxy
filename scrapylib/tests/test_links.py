@@ -8,7 +8,7 @@ class LinkMock(object):
 
 class LinkExtractorMock(object):
     def extract_links(self, response):
-        return [LinkMock(url=x) for x in response.split(':')]
+        return [LinkMock(url=x) for x in response.split('|')]
 
 def some_callback():
     pass
@@ -16,7 +16,7 @@ def some_callback():
 class TestLinks(unittest.TestCase):
 
     def test_follow_links(self):
-        r = list(follow_links(LinkExtractorMock(), 'link1:link2:link3', callback=some_callback))
+        r = list(follow_links(LinkExtractorMock(), 'http://link1|http://link2|http://link3', callback=some_callback))
         assert all(isinstance(x, Request) for x in r)
         assert all(x.callback is some_callback for x in r)
-        self.assertEqual([x.url for x in r], ['link1', 'link2', 'link3'])
+        self.assertEqual([x.url for x in r], ['http://link1', 'http://link2', 'http://link3'])
