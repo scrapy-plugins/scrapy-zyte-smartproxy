@@ -34,6 +34,8 @@ class HubProxyMiddleware(object):
     def open_spider(self, spider):
         try:
             self.enabled = spider.use_hubproxy
+            self.user = spider.hubproxy_user
+            self.auth = basic_auth_header(spider.hubproxy_user, spider.hubproxy_pass)
         except AttributeError:
             pass
 
