@@ -1,7 +1,7 @@
 from w3lib.http import basic_auth_header
-from scrapy.exceptions import NotConfigured
 from scrapy.xlib.pydispatch import dispatcher
 from scrapy import log, signals
+
 
 class HubProxyMiddleware(object):
 

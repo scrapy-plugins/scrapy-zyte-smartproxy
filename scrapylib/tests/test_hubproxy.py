@@ -4,7 +4,6 @@ from w3lib.http import basic_auth_header
 from scrapy.http import Request, Response
 from scrapy.spider import BaseSpider
 from scrapy.utils.test import get_crawler
-from scrapy.exceptions import NotConfigured
 from scrapylib.hubproxy import HubProxyMiddleware
 
 
