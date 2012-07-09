@@ -5,43 +5,30 @@ from scrapy import log, signals
 
 class HubProxyMiddleware(object):
 
-    default_url = 'http://proxy.scrapinghub.com:8010'
+    url = 'http://proxy.scrapinghub.com:8010'
+    maxbans = 20
     ban_code = 503
-
-    def __init__(self, user, password, maxbans, url, crawler, enabled=False):
-        self.url = url
-        self.user = user
-        self.auth = basic_auth_header(user, password)
-        self.crawler = crawler
-        self.enabled = enabled
-        self.maxbans = maxbans
-        self.bans = 0
 
     @classmethod
     def from_crawler(cls, crawler):
-        user = crawler.settings['HUBPROXY_USER']
-        password = crawler.settings['HUBPROXY_PASS']
-        url = crawler.settings.get('HUBPROXY_URL', cls.default_url)
-        maxbans = crawler.settings.get('HUBPROXY_MAXBANS', 20)
-        enabled = 'hubproxy' in crawler.settings.getlist('SHUB_JOB_TAGS')
-        if not user:
-            raise NotConfigured
-
-        o = cls(user, password, maxbans, url, crawler, enabled)
+        o = cls()
+        o.crawler = crawler
         dispatcher.connect(o.open_spider, signals.spider_opened)
         return o
 
     def open_spider(self, spider):
-        try:
-            self.enabled = spider.use_hubproxy
-            self.user = spider.hubproxy_user
-            self.auth = basic_auth_header(spider.hubproxy_user, spider.hubproxy_pass)
-        except AttributeError:
-            pass
+        self.enabled = getattr(spider, 'use_hubproxy', False) \
+                or 'hubproxy' in self.crawler.settings.getlist('SHUB_JOB_TAGS')
+        if not self.enabled:
+            return
 
-        if self.enabled:
-            log.msg("Using hubproxy at %s (user: %s)" % (self.url, self.user),
-                spider=spider)
+        self.user = getattr(spider, 'hubproxy_user', self.crawler.settings['HUBPROXY_USER'])
+        self.password = getattr(spider, 'hubproxy_pass', self.crawler.settings['HUBPROXY_PASS'])
+        self.url = self.crawler.settings.get('HUBPROXY_URL', self.url)
+        self.maxbans = self.crawler.settings.get('HUBPROXY_MAXBANS', self.maxbans)
+        self.bans = 0
+        self.auth = basic_auth_header(self.user, self.password)
+        log.msg("Using hubproxy at %s (user: %s)" % (self.url, self.user), spider=spider)
 
     def process_request(self, request, spider):
         if self.enabled:

@@ -62,12 +62,8 @@ class HubProxyMiddlewareTestCase(TestCase):
         # max bans reached and close_spider called
         self.assertEqual(crawler.engine.fake_spider_closed_result, (spider, 'banned'))
 
-    def test_disabled_by_lack_of_hubproxy_user_setting(self):
-        # Not configure mw if it miss HUBPROXY_USER setting
-        self.assertRaises(NotConfigured, self._assert_disabled,
-                          self.spider, settings={})
-        self.assertRaises(NotConfigured, self._assert_disabled,
-                          self.spider, settings={'HUBPROXY_USER': None})
+    def test_disabled_by_lack_of_hubproxy_settings(self):
+        self._assert_disabled(self.spider, settings={})
 
     def test_spider_use_hubproxy(self):
         self.assertFalse(hasattr(self.spider, 'use_hubproxy'))
