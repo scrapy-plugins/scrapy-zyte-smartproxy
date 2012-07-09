@@ -22,12 +22,14 @@ class HubProxyMiddleware(object):
         if not self.enabled:
             return
 
-        self.user = getattr(spider, 'hubproxy_user', self.crawler.settings['HUBPROXY_USER'])
-        self.password = getattr(spider, 'hubproxy_pass', self.crawler.settings['HUBPROXY_PASS'])
-        self.url = self.crawler.settings.get('HUBPROXY_URL', self.url)
-        self.maxbans = self.crawler.settings.get('HUBPROXY_MAXBANS', self.maxbans)
+        for k in ('user', 'pass', 'url', 'maxbans'):
+            o = getattr(self, k, None)
+            s = self.crawler.settings.get('HUBPROXY_' + k.upper(), o)
+            v = getattr(spider, 'hubproxy_' + k, s)
+            setattr(self, k, v)
+
         self.bans = 0
-        self.auth = basic_auth_header(self.user, self.password)
+        self.auth = basic_auth_header(self.user, getattr(self, 'pass'))
         log.msg("Using hubproxy at %s (user: %s)" % (self.url, self.user), spider=spider)
 
     def process_request(self, request, spider):
