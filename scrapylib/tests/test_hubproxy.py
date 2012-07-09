@@ -41,6 +41,7 @@ class HubProxyMiddlewareTestCase(TestCase):
                         basicauth=basic_auth_header('user', 'pass'),
                         bancode=503,
                         maxbans=20,
+                        download_timeout=1800,
                        ):
         crawler = self._mock_crawler(settings)
         mw = HubProxyMiddleware.from_crawler(crawler)
@@ -48,6 +49,7 @@ class HubProxyMiddlewareTestCase(TestCase):
         req = Request('http://www.scrapytest.org')
         assert mw.process_request(req, spider) is None
         self.assertEqual(req.meta.get('proxy'), proxyurl)
+        self.assertEqual(req.meta.get('download_timeout'), download_timeout)
         self.assertEqual(req.headers.get('Proxy-Authorization'), basicauth)
         res = Response(req.url)
         assert mw.process_response(req, res, spider) is res
@@ -110,3 +112,10 @@ class HubProxyMiddlewareTestCase(TestCase):
         self._assert_enabled(self.spider, self.settings, maxbans=maxbans)
         self.settings['HUBPROXY_MAXBANS'] = maxbans = 100
         self._assert_enabled(self.spider, self.settings, maxbans=maxbans)
+
+    def test_download_timeout(self):
+        self.spider.use_hubproxy = True
+        self.settings['HUBPROXY_DOWNLOAD_TIMEOUT'] = 60
+        self._assert_enabled(self.spider, self.settings, download_timeout=60)
+        self.spider.hubproxy_download_timeout = 120
+        self._assert_enabled(self.spider, self.settings, download_timeout=120)

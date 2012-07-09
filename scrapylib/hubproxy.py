@@ -8,6 +8,7 @@ class HubProxyMiddleware(object):
     url = 'http://proxy.scrapinghub.com:8010'
     maxbans = 20
     ban_code = 503
+    download_timeout = 1800
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -22,7 +23,7 @@ class HubProxyMiddleware(object):
         if not self.enabled:
             return
 
-        for k in ('user', 'pass', 'url', 'maxbans'):
+        for k in ('user', 'pass', 'url', 'maxbans', 'download_timeout'):
             o = getattr(self, k, None)
             s = self.crawler.settings.get('HUBPROXY_' + k.upper(), o)
             v = getattr(spider, 'hubproxy_' + k, s)
@@ -35,6 +36,7 @@ class HubProxyMiddleware(object):
     def process_request(self, request, spider):
         if self.enabled:
             request.meta['proxy'] = self.url
+            request.meta['download_timeout'] = self.download_timeout
             request.headers['Proxy-Authorization'] = self.auth
 
     def process_response(self, request, response, spider):
