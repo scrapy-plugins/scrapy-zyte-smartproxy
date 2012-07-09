@@ -31,6 +31,7 @@ class HubProxyMiddlewareTestCase(TestCase):
         out = mw.process_request(req, spider)
         self.assertEqual(out, None)
         self.assertEqual(req.meta.get('proxy'), None)
+        self.assertEqual(req.meta.get('download_timeout'), None)
         self.assertEqual(req.headers.get('Proxy-Authorization'), None)
         res = Response(req.url)
         assert mw.process_response(req, res, spider) is res
