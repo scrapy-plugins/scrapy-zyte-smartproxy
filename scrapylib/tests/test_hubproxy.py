@@ -9,6 +9,8 @@ from scrapylib.hubproxy import HubProxyMiddleware
 
 class HubProxyMiddlewareTestCase(TestCase):
 
+    mwcls = HubProxyMiddleware
+
     def setUp(self):
         self.spider = BaseSpider('foo')
         self.settings = {'HUBPROXY_USER': 'user', 'HUBPROXY_PASS': 'pass'}
@@ -25,7 +27,7 @@ class HubProxyMiddlewareTestCase(TestCase):
 
     def _assert_disabled(self, spider, settings=None):
         crawler = self._mock_crawler(settings)
-        mw = HubProxyMiddleware.from_crawler(crawler)
+        mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(spider)
         req = Request('http://www.scrapytest.org')
         out = mw.process_request(req, spider)
@@ -39,19 +41,19 @@ class HubProxyMiddlewareTestCase(TestCase):
     def _assert_enabled(self, spider,
                         settings=None,
                         proxyurl='http://proxy.scrapinghub.com:8010',
-                        basicauth=basic_auth_header('user', 'pass'),
+                        proxyauth=basic_auth_header('user', 'pass'),
                         bancode=503,
                         maxbans=20,
                         download_timeout=1800,
                        ):
         crawler = self._mock_crawler(settings)
-        mw = HubProxyMiddleware.from_crawler(crawler)
+        mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(spider)
         req = Request('http://www.scrapytest.org')
         assert mw.process_request(req, spider) is None
         self.assertEqual(req.meta.get('proxy'), proxyurl)
         self.assertEqual(req.meta.get('download_timeout'), download_timeout)
-        self.assertEqual(req.headers.get('Proxy-Authorization'), basicauth)
+        self.assertEqual(req.headers.get('Proxy-Authorization'), proxyauth)
         res = Response(req.url)
         assert mw.process_response(req, res, spider) is res
 
@@ -94,13 +96,13 @@ class HubProxyMiddlewareTestCase(TestCase):
         self.spider.use_hubproxy = True
         self.settings['HUBPROXY_USER'] = user = 'other'
         self.settings['HUBPROXY_PASS'] = pass_ = 'secret'
-        basicauth = basic_auth_header(user, pass_)
-        self._assert_enabled(self.spider, self.settings, basicauth=basicauth)
+        proxyauth = basic_auth_header(user, pass_)
+        self._assert_enabled(self.spider, self.settings, proxyauth=proxyauth)
 
         self.spider.hubproxy_user = user = 'notfromsettings'
         self.spider.hubproxy_pass = pass_ = 'anothersecret'
-        basicauth = basic_auth_header(user, pass_)
-        self._assert_enabled(self.spider, self.settings, basicauth=basicauth)
+        proxyauth = basic_auth_header(user, pass_)
+        self._assert_enabled(self.spider, self.settings, proxyauth=proxyauth)
 
     def test_proxyurl(self):
         self.spider.use_hubproxy = True
@@ -120,3 +122,28 @@ class HubProxyMiddlewareTestCase(TestCase):
         self._assert_enabled(self.spider, self.settings, download_timeout=60)
         self.spider.hubproxy_download_timeout = 120
         self._assert_enabled(self.spider, self.settings, download_timeout=120)
+
+    def test_hooks(self):
+        class _ECLS(self.mwcls):
+            def is_enabled(self, spider):
+                wascalled.append('is_enabled')
+                return enabled
+            def get_proxyauth(self, spider):
+                wascalled.append('get_proxyauth')
+                return proxyauth
+
+        wascalled = []
+        self.mwcls = _ECLS
+
+        # test is_enabled returns False
+        enabled = False
+        self.spider.use_hubproxy = True
+        self._assert_disabled(self.spider, self.settings)
+        self.assertEqual(wascalled, ['is_enabled'])
+
+        wascalled[:] = [] # reset
+        enabled = True
+        self.spider.use_hubproxy = False
+        proxyauth = 'Basic Foo'
+        self._assert_enabled(self.spider, self.settings, proxyauth=proxyauth)
+        self.assertEqual(wascalled, ['is_enabled', 'get_proxyauth'])

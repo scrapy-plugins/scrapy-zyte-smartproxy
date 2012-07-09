@@ -18,8 +18,7 @@ class HubProxyMiddleware(object):
         return o
 
     def open_spider(self, spider):
-        self.enabled = getattr(spider, 'use_hubproxy', False) \
-                or 'hubproxy' in self.crawler.settings.getlist('SHUB_JOB_TAGS')
+        self.enabled = self.is_enabled(spider)
         if not self.enabled:
             return
 
@@ -29,21 +28,30 @@ class HubProxyMiddleware(object):
             v = getattr(spider, 'hubproxy_' + k, s)
             setattr(self, k, v)
 
-        self.bans = 0
-        self.auth = basic_auth_header(self.user, getattr(self, 'pass'))
+        self._bans = 0
+        self._proxyauth = self.get_proxyauth(spider)
         log.msg("Using hubproxy at %s (user: %s)" % (self.url, self.user), spider=spider)
+
+    def is_enabled(self, spider):
+        """Hook to enable middleware by custom rules"""
+        return getattr(spider, 'use_hubproxy', False) \
+                or 'hubproxy' in self.crawler.settings.getlist('SHUB_JOB_TAGS')
+
+    def get_proxyauth(self, spider):
+        """Hook to compute Proxy-Authorization header by custom rules"""
+        return basic_auth_header(self.user, getattr(self, 'pass'))
 
     def process_request(self, request, spider):
         if self.enabled:
             request.meta['proxy'] = self.url
             request.meta['download_timeout'] = self.download_timeout
-            request.headers['Proxy-Authorization'] = self.auth
+            request.headers['Proxy-Authorization'] = self._proxyauth
 
     def process_response(self, request, response, spider):
         if response.status == self.ban_code:
-            self.bans += 1
-            if self.bans > self.maxbans:
+            self._bans += 1
+            if self._bans > self.maxbans:
                 self.crawler.engine.close_spider(spider, 'banned')
         else:
-            self.bans = 0
+            self._bans = 0
         return response
