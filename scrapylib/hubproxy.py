@@ -2,7 +2,6 @@ from w3lib.http import basic_auth_header
 from scrapy.xlib.pydispatch import dispatcher
 from scrapy import log, signals
 
-
 class HubProxyMiddleware(object):
 
     url = 'http://proxy.scrapinghub.com:8010'
@@ -35,7 +34,7 @@ class HubProxyMiddleware(object):
     def is_enabled(self, spider):
         """Hook to enable middleware by custom rules"""
         return getattr(spider, 'use_hubproxy', False) \
-                or 'hubproxy' in self.crawler.settings.getlist('SHUB_JOB_TAGS')
+                or self.crawler.settings.getbool("HUBPROXY_ENABLED")
 
     def get_proxyauth(self, spider):
         """Hook to compute Proxy-Authorization header by custom rules"""
