@@ -86,10 +86,9 @@ class HubProxyMiddlewareTestCase(TestCase):
         self.spider.use_hubproxy = False
         self._assert_disabled(self.spider, self.settings)
 
-    def test_shub_job_tags(self):
-        self.settings['SHUB_JOB_TAGS'] = 'other'
+    def test_enabled(self):
         self._assert_disabled(self.spider, self.settings)
-        self.settings['SHUB_JOB_TAGS'] = 'hubproxy'
+        self.settings['HUBPROXY_ENABLED'] = True
         self._assert_enabled(self.spider, self.settings)
 
     def test_userpass(self):
