@@ -41,7 +41,7 @@ class HubProxyMiddleware(object):
         return basic_auth_header(self.user, getattr(self, 'pass'))
 
     def process_request(self, request, spider):
-        if self.enabled:
+        if self.enabled and 'dont_proxy' not in request.meta:
             request.meta['proxy'] = self.url
             request.meta['download_timeout'] = self.download_timeout
             request.headers['Proxy-Authorization'] = self._proxyauth
