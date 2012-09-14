@@ -57,6 +57,16 @@ class HubProxyMiddlewareTestCase(TestCase):
         res = Response(req.url)
         assert mw.process_response(req, res, spider) is res
 
+        # disabled if 'dont_proxy' is set
+        req = Request('http://www.scrapytest.org')
+        req.meta['dont_proxy'] = True
+        assert mw.process_request(req, spider) is None
+        self.assertEqual(req.meta.get('proxy'), None)
+        self.assertEqual(req.meta.get('download_timeout'), None)
+        self.assertEqual(req.headers.get('Proxy-Authorization'), None)
+        res = Response(req.url)
+        assert mw.process_response(req, res, spider) is res
+
         if maxbans > 0:
             # assert ban count is reseted after a succesful response
             res = Response('http://ban.me', status=bancode)
