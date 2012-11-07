@@ -37,6 +37,9 @@ class HubProxyMiddlewareTestCase(TestCase):
         self.assertEqual(req.headers.get('Proxy-Authorization'), None)
         res = Response(req.url)
         assert mw.process_response(req, res, spider) is res
+        res = Response(req.url, status=mw.ban_code)
+        assert mw.process_response(req, res, spider) is res
+        assert mw._bans == 0 
 
     def _assert_enabled(self, spider,
                         settings=None,

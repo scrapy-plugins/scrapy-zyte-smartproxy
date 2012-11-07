@@ -47,7 +47,7 @@ class HubProxyMiddleware(object):
             request.headers['Proxy-Authorization'] = self._proxyauth
 
     def process_response(self, request, response, spider):
-        if response.status == self.ban_code:
+        if self.enabled and response.status == self.ban_code:
             self._bans += 1
             if self._bans > self.maxbans:
                 self.crawler.engine.close_spider(spider, 'banned')
