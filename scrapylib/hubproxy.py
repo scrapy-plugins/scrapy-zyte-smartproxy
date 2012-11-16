@@ -1,5 +1,4 @@
 from w3lib.http import basic_auth_header
-from scrapy.xlib.pydispatch import dispatcher
 from scrapy import log, signals
 
 class HubProxyMiddleware(object):
@@ -13,7 +12,7 @@ class HubProxyMiddleware(object):
     def from_crawler(cls, crawler):
         o = cls()
         o.crawler = crawler
-        dispatcher.connect(o.open_spider, signals.spider_opened)
+        crawler.signals.connect(o.open_spider, signals.spider_opened)
         return o
 
     def open_spider(self, spider):
