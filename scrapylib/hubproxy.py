@@ -3,7 +3,7 @@ from scrapy import log, signals
 
 class HubProxyMiddleware(object):
 
-    url = 'http://proxy.scrapinghub.com:8010'
+    url = 'http://proxy.crawlera.com:8010'
     maxbans = 20
     ban_code = 503
     download_timeout = 1800
