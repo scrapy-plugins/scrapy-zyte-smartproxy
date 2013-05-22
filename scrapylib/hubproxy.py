@@ -1,3 +1,4 @@
+from collections import defaultdict
 from w3lib.http import basic_auth_header
 from scrapy import log, signals
 
@@ -12,6 +13,7 @@ class HubProxyMiddleware(object):
     def from_crawler(cls, crawler):
         o = cls()
         o.crawler = crawler
+        o._bans = defaultdict(int)
         crawler.signals.connect(o.open_spider, signals.spider_opened)
         return o
 
@@ -26,7 +28,6 @@ class HubProxyMiddleware(object):
             v = getattr(spider, 'hubproxy_' + k, s)
             setattr(self, k, v)
 
-        self._bans = 0
         self._proxyauth = self.get_proxyauth(spider)
         log.msg("Using hubproxy at %s (user: %s)" % (self.url, self.user), spider=spider)
 
@@ -47,9 +48,11 @@ class HubProxyMiddleware(object):
 
     def process_response(self, request, response, spider):
         if self.enabled and response.status == self.ban_code:
-            self._bans += 1
-            if self._bans > self.maxbans:
+            key = request.meta.get('download_slot')
+            self._bans[key] += 1
+            if self._bans[key] > self.maxbans:
                 self.crawler.engine.close_spider(spider, 'banned')
         else:
-            self._bans = 0
+            key = request.meta.get('download_slot')
+            self._bans[key] = 0
         return response
