@@ -39,7 +39,6 @@ class HubProxyMiddlewareTestCase(TestCase):
         assert mw.process_response(req, res, spider) is res
         res = Response(req.url, status=mw.ban_code)
         assert mw.process_response(req, res, spider) is res
-        assert mw._bans == 0 
 
     def _assert_enabled(self, spider,
                         settings=None,
@@ -78,6 +77,7 @@ class HubProxyMiddlewareTestCase(TestCase):
             res = Response('http://unban.me')
             assert mw.process_response(req, res, spider) is res
             self.assertEqual(crawler.engine.fake_spider_closed_result, None)
+            self.assertEqual(mw._bans[None], 0)
 
         # check for not banning before maxbans for bancode
         for x in xrange(maxbans + 1):
