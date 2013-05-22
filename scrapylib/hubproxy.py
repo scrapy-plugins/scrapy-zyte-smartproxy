@@ -52,7 +52,19 @@ class HubProxyMiddleware(object):
             self._bans[key] += 1
             if self._bans[key] > self.maxbans:
                 self.crawler.engine.close_spider(spider, 'banned')
+            else:
+                after = response.headers.get('retry-after')
+                if after:
+                    key, slot = self._get_slot(request, spider)
+                    if slot:
+                        slot.delay = float(after)
         else:
-            key = request.meta.get('download_slot')
+            key, slot = self._get_slot(request, spider)
+            if slot:
+                slot.delay = 0
             self._bans[key] = 0
         return response
+
+    def _get_slot(self, request, spider):
+        key = request.meta.get('download_slot')
+        return key, self.crawler.engine.downloader.slots.get(key)
