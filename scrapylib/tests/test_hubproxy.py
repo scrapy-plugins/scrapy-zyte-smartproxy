@@ -16,7 +16,11 @@ class HubProxyMiddlewareTestCase(TestCase):
         self.settings = {'HUBPROXY_USER': 'user', 'HUBPROXY_PASS': 'pass'}
 
     def _mock_crawler(self, settings=None):
+        class MockedDownloader(object):
+            slots = {}
+
         class MockedEngine(object):
+            downloader = MockedDownloader()
             fake_spider_closed_result = None
             def close_spider(self, spider, reason):
                 self.fake_spider_closed_result = (spider, reason)
