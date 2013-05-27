@@ -24,22 +24,21 @@ class CrawleraMiddleware(object):
             return
 
         for k in ('user', 'pass', 'url', 'maxbans', 'download_timeout'):
-            o = getattr(self, k, None)
-            s = self.crawler.settings.get('CRAWLERA_' + k.upper(),
-                self.crawler.settings.get('HUBPROXY_' + k.upper(), o))
-            v = getattr(spider, 'crawlera_' + k,
-                getattr(spider, 'hubproxy_' + k, s))
+            v = self._get_setting_value(spider, k)
             setattr(self, k, v)
 
         self._proxyauth = self.get_proxyauth(spider)
         log.msg("Using crawlera at %s (user: %s)" % (self.url, self.user), spider=spider)
 
+    def _get_setting_value(self, spider, k):
+        o = getattr(self, k, None)
+        s = self.crawler.settings.get('CRAWLERA_' + k.upper(), o)
+        return getattr(spider, 'crawlera_' + k, s)
+
     def is_enabled(self, spider):
         """Hook to enable middleware by custom rules"""
         return getattr(spider, 'crawlera_enabled', False) \
-                or getattr(spider, 'use_hubproxy', False) \
-                or self.crawler.settings.getbool("CRAWLERA_ENABLED") \
-                or self.crawler.settings.getbool("HUBPROXY_ENABLED")
+            or self.crawler.settings.getbool("CRAWLERA_ENABLED")
 
     def get_proxyauth(self, spider):
         """Hook to compute Proxy-Authorization header by custom rules"""
