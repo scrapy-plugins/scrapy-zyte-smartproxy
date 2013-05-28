@@ -112,3 +112,19 @@ class MagicFieldsTest(TestCase):
         }
         self.assertEqual(result, expected)
 
+    def test_mware_override(self):
+        settings = {
+            "MAGIC_FIELDS": {"spider": "$spider:name"},
+            "MAGIC_FIELDS_OVERRIDE": {"sku": "$field:nom"}
+        }
+        crawler = get_crawler(settings)
+        mware = MagicFieldsMiddleware.from_crawler(crawler)
+        result = list(mware.process_spider_output(self.response, [self.item], self.spider))[0]
+        expected = {
+            'nom': 'myitem',
+            'prix': '56.70 euros',
+            'spider': 'myspider',
+            'url': 'http://www.example.com/product.html?item_no=345',
+            'sku': 'myitem',
+        }
+        self.assertEqual(result, expected)
