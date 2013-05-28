@@ -99,6 +99,10 @@ class MagicFieldsTest(TestCase):
         formatted = _format("$field:nom", self.spider, self.response, self.item, {})
         self.assertEqual(formatted, 'myitem')
 
+    def test_regex(self):
+        formatted = _format("$field:url,r'item_no=(\d+)'", self.spider, self.response, self.item, {})
+        self.assertEqual(formatted, '345')
+
     def test_mware(self):
         settings = {"MAGIC_FIELDS": {"spider": "$spider:name"}}
         crawler = get_crawler(settings)
