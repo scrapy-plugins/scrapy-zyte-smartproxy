@@ -170,7 +170,7 @@ class HcfTestCase(TestCase):
         self.assertEqual(new_urls, new_fps)
 
         # Simulate close spider
-        hcf.close_spider(self.spider)
+        hcf.close_spider(self.spider, 'finished')
         self.assertEqual(len(hcf.new_links[self.slot]), 0)
         self.assertEqual(len(hcf.batch_ids), 0)
 
