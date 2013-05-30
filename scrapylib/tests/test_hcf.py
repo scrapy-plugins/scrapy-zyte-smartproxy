@@ -19,7 +19,7 @@ class HcfTestCase(TestCase):
     endpoint = os.getenv('HS_ENDPOINT', 'http://localhost:8003')
     auth = os.getenv('HS_AUTH', 'useavalidkey')
     frontier = 'test'
-    slot = 'slot'
+    slot = '0'
 
     @classmethod
     def setUpClass(cls):
@@ -101,7 +101,7 @@ class HcfTestCase(TestCase):
         request = Request(url="http://www.example.com/product/?qxp=12&qxg=1231")
         outputs = list(hcf.process_spider_output(response, [request], self.spider))
         self.assertEqual(outputs, [])
-        expected_links = {'slot': ['http://www.example.com/product/?qxp=12&qxg=1231']}
+        expected_links = {'0': ['http://www.example.com/product/?qxp=12&qxg=1231']}
         self.assertEqual(dict(hcf.new_links), expected_links)
 
         # process new POST request (don't add it to the hcf)
@@ -109,7 +109,7 @@ class HcfTestCase(TestCase):
         request = Request(url="http://www.example.com/product/?qxp=456", method='POST')
         outputs = list(hcf.process_spider_output(response, [request], self.spider))
         self.assertEqual(outputs, [request])
-        expected_links = {'slot': ['http://www.example.com/product/?qxp=12&qxg=1231']}
+        expected_links = {'0': ['http://www.example.com/product/?qxp=12&qxg=1231']}
         self.assertEqual(dict(hcf.new_links), expected_links)
 
         # process new GET request (with the skip_hcf meta key)
@@ -117,7 +117,7 @@ class HcfTestCase(TestCase):
         request = Request(url="http://www.example.com/product/?qxp=789")
         outputs = list(hcf.process_spider_output(response, [request], self.spider))
         self.assertEqual(outputs, [request])
-        expected_links = {'slot': ['http://www.example.com/product/?qxp=12&qxg=1231']}
+        expected_links = {'0': ['http://www.example.com/product/?qxp=12&qxg=1231']}
         self.assertEqual(dict(hcf.new_links), expected_links)
 
     def test_idle_close_spider(self):
