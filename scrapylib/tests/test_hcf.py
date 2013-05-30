@@ -187,10 +187,10 @@ class HcfTestCase(TestCase):
             md5.update(request.url)
             digest = md5.hexdigest()
             return str(int(digest, 16) % 5)
+        self.spider.slot_callback = get_slot_callback
 
         # process new GET request
-        response = self._build_response("http://www.example.com/qxg1231",
-                                        meta={'slot_callback': get_slot_callback})
+        response = self._build_response("http://www.example.com/qxg1231")
         request = Request(url="http://www.example.com/product/?qxp=12&qxg=1231")
         outputs = list(hcf.process_spider_output(response, [request], self.spider))
         self.assertEqual(outputs, [])
