@@ -6,7 +6,7 @@ from scrapy.http import Request, Response
 from scrapy.spider import BaseSpider
 from scrapy.utils.test import get_crawler
 from scrapylib.hcf import HcfMiddleware
-from scrapy.exceptions import NotConfigured
+from scrapy.exceptions import NotConfigured, DontCloseSpider
 from hubstorage import HubstorageClient
 
 
@@ -57,12 +57,24 @@ class HcfTestCase(TestCase):
     def _build_response(self, url, meta=None):
         return Response(url, request=Request(url="http://www.example.com/parent.html", meta=meta))
 
+    def _get_crawler(self, settings=None):
+        crawler = get_crawler(settings)
+        # simulate crawler engine
+        class Engine():
+            def __init__(self):
+                self.requests = []
+            def schedule(self, request, spider):
+                self.requests.append(request)
+        crawler.engine = Engine()
+
+        return crawler
+
     def test_not_loaded(self):
-        crawler = get_crawler({})
+        crawler = self._get_crawler({})
         self.assertRaises(NotConfigured, self.hcf_cls.from_crawler, crawler)
 
     def test_start_requests(self):
-        crawler = get_crawler(self.hcf_settings)
+        crawler = self._get_crawler(self.hcf_settings)
         hcf = self.hcf_cls.from_crawler(crawler)
 
         # first time should be empty
@@ -81,7 +93,7 @@ class HcfTestCase(TestCase):
         self.assertEqual(len(hcf.batch_ids), 1)
 
     def test_spider_output(self):
-        crawler = get_crawler(self.hcf_settings)
+        crawler = self._get_crawler(self.hcf_settings)
         hcf = self.hcf_cls.from_crawler(crawler)
 
         # process new GET request
@@ -109,7 +121,7 @@ class HcfTestCase(TestCase):
         self.assertEqual(dict(hcf.new_links), expected_links)
 
     def test_idle_close_spider(self):
-        crawler = get_crawler(self.hcf_settings)
+        crawler = self._get_crawler(self.hcf_settings)
         hcf = self.hcf_cls.from_crawler(crawler)
 
         # Save 2 batches in the HCF
@@ -131,16 +143,27 @@ class HcfTestCase(TestCase):
             list(hcf.process_spider_output(response, [request], self.spider))
         self.assertEqual(len(hcf.new_links[self.slot]), 50)
 
+        # Simulate emptying the scheduler
+        crawler.engine.requests = []
+
         # Simulate idle spider
-        new_urls = [r.url for r in hcf.idle_spider(self.spider)]
+        self.assertRaises(DontCloseSpider, hcf.idle_spider, self.spider)
+        new_urls = [r.url for r in crawler.engine.requests]
         self.assertEqual(len(hcf.new_links[self.slot]), 0)
         self.assertEqual(len(hcf.batch_ids), 1)
         self.assertEqual(len(new_urls), 100)
         expected_urls = [r['fp'] for r in fps[100:200]]
         self.assertEqual(new_urls, expected_urls)
+        # need to flush the client so the 50 new urls are picked by
+        # the next call to idle_spider
+        hcf.fclient.flush()
+
+        # Simulate emptying the scheduler
+        crawler.engine.requests = []
 
         # Simulate idle spider (get the 50 additional URLs)
-        new_urls = [r.url for r in hcf.idle_spider(self.spider)]
+        self.assertRaises(DontCloseSpider, hcf.idle_spider, self.spider)
+        new_urls = [r.url for r in crawler.engine.requests]
         self.assertEqual(len(hcf.new_links[self.slot]), 0)
         self.assertEqual(len(hcf.batch_ids), 1)
         self.assertEqual(len(new_urls), 50)
@@ -156,7 +179,7 @@ class HcfTestCase(TestCase):
         self.assertEqual(len(batches), 0)
 
     def test_spider_output_override_slot(self):
-        crawler = get_crawler(self.hcf_settings)
+        crawler = self._get_crawler(self.hcf_settings)
         hcf = self.hcf_cls.from_crawler(crawler)
 
         def get_slot_callback(request):
