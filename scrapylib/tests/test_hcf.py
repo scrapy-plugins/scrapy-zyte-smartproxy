@@ -27,6 +27,11 @@ class HcfTestCase(TestCase):
         cls.project = cls.hsclient.get_project(cls.projectid)
         cls.fclient = cls.project.frontier
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.project.frontier.close()
+        cls.hsclient.close()
+
     def setUp(self):
 
         class TestSpider(BaseSpider):
@@ -69,6 +74,7 @@ class HcfTestCase(TestCase):
         fps = [{'fp': 'http://www.example.com/index.html'},
                {'fp': 'http://www.example.com/index2.html'}]
         self.fclient.add(self.frontier, self.slot, fps)
+        self.fclient.flush()
         new_urls = [r.url for r in hcf.process_start_requests(start_urls, self.spider)]
         expected_urls = [r['fp'] for r in fps]
         self.assertEqual(new_urls, expected_urls)
@@ -109,6 +115,7 @@ class HcfTestCase(TestCase):
         # Save 2 batches in the HCF
         fps = [{'fp': 'http://www.example.com/index_%s.html' % i} for i in range(0, 200)]
         self.fclient.add(self.frontier, self.slot, fps)
+        self.fclient.flush()
 
         # Read the first batch
         start_urls = self.spider.start_urls
