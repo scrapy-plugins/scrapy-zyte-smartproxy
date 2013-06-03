@@ -113,8 +113,8 @@ class HcfTestCase(TestCase):
         self.assertEqual(dict(hcf.new_links), expected_links)
 
         # process new GET request (with the skip_hcf meta key)
-        response = self._build_response("http://www.example.com/qxg1231", meta={'dont_hcf': True})
-        request = Request(url="http://www.example.com/product/?qxp=789")
+        response = self._build_response("http://www.example.com/qxg1231")
+        request = Request(url="http://www.example.com/product/?qxp=789", meta={'dont_hcf': True})
         outputs = list(hcf.process_spider_output(response, [request], self.spider))
         self.assertEqual(outputs, [request])
         expected_links = {'0': [{'fp': 'http://www.example.com/product/?qxp=12&qxg=1231'}]}
