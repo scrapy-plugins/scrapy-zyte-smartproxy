@@ -98,7 +98,7 @@ class HcfTestCase(TestCase):
 
         # process new GET request
         response = self._build_response("http://www.example.com/qxg1231")
-        request = Request(url="http://www.example.com/product/?qxp=12&qxg=1231")
+        request = Request(url="http://www.example.com/product/?qxp=12&qxg=1231", meta={'use_hcf': True})
         outputs = list(hcf.process_spider_output(response, [request], self.spider))
         self.assertEqual(outputs, [])
         expected_links = {'0': [{'fp': 'http://www.example.com/product/?qxp=12&qxg=1231'}]}
@@ -112,9 +112,9 @@ class HcfTestCase(TestCase):
         expected_links = {'0': [{'fp': 'http://www.example.com/product/?qxp=12&qxg=1231'}]}
         self.assertEqual(dict(hcf.new_links), expected_links)
 
-        # process new GET request (with the skip_hcf meta key)
+        # process new GET request (without the use_hcf meta key)
         response = self._build_response("http://www.example.com/qxg1231")
-        request = Request(url="http://www.example.com/product/?qxp=789", meta={'dont_hcf': True})
+        request = Request(url="http://www.example.com/product/?qxp=789")
         outputs = list(hcf.process_spider_output(response, [request], self.spider))
         self.assertEqual(outputs, [request])
         expected_links = {'0': [{'fp': 'http://www.example.com/product/?qxp=12&qxg=1231'}]}
@@ -139,7 +139,7 @@ class HcfTestCase(TestCase):
         response = self._build_response("http://www.example.com/parent.html")
         new_fps = ["http://www.example.com/child_%s.html" % i for i in range(0, 50)]
         for fp in new_fps:
-            request = Request(url=fp)
+            request = Request(url=fp, meta={'use_hcf': True})
             list(hcf.process_spider_output(response, [request], self.spider))
         self.assertEqual(len(hcf.new_links[self.slot]), 50)
 
@@ -191,7 +191,8 @@ class HcfTestCase(TestCase):
 
         # process new GET request
         response = self._build_response("http://www.example.com/qxg1231")
-        request = Request(url="http://www.example.com/product/?qxp=12&qxg=1231")
+        request = Request(url="http://www.example.com/product/?qxp=12&qxg=1231",
+                          meta={'use_hcf': True})
         outputs = list(hcf.process_spider_output(response, [request], self.spider))
         self.assertEqual(outputs, [])
         expected_links = {'4': [{'fp': 'http://www.example.com/product/?qxp=12&qxg=1231'}]}
