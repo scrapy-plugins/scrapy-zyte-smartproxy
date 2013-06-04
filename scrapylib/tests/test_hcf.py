@@ -159,6 +159,40 @@ class HcfTestCase(TestCase):
         batches = [b for b in self.fclient.read(self.frontier, self.slot)]
         self.assertEqual(len(batches), 1)
 
+    def test_hcf_params(self):
+        crawler = self._get_crawler(self.hcf_settings)
+        hcf = self.hcf_cls.from_crawler(crawler)
+
+        # Simulate extracting some new urls and adding them to the HCF
+        response = self._build_response("http://www.example.com/parent.html")
+        new_fps = ["http://www.example.com/child_%s.html" % i for i in range(0, 5)]
+        new_requests = []
+        for fp in new_fps:
+            hcf_params = {'qdata': {'a': '1', 'b': '2', 'c': '3'},
+                          'fdata': {'x': '1', 'y': '2', 'z': '3'},
+                          'p': 1}
+            request = Request(url=fp, meta={'use_hcf': True, "hcf_params": hcf_params})
+            new_requests.append(request)
+            list(hcf.process_spider_output(response, [request], self.spider))
+        self.assertEqual(hcf.new_links_count[self.slot], 5)
+
+        # Simulate close spider
+        hcf.close_spider(self.spider, 'finished')
+
+        # Similate running another spider
+        start_urls = self.spider.start_urls
+        stored_requests = list(hcf.process_start_requests(start_urls, self.spider))
+        for a, b in zip(new_requests, stored_requests):
+            self.assertEqual(a.url, b.url)
+            self.assertEqual(a.meta.get('qdata'), b.meta.get('qdata'))
+
+        # Simulate emptying the scheduler
+        crawler.engine.requests = []
+
+        # Simulate close spider
+        hcf.close_spider(self.spider, 'finished')
+
+
     def test_spider_output_override_slot(self):
         crawler = self._get_crawler(self.hcf_settings)
         hcf = self.hcf_cls.from_crawler(crawler)
