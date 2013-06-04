@@ -20,6 +20,7 @@ class HcfTestCase(TestCase):
     auth = os.getenv('HS_AUTH', 'useavalidkey')
     frontier = 'test'
     slot = '0'
+    number_of_slots = 1
 
     @classmethod
     def setUpClass(cls):
@@ -44,7 +45,8 @@ class HcfTestCase(TestCase):
                              'HS_AUTH': self.auth,
                              'HS_PROJECTID': self.projectid,
                              'HS_FRONTIER': self.frontier,
-                             'HS_SLOT': self.slot}
+                             'HS_SLOT': self.slot,
+                             'HS_NUMBER_OF_SLOTS': self.number_of_slots}
         self._delete_slot()
 
     def tearDown(self):
