@@ -20,6 +20,7 @@ class HcfTestCase(TestCase):
     auth = os.getenv('HS_AUTH', 'useavalidkey')
     frontier = 'test'
     slot = '0'
+    number_of_slots = 1
 
     @classmethod
     def setUpClass(cls):
@@ -33,7 +34,6 @@ class HcfTestCase(TestCase):
         cls.hsclient.close()
 
     def setUp(self):
-
         class TestSpider(BaseSpider):
             name = self.spidername
             start_urls = [
@@ -45,7 +45,8 @@ class HcfTestCase(TestCase):
                              'HS_AUTH': self.auth,
                              'HS_PROJECTID': self.projectid,
                              'HS_FRONTIER': self.frontier,
-                             'HS_SLOT': self.slot}
+                             'HS_SLOT': self.slot,
+                             'HS_NUMBER_OF_SLOTS': self.number_of_slots}
         self._delete_slot()
 
     def tearDown(self):
@@ -101,26 +102,29 @@ class HcfTestCase(TestCase):
         request = Request(url="http://www.example.com/product/?qxp=12&qxg=1231", meta={'use_hcf': True})
         outputs = list(hcf.process_spider_output(response, [request], self.spider))
         self.assertEqual(outputs, [])
-        expected_links = {'0': [{'fp': 'http://www.example.com/product/?qxp=12&qxg=1231'}]}
-        self.assertEqual(dict(hcf.new_links), expected_links)
+        expected_links = {'0': 1}
+        self.assertEqual(dict(hcf.new_links_count), expected_links)
 
         # process new POST request (don't add it to the hcf)
         response = self._build_response("http://www.example.com/qxg456")
         request = Request(url="http://www.example.com/product/?qxp=456", method='POST')
         outputs = list(hcf.process_spider_output(response, [request], self.spider))
         self.assertEqual(outputs, [request])
-        expected_links = {'0': [{'fp': 'http://www.example.com/product/?qxp=12&qxg=1231'}]}
-        self.assertEqual(dict(hcf.new_links), expected_links)
+        expected_links = {'0': 1}
+        self.assertEqual(dict(hcf.new_links_count), expected_links)
 
         # process new GET request (without the use_hcf meta key)
         response = self._build_response("http://www.example.com/qxg1231")
         request = Request(url="http://www.example.com/product/?qxp=789")
         outputs = list(hcf.process_spider_output(response, [request], self.spider))
         self.assertEqual(outputs, [request])
-        expected_links = {'0': [{'fp': 'http://www.example.com/product/?qxp=12&qxg=1231'}]}
-        self.assertEqual(dict(hcf.new_links), expected_links)
+        expected_links = {'0': 1}
+        self.assertEqual(dict(hcf.new_links_count), expected_links)
 
-    def test_idle_close_spider(self):
+        # Simulate close spider
+        hcf.close_spider(self.spider, 'finished')
+
+    def test_close_spider(self):
         crawler = self._get_crawler(self.hcf_settings)
         hcf = self.hcf_cls.from_crawler(crawler)
 
@@ -141,42 +145,19 @@ class HcfTestCase(TestCase):
         for fp in new_fps:
             request = Request(url=fp, meta={'use_hcf': True})
             list(hcf.process_spider_output(response, [request], self.spider))
-        self.assertEqual(len(hcf.new_links[self.slot]), 50)
+        self.assertEqual(hcf.new_links_count[self.slot], 50)
 
         # Simulate emptying the scheduler
         crawler.engine.requests = []
-
-        # Simulate idle spider
-        self.assertRaises(DontCloseSpider, hcf.idle_spider, self.spider)
-        new_urls = [r.url for r in crawler.engine.requests]
-        self.assertEqual(len(hcf.new_links[self.slot]), 0)
-        self.assertEqual(len(hcf.batch_ids), 1)
-        self.assertEqual(len(new_urls), 100)
-        expected_urls = [r['fp'] for r in fps[100:200]]
-        self.assertEqual(new_urls, expected_urls)
-        # need to flush the client so the 50 new urls are picked by
-        # the next call to idle_spider
-        hcf.fclient.flush()
-
-        # Simulate emptying the scheduler
-        crawler.engine.requests = []
-
-        # Simulate idle spider (get the 50 additional URLs)
-        self.assertRaises(DontCloseSpider, hcf.idle_spider, self.spider)
-        new_urls = [r.url for r in crawler.engine.requests]
-        self.assertEqual(len(hcf.new_links[self.slot]), 0)
-        self.assertEqual(len(hcf.batch_ids), 1)
-        self.assertEqual(len(new_urls), 50)
-        self.assertEqual(new_urls, new_fps)
 
         # Simulate close spider
         hcf.close_spider(self.spider, 'finished')
-        self.assertEqual(len(hcf.new_links[self.slot]), 0)
+        self.assertEqual(len(hcf.new_links_count[self.slot]), 0)
         self.assertEqual(len(hcf.batch_ids), 0)
 
-        # HCF must be empty now
+        # HCF must be have 1 new batch
         batches = [b for b in self.fclient.read(self.frontier, self.slot)]
-        self.assertEqual(len(batches), 0)
+        self.assertEqual(len(batches), 1)
 
     def test_spider_output_override_slot(self):
         crawler = self._get_crawler(self.hcf_settings)
@@ -195,7 +176,9 @@ class HcfTestCase(TestCase):
                           meta={'use_hcf': True})
         outputs = list(hcf.process_spider_output(response, [request], self.spider))
         self.assertEqual(outputs, [])
-        expected_links = {'4': [{'fp': 'http://www.example.com/product/?qxp=12&qxg=1231'}]}
-        self.assertEqual(dict(hcf.new_links), expected_links)
+        expected_links = {'4': 1}
+        self.assertEqual(dict(hcf.new_links_count), expected_links)
 
+        # Simulate close spider
+        hcf.close_spider(self.spider, 'finished')
 
