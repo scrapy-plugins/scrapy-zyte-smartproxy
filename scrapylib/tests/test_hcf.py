@@ -120,7 +120,7 @@ class HcfTestCase(TestCase):
         expected_links = {'0': [{'fp': 'http://www.example.com/product/?qxp=12&qxg=1231'}]}
         self.assertEqual(dict(hcf.new_links), expected_links)
 
-    def test_idle_close_spider(self):
+    def test_close_spider(self):
         crawler = self._get_crawler(self.hcf_settings)
         hcf = self.hcf_cls.from_crawler(crawler)
 
@@ -146,37 +146,14 @@ class HcfTestCase(TestCase):
         # Simulate emptying the scheduler
         crawler.engine.requests = []
 
-        # Simulate idle spider
-        self.assertRaises(DontCloseSpider, hcf.idle_spider, self.spider)
-        new_urls = [r.url for r in crawler.engine.requests]
-        self.assertEqual(len(hcf.new_links[self.slot]), 0)
-        self.assertEqual(len(hcf.batch_ids), 1)
-        self.assertEqual(len(new_urls), 100)
-        expected_urls = [r['fp'] for r in fps[100:200]]
-        self.assertEqual(new_urls, expected_urls)
-        # need to flush the client so the 50 new urls are picked by
-        # the next call to idle_spider
-        hcf.fclient.flush()
-
-        # Simulate emptying the scheduler
-        crawler.engine.requests = []
-
-        # Simulate idle spider (get the 50 additional URLs)
-        self.assertRaises(DontCloseSpider, hcf.idle_spider, self.spider)
-        new_urls = [r.url for r in crawler.engine.requests]
-        self.assertEqual(len(hcf.new_links[self.slot]), 0)
-        self.assertEqual(len(hcf.batch_ids), 1)
-        self.assertEqual(len(new_urls), 50)
-        self.assertEqual(new_urls, new_fps)
-
         # Simulate close spider
         hcf.close_spider(self.spider, 'finished')
         self.assertEqual(len(hcf.new_links[self.slot]), 0)
         self.assertEqual(len(hcf.batch_ids), 0)
 
-        # HCF must be empty now
+        # HCF must be have 1 new batch
         batches = [b for b in self.fclient.read(self.frontier, self.slot)]
-        self.assertEqual(len(batches), 0)
+        self.assertEqual(len(batches), 1)
 
     def test_spider_output_override_slot(self):
         crawler = self._get_crawler(self.hcf_settings)
