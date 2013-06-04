@@ -23,23 +23,16 @@ class HcfTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # cls.hsclient = HubstorageClient(auth=cls.auth, endpoint=cls.endpoint)
-        # cls.project = cls.hsclient.get_project(cls.projectid)
-        # cls.fclient = cls.project.frontier
-        pass
+        cls.hsclient = HubstorageClient(auth=cls.auth, endpoint=cls.endpoint)
+        cls.project = cls.hsclient.get_project(cls.projectid)
+        cls.fclient = cls.project.frontier
 
     @classmethod
     def tearDownClass(cls):
-        # cls.project.frontier.close()
-        # cls.hsclient.close()
-        pass
+        cls.project.frontier.close()
+        cls.hsclient.close()
 
     def setUp(self):
-
-        self.hsclient = HubstorageClient(auth=self.auth, endpoint=self.endpoint)
-        self.project = self.hsclient.get_project(self.projectid)
-        self.fclient = self.project.frontier
-
         class TestSpider(BaseSpider):
             name = self.spidername
             start_urls = [
@@ -56,8 +49,6 @@ class HcfTestCase(TestCase):
 
     def tearDown(self):
         self._delete_slot()
-        self.project.frontier.close()
-        self.hsclient.close()
 
     def _delete_slot(self):
         self.fclient.delete_slot(self.frontier, self.slot)
