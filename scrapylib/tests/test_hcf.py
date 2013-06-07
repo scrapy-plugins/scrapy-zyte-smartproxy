@@ -102,24 +102,24 @@ class HcfTestCase(TestCase):
         request = Request(url="http://www.example.com/product/?qxp=12&qxg=1231", meta={'use_hcf': True})
         outputs = list(hcf.process_spider_output(response, [request], self.spider))
         self.assertEqual(outputs, [])
-        expected_links = {'0': 1}
-        self.assertEqual(dict(hcf.new_links_count), expected_links)
+        expected_links = {'0': set(['http://www.example.com/product/?qxp=12&qxg=1231'])}
+        self.assertEqual(dict(hcf.new_links), expected_links)
 
         # process new POST request (don't add it to the hcf)
         response = self._build_response("http://www.example.com/qxg456")
         request = Request(url="http://www.example.com/product/?qxp=456", method='POST')
         outputs = list(hcf.process_spider_output(response, [request], self.spider))
         self.assertEqual(outputs, [request])
-        expected_links = {'0': 1}
-        self.assertEqual(dict(hcf.new_links_count), expected_links)
+        expected_links = {'0': set(['http://www.example.com/product/?qxp=12&qxg=1231'])}
+        self.assertEqual(dict(hcf.new_links), expected_links)
 
         # process new GET request (without the use_hcf meta key)
         response = self._build_response("http://www.example.com/qxg1231")
         request = Request(url="http://www.example.com/product/?qxp=789")
         outputs = list(hcf.process_spider_output(response, [request], self.spider))
         self.assertEqual(outputs, [request])
-        expected_links = {'0': 1}
-        self.assertEqual(dict(hcf.new_links_count), expected_links)
+        expected_links = {'0': set(['http://www.example.com/product/?qxp=12&qxg=1231'])}
+        self.assertEqual(dict(hcf.new_links), expected_links)
 
         # Simulate close spider
         hcf.close_spider(self.spider, 'finished')
@@ -145,14 +145,14 @@ class HcfTestCase(TestCase):
         for fp in new_fps:
             request = Request(url=fp, meta={'use_hcf': True})
             list(hcf.process_spider_output(response, [request], self.spider))
-        self.assertEqual(hcf.new_links_count[self.slot], 50)
+        self.assertEqual(len(hcf.new_links[self.slot]), 50)
 
         # Simulate emptying the scheduler
         crawler.engine.requests = []
 
         # Simulate close spider
         hcf.close_spider(self.spider, 'finished')
-        self.assertEqual(len(hcf.new_links_count[self.slot]), 0)
+        self.assertEqual(len(hcf.new_links[self.slot]), 0)
         self.assertEqual(len(hcf.batch_ids), 0)
 
         # HCF must be have 1 new batch
@@ -174,7 +174,12 @@ class HcfTestCase(TestCase):
             request = Request(url=fp, meta={'use_hcf': True, "hcf_params": hcf_params})
             new_requests.append(request)
             list(hcf.process_spider_output(response, [request], self.spider))
-        self.assertEqual(hcf.new_links_count[self.slot], 5)
+        expected = set(['http://www.example.com/child_4.html',
+                        'http://www.example.com/child_1.html',
+                        'http://www.example.com/child_0.html',
+                        'http://www.example.com/child_3.html',
+                        'http://www.example.com/child_2.html'])
+        self.assertEqual(hcf.new_links[self.slot], expected)
 
         # Simulate close spider
         hcf.close_spider(self.spider, 'finished')
@@ -191,7 +196,6 @@ class HcfTestCase(TestCase):
 
         # Simulate close spider
         hcf.close_spider(self.spider, 'finished')
-
 
     def test_spider_output_override_slot(self):
         crawler = self._get_crawler(self.hcf_settings)
@@ -210,8 +214,8 @@ class HcfTestCase(TestCase):
                           meta={'use_hcf': True})
         outputs = list(hcf.process_spider_output(response, [request], self.spider))
         self.assertEqual(outputs, [])
-        expected_links = {'4': 1}
-        self.assertEqual(dict(hcf.new_links_count), expected_links)
+        expected_links = {'4': set(['http://www.example.com/product/?qxp=12&qxg=1231'])}
+        self.assertEqual(dict(hcf.new_links), expected_links)
 
         # Simulate close spider
         hcf.close_spider(self.spider, 'finished')
