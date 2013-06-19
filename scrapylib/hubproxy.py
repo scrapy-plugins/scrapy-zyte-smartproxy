@@ -7,6 +7,6 @@ class HubProxyMiddleware(CrawleraMiddleware):
         import warnings
         from scrapy.exceptions import ScrapyDeprecationWarning
         warnings.warn('scrapylib.hubproxy.HubProxyMiddleware is deprecated, '
-                      'use scrapy.crawlera.CrawleraMiddleware instead.',
+                      'use scrapylib.crawlera.CrawleraMiddleware instead.',
                       category=ScrapyDeprecationWarning, stacklevel=1)
         super(HubProxyMiddleware, self).__init__(*args, **kwargs)
