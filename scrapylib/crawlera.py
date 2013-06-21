@@ -77,7 +77,10 @@ class CrawleraMiddleware(object):
             request.headers['Proxy-Authorization'] = self._proxyauth
 
     def process_response(self, request, response, spider):
-        if self.enabled and response.status == self.ban_code:
+        if not self.enabled:
+            return response
+
+        if response.status == self.ban_code:
             key = request.meta.get('download_slot')
             self._bans[key] += 1
             if self._bans[key] > self.maxbans:
@@ -93,6 +96,7 @@ class CrawleraMiddleware(object):
             if slot:
                 slot.delay = 0
             self._bans[key] = 0
+
         return response
 
     def _get_slot(self, request, spider):
