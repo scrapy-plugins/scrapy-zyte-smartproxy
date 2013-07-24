@@ -136,7 +136,7 @@ class HcfTestCase(TestCase):
         # Read the first batch
         start_urls = self.spider.start_urls
         new_urls = [r.url for r in hcf.process_start_requests(start_urls, self.spider)]
-        expected_urls = [r['fp'] for r in fps[:100]]
+        expected_urls = [r['fp'] for r in fps]
         self.assertEqual(new_urls, expected_urls)
 
         # Simulate extracting some new urls
