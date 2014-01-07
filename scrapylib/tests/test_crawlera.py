@@ -47,7 +47,7 @@ class CrawleraMiddlewareTestCase(TestCase):
 
     def _assert_enabled(self, spider,
                         settings=None,
-                        proxyurl='http://proxy.crawlera.com:8010',
+                        proxyurl='http://proxy.crawlera.com:8010?noconnect',
                         proxyauth=basic_auth_header('user', 'pass'),
                         bancode=503,
                         maxbans=20,
