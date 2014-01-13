@@ -7,7 +7,7 @@ from scrapy import log, signals
 
 class CrawleraMiddleware(object):
 
-    url = 'http://proxy.crawlera.com:8010?noconnect'
+    url = 'http://proxy.crawlera.com:8010'
     maxbans = 20
     ban_code = 503
     download_timeout = 1800
@@ -27,6 +27,8 @@ class CrawleraMiddleware(object):
 
         for k in ('user', 'pass', 'url', 'maxbans', 'download_timeout'):
             v = self._get_setting_value(spider, k)
+            if k == 'url' and '?noconnect' not in v:
+                v += '?noconnect'
             setattr(self, k, v)
 
         self._proxyauth = self.get_proxyauth(spider)

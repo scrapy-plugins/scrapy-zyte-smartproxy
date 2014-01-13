@@ -122,8 +122,8 @@ class HubProxyMiddlewareTestCase(TestCase):
 
     def test_proxyurl(self):
         self.spider.use_hubproxy = True
-        self.settings['HUBPROXY_URL'] = proxyurl = 'http://localhost:8010'
-        self._assert_enabled(self.spider, self.settings, proxyurl=proxyurl)
+        self.settings['HUBPROXY_URL'] = 'http://localhost:8010'
+        self._assert_enabled(self.spider, self.settings, proxyurl='http://localhost:8010?noconnect')
 
     def test_maxbans(self):
         self.spider.use_hubproxy = True

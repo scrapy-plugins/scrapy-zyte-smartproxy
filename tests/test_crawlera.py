@@ -122,8 +122,13 @@ class CrawleraMiddlewareTestCase(TestCase):
 
     def test_proxyurl(self):
         self.spider.crawlera_enabled = True
-        self.settings['CRAWLERA_URL'] = proxyurl = 'http://localhost:8010'
-        self._assert_enabled(self.spider, self.settings, proxyurl=proxyurl)
+        self.settings['CRAWLERA_URL'] = 'http://localhost:8010'
+        self._assert_enabled(self.spider, self.settings, proxyurl='http://localhost:8010?noconnect')
+
+    def test_proxyurl_including_noconnect(self):
+        self.spider.crawlera_enabled = True
+        self.settings['CRAWLERA_URL'] = 'http://localhost:8010?noconnect'
+        self._assert_enabled(self.spider, self.settings, proxyurl='http://localhost:8010?noconnect')
 
     def test_maxbans(self):
         self.spider.crawlera_enabled = True
