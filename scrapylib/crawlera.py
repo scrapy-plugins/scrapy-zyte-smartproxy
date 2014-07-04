@@ -82,13 +82,13 @@ class CrawleraMiddleware(object):
         return basic_auth_header(self.user, getattr(self, 'pass'))
 
     def process_request(self, request, spider):
-        if self.enabled and 'dont_proxy' not in request.meta:
+        if self._is_enabled_for_request(request):
             request.meta['proxy'] = self.url
             request.meta['download_timeout'] = self.download_timeout
             request.headers['Proxy-Authorization'] = self._proxyauth
 
     def process_response(self, request, response, spider):
-        if not self.enabled:
+        if not self._is_enabled_for_request(request):
             return response
         key = self._get_slot_key(request)
         self._restore_original_delay(request)
@@ -105,11 +105,14 @@ class CrawleraMiddleware(object):
         return response
 
     def process_exception(self, request, exception, spider):
-        if not self.enabled:
+        if not self._is_enabled_for_request(request):
             return
         if isinstance(exception, ConnectionRefusedError):
             # Handle crawlera deploy
             self._set_custom_delay(request, self.deploy_delay)
+
+    def _is_enabled_for_request(self, request):
+        return self.enabled and 'dont_proxy' not in request.meta
 
     def _get_slot_key(self, request):
         return request.meta.get('download_slot')
