@@ -72,6 +72,7 @@ class HubProxyMiddlewareTestCase(TestCase):
         self.assertEqual(req.headers.get('Proxy-Authorization'), None)
         res = Response(req.url)
         assert mw.process_response(req, res, spider) is res
+        del req.meta['dont_proxy']
 
         if maxbans > 0:
             # assert ban count is reseted after a succesful response
