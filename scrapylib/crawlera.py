@@ -1,8 +1,10 @@
-import warnings
-from scrapy.exceptions import ScrapyDeprecationWarning
 from collections import defaultdict
+import warnings
+
 from w3lib.http import basic_auth_header
 from scrapy import log, signals
+from scrapy.exceptions import ScrapyDeprecationWarning
+from twisted.internet.error import ConnectionRefusedError
 
 
 class CrawleraMiddleware(object):
@@ -11,12 +13,17 @@ class CrawleraMiddleware(object):
     maxbans = 20
     ban_code = 503
     download_timeout = 1800
+    # wait 90 seconds while crawlera is deployed
+    deploy_delay = 90
+
+    def __init__(self, crawler):
+        self.crawler = crawler
+        self._bans = defaultdict(int)
+        self._saved_delays = defaultdict(lambda: None)
 
     @classmethod
     def from_crawler(cls, crawler):
-        o = cls()
-        o.crawler = crawler
-        o._bans = defaultdict(int)
+        o = cls(crawler)
         crawler.signals.connect(o.open_spider, signals.spider_opened)
         return o
 
@@ -32,7 +39,8 @@ class CrawleraMiddleware(object):
             setattr(self, k, v)
 
         self._proxyauth = self.get_proxyauth(spider)
-        log.msg("Using crawlera at %s (user: %s)" % (self.url, self.user), spider=spider)
+        log.msg("Using crawlera at %s (user: %s)" % (self.url, self.user),
+                spider=spider)
 
     def _get_setting_value(self, spider, k):
         if hasattr(spider, 'hubproxy_' + k):
@@ -62,11 +70,12 @@ class CrawleraMiddleware(object):
             warnings.warn('HUBPROXY_ENABLED setting is deprecated, '
                           'use CRAWLERA_ENABLED instead.',
                           category=ScrapyDeprecationWarning, stacklevel=1)
-
-        return getattr(spider, 'crawlera_enabled', False) \
-            or getattr(spider, 'use_hubproxy', False) \
-            or self.crawler.settings.getbool("CRAWLERA_ENABLED") \
-            or self.crawler.settings.getbool("HUBPROXY_ENABLED")
+        return (
+            getattr(spider, 'crawlera_enabled', False) or
+            getattr(spider, 'use_hubproxy', False) or
+            self.crawler.settings.getbool("CRAWLERA_ENABLED") or
+            self.crawler.settings.getbool("HUBPROXY_ENABLED")
+        )
 
     def get_proxyauth(self, spider):
         """Hook to compute Proxy-Authorization header by custom rules"""
@@ -81,26 +90,47 @@ class CrawleraMiddleware(object):
     def process_response(self, request, response, spider):
         if not self.enabled:
             return response
-
+        key = self._get_slot_key(request)
+        self._restore_original_delay(request)
         if response.status == self.ban_code:
-            key = request.meta.get('download_slot')
             self._bans[key] += 1
             if self._bans[key] > self.maxbans:
                 self.crawler.engine.close_spider(spider, 'banned')
             else:
                 after = response.headers.get('retry-after')
                 if after:
-                    key, slot = self._get_slot(request, spider)
-                    if slot:
-                        slot.delay = float(after)
+                    self._set_custom_delay(request, float(after))
         else:
-            key, slot = self._get_slot(request, spider)
-            if slot:
-                slot.delay = 0
             self._bans[key] = 0
-
         return response
 
-    def _get_slot(self, request, spider):
-        key = request.meta.get('download_slot')
+    def process_exception(self, request, exception, spider):
+        if not self.enabled:
+            return
+        if isinstance(exception, ConnectionRefusedError):
+            # Handle crawlera deploy
+            self._set_custom_delay(request, self.deploy_delay)
+
+    def _get_slot_key(self, request):
+        return request.meta.get('download_slot')
+
+    def _get_slot(self, request):
+        key = self._get_slot_key(request)
         return key, self.crawler.engine.downloader.slots.get(key)
+
+    def _set_custom_delay(self, request, delay):
+        """Set custom delay for slot and save original one."""
+        key, slot = self._get_slot(request)
+        if not slot:
+            return
+        if self._saved_delays[key] is None:
+            self._saved_delays[key] = slot.delay
+        slot.delay = delay
+
+    def _restore_original_delay(self, request):
+        """Restore original delay for slot if it was changed."""
+        key, slot = self._get_slot(request)
+        if not slot:
+            return
+        if self._saved_delays[key] is not None:
+            slot.delay, self._saved_delays[key] = self._saved_delays[key], None
