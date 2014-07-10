@@ -189,7 +189,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.spider.crawlera_enabled = True
 
         crawler = self._mock_crawler(self.settings)
-        # ignore spider delay be default
+        # ignore spider delay by default
         self.spider.download_delay = delay
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(self.spider)
