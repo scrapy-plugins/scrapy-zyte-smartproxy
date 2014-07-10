@@ -13,8 +13,18 @@ class CrawleraMiddleware(object):
     maxbans = 20
     ban_code = 503
     download_timeout = 1800
-    # wait 90 seconds while crawlera is deployed
-    deploy_delay = 90
+    # wait while crawlera is deployed
+    connection_refused_delay = 90
+    preserve_delay = False
+
+    _settings = [
+        'user',
+        'pass',
+        'url',
+        'maxbans',
+        'download_timeout',
+        'preserve_delay',
+    ]
 
     def __init__(self, crawler):
         self.crawler = crawler
@@ -32,15 +42,22 @@ class CrawleraMiddleware(object):
         if not self.enabled:
             return
 
-        for k in ('user', 'pass', 'url', 'maxbans', 'download_timeout'):
-            v = self._get_setting_value(spider, k)
-            if k == 'url' and '?noconnect' not in v:
-                v += '?noconnect'
-            setattr(self, k, v)
+        for k in self._settings:
+            setattr(self, k, self._get_setting_value(spider, k))
+        if '?noconnect' not in self.url:
+            self.url += '?noconnect'
 
         self._proxyauth = self.get_proxyauth(spider)
         log.msg("Using crawlera at %s (user: %s)" % (self.url, self.user),
                 spider=spider)
+
+        if not self.preserve_delay:
+            # setting spider download delay to 0 to get maximum crawl rate
+            spider.download_delay = 0
+            log.msg("Setting spider download delay to 0. It's default "
+                    "CrawleraMiddleware behavior, to preserve original delay"
+                    " set CRAWLERA_PRESERVE_DELAY = True in settings.",
+                    spider=spider)
 
     def _get_setting_value(self, spider, k):
         if hasattr(spider, 'hubproxy_' + k):
@@ -109,7 +126,7 @@ class CrawleraMiddleware(object):
             return
         if isinstance(exception, ConnectionRefusedError):
             # Handle crawlera deploy
-            self._set_custom_delay(request, self.deploy_delay)
+            self._set_custom_delay(request, self.connection_refused_delay)
 
     def _is_enabled_for_request(self, request):
         return self.enabled and 'dont_proxy' not in request.meta

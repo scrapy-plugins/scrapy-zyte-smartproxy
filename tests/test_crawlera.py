@@ -186,13 +186,23 @@ class CrawleraMiddlewareTestCase(TestCase):
         url = 'http://www.scrapytest.org'
         ban_url = 'http://ban.me'
 
-        self.spider.delay = delay
         self.spider.crawlera_enabled = True
 
         crawler = self._mock_crawler(self.settings)
+        # ignore spider delay be default
+        self.spider.download_delay = delay
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(self.spider)
-        slot = MockedSlot(self.spider.delay)
+        self.assertEqual(self.spider.download_delay, 0)
+
+        # preserve original delay
+        self.spider.download_delay = delay
+        self.spider.crawlera_preserve_delay = True
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+        self.assertEqual(self.spider.download_delay, delay)
+
+        slot = MockedSlot(self.spider.download_delay)
         crawler.engine.downloader.slots[slot_key] = slot
 
         # ban
@@ -200,7 +210,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         res = Response(ban_url, status=self.bancode, request=req)
         mw.process_response(req, res, self.spider)
         self.assertEqual(slot.delay, delay)
-        self.assertEqual(self.spider.delay, delay)
+        self.assertEqual(self.spider.download_delay, delay)
 
         retry_after = 1.5
         headers = {'retry-after': str(retry_after)}
@@ -208,28 +218,28 @@ class CrawleraMiddlewareTestCase(TestCase):
             ban_url, status=self.bancode, headers=headers, request=req)
         mw.process_response(req, res, self.spider)
         self.assertEqual(slot.delay, retry_after)
-        self.assertEqual(self.spider.delay, delay)
+        self.assertEqual(self.spider.download_delay, delay)
 
         res = Response(url, request=req)
         mw.process_response(req, res, self.spider)
         self.assertEqual(slot.delay, delay)
-        self.assertEqual(self.spider.delay, delay)
+        self.assertEqual(self.spider.download_delay, delay)
 
         # deploy
         mw.process_exception(req, ConnectionRefusedError(), self.spider)
-        self.assertEqual(slot.delay, mw.deploy_delay)
-        self.assertEqual(self.spider.delay, delay)
+        self.assertEqual(slot.delay, mw.connection_refused_delay)
+        self.assertEqual(self.spider.download_delay, delay)
 
         res = Response(ban_url, request=req)
         mw.process_response(req, res, self.spider)
         self.assertEqual(slot.delay, delay)
-        self.assertEqual(self.spider.delay, delay)
+        self.assertEqual(self.spider.download_delay, delay)
 
         mw.process_exception(req, ConnectionRefusedError(), self.spider)
-        self.assertEqual(slot.delay, mw.deploy_delay)
-        self.assertEqual(self.spider.delay, delay)
+        self.assertEqual(slot.delay, mw.connection_refused_delay)
+        self.assertEqual(self.spider.download_delay, delay)
 
         res = Response(ban_url, status=self.bancode, request=req)
         mw.process_response(req, res, self.spider)
         self.assertEqual(slot.delay, delay)
-        self.assertEqual(self.spider.delay, delay)
+        self.assertEqual(self.spider.download_delay, delay)
