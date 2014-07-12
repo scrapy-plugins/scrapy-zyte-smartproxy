@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from w3lib.http import basic_auth_header
 from scrapy.http import Request, Response
-from scrapy.spider import BaseSpider
+from scrapy.spider import Spider
 from scrapy.utils.test import get_crawler
 from scrapylib.crawlera import CrawleraMiddleware
 
@@ -12,7 +12,7 @@ class CrawleraMiddlewareTestCase(TestCase):
     mwcls = CrawleraMiddleware
 
     def setUp(self):
-        self.spider = BaseSpider('foo')
+        self.spider = Spider('foo')
         self.settings = {'CRAWLERA_USER': 'user', 'CRAWLERA_PASS': 'pass'}
 
     def _mock_crawler(self, settings=None):
