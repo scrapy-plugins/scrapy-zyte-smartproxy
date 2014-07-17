@@ -4,18 +4,28 @@ from w3lib.http import basic_auth_header
 from scrapy.http import Request, Response
 from scrapy.spider import Spider
 from scrapy.utils.test import get_crawler
+from twisted.internet.error import ConnectionRefusedError
+
 from scrapylib.crawlera import CrawleraMiddleware
+
+
+class MockedSlot(object):
+
+    def __init__(self, delay=0.0):
+        self.delay = delay
 
 
 class CrawleraMiddlewareTestCase(TestCase):
 
     mwcls = CrawleraMiddleware
+    bancode = 503
 
     def setUp(self):
         self.spider = Spider('foo')
         self.settings = {'CRAWLERA_USER': 'user', 'CRAWLERA_PASS': 'pass'}
 
     def _mock_crawler(self, settings=None):
+
         class MockedDownloader(object):
             slots = {}
 
@@ -49,7 +59,6 @@ class CrawleraMiddlewareTestCase(TestCase):
                         settings=None,
                         proxyurl='http://proxy.crawlera.com:8010?noconnect',
                         proxyauth=basic_auth_header('user', 'pass'),
-                        bancode=503,
                         maxbans=20,
                         download_timeout=1800):
         crawler = self._mock_crawler(settings)
@@ -72,10 +81,11 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(req.headers.get('Proxy-Authorization'), None)
         res = Response(req.url)
         assert mw.process_response(req, res, spider) is res
+        del req.meta['dont_proxy']
 
         if maxbans > 0:
             # assert ban count is reseted after a succesful response
-            res = Response('http://ban.me', status=bancode)
+            res = Response('http://ban.me', status=self.bancode)
             assert mw.process_response(req, res, spider) is res
             self.assertEqual(crawler.engine.fake_spider_closed_result, None)
             res = Response('http://unban.me')
@@ -86,7 +96,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         # check for not banning before maxbans for bancode
         for x in xrange(maxbans + 1):
             self.assertEqual(crawler.engine.fake_spider_closed_result, None)
-            res = Response('http://ban.me/%d' % x, status=bancode)
+            res = Response('http://ban.me/%d' % x, status=self.bancode)
             assert mw.process_response(req, res, spider) is res
 
         # max bans reached and close_spider called
@@ -169,3 +179,67 @@ class CrawleraMiddlewareTestCase(TestCase):
         proxyauth = 'Basic Foo'
         self._assert_enabled(self.spider, self.settings, proxyauth=proxyauth)
         self.assertEqual(wascalled, ['is_enabled', 'get_proxyauth'])
+
+    def test_delay_adjustment(self):
+        delay = 0.5
+        slot_key = 'www.scrapytest.org'
+        url = 'http://www.scrapytest.org'
+        ban_url = 'http://ban.me'
+
+        self.spider.crawlera_enabled = True
+
+        crawler = self._mock_crawler(self.settings)
+        # ignore spider delay by default
+        self.spider.download_delay = delay
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+        self.assertEqual(self.spider.download_delay, 0)
+
+        # preserve original delay
+        self.spider.download_delay = delay
+        self.spider.crawlera_preserve_delay = True
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+        self.assertEqual(self.spider.download_delay, delay)
+
+        slot = MockedSlot(self.spider.download_delay)
+        crawler.engine.downloader.slots[slot_key] = slot
+
+        # ban
+        req = Request(url, meta={'download_slot': slot_key})
+        res = Response(ban_url, status=self.bancode, request=req)
+        mw.process_response(req, res, self.spider)
+        self.assertEqual(slot.delay, delay)
+        self.assertEqual(self.spider.download_delay, delay)
+
+        retry_after = 1.5
+        headers = {'retry-after': str(retry_after)}
+        res = Response(
+            ban_url, status=self.bancode, headers=headers, request=req)
+        mw.process_response(req, res, self.spider)
+        self.assertEqual(slot.delay, retry_after)
+        self.assertEqual(self.spider.download_delay, delay)
+
+        res = Response(url, request=req)
+        mw.process_response(req, res, self.spider)
+        self.assertEqual(slot.delay, delay)
+        self.assertEqual(self.spider.download_delay, delay)
+
+        # server failures
+        mw.process_exception(req, ConnectionRefusedError(), self.spider)
+        self.assertEqual(slot.delay, mw.connection_refused_delay)
+        self.assertEqual(self.spider.download_delay, delay)
+
+        res = Response(ban_url, request=req)
+        mw.process_response(req, res, self.spider)
+        self.assertEqual(slot.delay, delay)
+        self.assertEqual(self.spider.download_delay, delay)
+
+        mw.process_exception(req, ConnectionRefusedError(), self.spider)
+        self.assertEqual(slot.delay, mw.connection_refused_delay)
+        self.assertEqual(self.spider.download_delay, delay)
+
+        res = Response(ban_url, status=self.bancode, request=req)
+        mw.process_response(req, res, self.spider)
+        self.assertEqual(slot.delay, delay)
+        self.assertEqual(self.spider.download_delay, delay)
