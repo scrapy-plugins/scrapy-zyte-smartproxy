@@ -225,7 +225,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(slot.delay, delay)
         self.assertEqual(self.spider.download_delay, delay)
 
-        # deploy
+        # server failures
         mw.process_exception(req, ConnectionRefusedError(), self.spider)
         self.assertEqual(slot.delay, mw.connection_refused_delay)
         self.assertEqual(self.spider.download_delay, delay)

@@ -13,7 +13,7 @@ class CrawleraMiddleware(object):
     maxbans = 20
     ban_code = 503
     download_timeout = 1800
-    # wait while crawlera is deployed
+    # Handle crawlera server failures
     connection_refused_delay = 90
     preserve_delay = False
 
@@ -52,7 +52,7 @@ class CrawleraMiddleware(object):
                 spider=spider)
 
         if not self.preserve_delay:
-            # setting spider download delay to 0 to get maximum crawl rate
+            # Setting spider download delay to 0 to get maximum crawl rate
             spider.download_delay = 0
             log.msg("Setting spider download delay to 0. It's default "
                     "CrawleraMiddleware behavior, to preserve original delay"
@@ -77,7 +77,7 @@ class CrawleraMiddleware(object):
                getattr(spider, 'hubproxy_' + k, s))
 
     def is_enabled(self, spider):
-        """Hook to enable middleware by custom rules"""
+        """Hook to enable middleware by custom rules."""
         if hasattr(spider, 'use_hubproxy'):
             warnings.warn('use_hubproxy attribute is deprecated, '
                           'use crawlera_enabled instead.',
@@ -95,7 +95,7 @@ class CrawleraMiddleware(object):
         )
 
     def get_proxyauth(self, spider):
-        """Hook to compute Proxy-Authorization header by custom rules"""
+        """Hook to compute Proxy-Authorization header by custom rules."""
         return basic_auth_header(self.user, getattr(self, 'pass'))
 
     def process_request(self, request, spider):
@@ -125,7 +125,7 @@ class CrawleraMiddleware(object):
         if not self._is_enabled_for_request(request):
             return
         if isinstance(exception, ConnectionRefusedError):
-            # Handle crawlera deploy
+            # Handle crawlera downtime
             self._set_custom_delay(request, self.connection_refused_delay)
 
     def _is_enabled_for_request(self, request):
