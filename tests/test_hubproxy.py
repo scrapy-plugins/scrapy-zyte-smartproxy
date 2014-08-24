@@ -49,7 +49,7 @@ class HubProxyMiddlewareTestCase(TestCase):
                         proxyurl='http://proxy.crawlera.com:8010?noconnect',
                         proxyauth=basic_auth_header('user', 'pass'),
                         bancode=503,
-                        maxbans=20,
+                        maxbans=400,
                         download_timeout=1800,
                        ):
         crawler = self._mock_crawler(settings)

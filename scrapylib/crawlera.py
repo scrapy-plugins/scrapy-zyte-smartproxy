@@ -10,7 +10,7 @@ from twisted.internet.error import ConnectionRefusedError
 class CrawleraMiddleware(object):
 
     url = 'http://proxy.crawlera.com:8010'
-    maxbans = 20
+    maxbans = 400
     ban_code = 503
     download_timeout = 1800
     # Handle crawlera server failures
