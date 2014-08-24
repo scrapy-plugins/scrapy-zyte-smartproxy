@@ -18,12 +18,12 @@ class CrawleraMiddleware(object):
     preserve_delay = False
 
     _settings = [
-        'user',
-        'pass',
-        'url',
-        'maxbans',
-        'download_timeout',
-        'preserve_delay',
+        ('user', str),
+        ('pass', str),
+        ('url', str),
+        ('maxbans', int),
+        ('download_timeout', int),
+        ('preserve_delay', bool),
     ]
 
     def __init__(self, crawler):
@@ -42,8 +42,8 @@ class CrawleraMiddleware(object):
         if not self.enabled:
             return
 
-        for k in self._settings:
-            setattr(self, k, self._get_setting_value(spider, k))
+        for k, type_ in self._settings:
+            setattr(self, k, self._get_setting_value(spider, k, type_))
         if '?noconnect' not in self.url:
             self.url += '?noconnect'
 
@@ -59,7 +59,19 @@ class CrawleraMiddleware(object):
                     " set CRAWLERA_PRESERVE_DELAY = True in settings.",
                     spider=spider)
 
-    def _get_setting_value(self, spider, k):
+    def _settings_get(self, type_, *a, **kw):
+        if type_ is int:
+            return self.crawler.settings.getint(*a, **kw)
+        elif type_ is bool:
+            return self.crawler.settings.getbool(*a, **kw)
+        elif type_ is list:
+            return self.crawler.settings.getlist(*a, **kw)
+        elif type_ is dict:
+            return self.crawler.settings.getdict(*a, **kw)
+        else:
+            return self.crawler.settings.get(*a, **kw)
+
+    def _get_setting_value(self, spider, k, type_):
         if hasattr(spider, 'hubproxy_' + k):
             warnings.warn('hubproxy_%s attribute is deprecated, '
                           'use crawlera_%s instead.' % (k, k),
@@ -71,8 +83,8 @@ class CrawleraMiddleware(object):
                           category=ScrapyDeprecationWarning, stacklevel=1)
 
         o = getattr(self, k, None)
-        s = self.crawler.settings.get('CRAWLERA_' + k.upper(),
-            self.crawler.settings.get('HUBPROXY_' + k.upper(), o))
+        s = self._settings_get(type_, 'CRAWLERA_' + k.upper(),
+            self._settings_get(type_, 'HUBPROXY_' + k.upper(), o))
         return getattr(spider, 'crawlera_' + k,
                getattr(spider, 'hubproxy_' + k, s))
 
