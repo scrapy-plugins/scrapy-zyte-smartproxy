@@ -146,11 +146,19 @@ class CrawleraMiddlewareTestCase(TestCase):
         self._assert_enabled(self.spider, self.settings, maxbans=maxbans)
         self.settings['CRAWLERA_MAXBANS'] = maxbans = 100
         self._assert_enabled(self.spider, self.settings, maxbans=maxbans)
+        # Assert setting is coerced into correct type
+        self.settings['CRAWLERA_MAXBANS'] = '123'
+        self._assert_enabled(self.spider, self.settings, maxbans=123)
+        self.spider.crawlera_maxbans = 99
+        self._assert_enabled(self.spider, self.settings, maxbans=99)
 
     def test_download_timeout(self):
         self.spider.crawlera_enabled = True
         self.settings['CRAWLERA_DOWNLOAD_TIMEOUT'] = 60
         self._assert_enabled(self.spider, self.settings, download_timeout=60)
+        # Assert setting is coerced into correct type
+        self.settings['CRAWLERA_DOWNLOAD_TIMEOUT'] = '42'
+        self._assert_enabled(self.spider, self.settings, download_timeout=42)
         self.spider.crawlera_download_timeout = 120
         self._assert_enabled(self.spider, self.settings, download_timeout=120)
 
