@@ -1,5 +1,6 @@
 from collections import defaultdict
 import warnings
+import os
 
 from w3lib.http import basic_auth_header
 from scrapy import log, signals
@@ -28,6 +29,7 @@ class CrawleraMiddleware(object):
 
     def __init__(self, crawler):
         self.crawler = crawler
+        self.job_id = os.environ.get('SCRAPY_JOB')
         self._bans = defaultdict(int)
         self._saved_delays = defaultdict(lambda: None)
 
@@ -115,6 +117,8 @@ class CrawleraMiddleware(object):
             request.meta['proxy'] = self.url
             request.meta['download_timeout'] = self.download_timeout
             request.headers['Proxy-Authorization'] = self._proxyauth
+            if self.job_id:
+                request.headers['X-Crawlera-Jobid'] = self.job_id
 
     def process_response(self, request, response, spider):
         if not self._is_enabled_for_request(request):
