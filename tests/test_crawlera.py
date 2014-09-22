@@ -7,6 +7,7 @@ from scrapy.utils.test import get_crawler
 from twisted.internet.error import ConnectionRefusedError
 
 from scrapylib.crawlera import CrawleraMiddleware
+import os
 
 
 class MockedSlot(object):
@@ -251,3 +252,23 @@ class CrawleraMiddlewareTestCase(TestCase):
         mw.process_response(req, res, self.spider)
         self.assertEqual(slot.delay, delay)
         self.assertEqual(self.spider.download_delay, delay)
+
+    def test_jobid_header(self):
+        # test without the environment variable 'SCRAPY_JOB'
+        self.spider.crawlera_enabled = True
+        crawler = self._mock_crawler(self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+        req = Request('http://www.scrapytest.org')
+        self.assertEqual(mw.process_request(req, self.spider), None)
+        self.assertEqual(req.headers.get('X-Crawlera-Jobid'), None)
+
+        # test with the environment variable 'SCRAPY_JOB'
+        os.environ['SCRAPY_JOB'] = '2816'
+        self.spider.crawlera_enabled = True
+        crawler1 = self._mock_crawler(self.settings)
+        mw1 = self.mwcls.from_crawler(crawler)
+        mw1.open_spider(self.spider)
+        req1 = Request('http://www.scrapytest.org')
+        self.assertEqual(mw1.process_request(req1, self.spider), None)
+        self.assertEqual(req1.headers.get('X-Crawlera-Jobid'), '2816')
