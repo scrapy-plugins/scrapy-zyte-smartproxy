@@ -58,7 +58,7 @@ class CrawleraMiddlewareTestCase(TestCase):
 
     def _assert_enabled(self, spider,
                         settings=None,
-                        proxyurl='http://proxy.crawlera.com:8010?noconnect',
+                        proxyurl='http://paygo.crawlera.com:8010?noconnect',
                         proxyauth=basic_auth_header('user', 'pass'),
                         maxbans=400,
                         download_timeout=1800):
