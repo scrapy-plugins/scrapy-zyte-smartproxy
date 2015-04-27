@@ -15,6 +15,5 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-    ],
-    install_requires=['Scrapy>=0.22.0']
+    ]
 )
