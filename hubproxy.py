@@ -1,4 +1,4 @@
-from .crawlera import CrawleraMiddleware
+from crawlera import CrawleraMiddleware
 
 
 class HubProxyMiddleware(CrawleraMiddleware):
