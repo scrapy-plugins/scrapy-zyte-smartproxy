@@ -17,6 +17,7 @@ class CrawleraMiddleware(object):
     # Handle crawlera server failures
     connection_refused_delay = 90
     preserve_delay = False
+    use_connect = False
 
     _settings = [
         ('user', str),
@@ -25,6 +26,7 @@ class CrawleraMiddleware(object):
         ('maxbans', int),
         ('download_timeout', int),
         ('preserve_delay', bool),
+        ('use_connect', bool)
     ]
 
     def __init__(self, crawler):
@@ -46,8 +48,8 @@ class CrawleraMiddleware(object):
 
         for k, type_ in self._settings:
             setattr(self, k, self._get_setting_value(spider, k, type_))
-        if '?noconnect' not in self.url:
-            self.url += '?noconnect'
+        if not self.use_connect and '?noconnect' not in self.url:
+            self.url += '/?noconnect'
 
         self._proxyauth = self.get_proxyauth(spider)
         log.msg("Using crawlera at %s (user: %s)" % (self.url, self.user),
