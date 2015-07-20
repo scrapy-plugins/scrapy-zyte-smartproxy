@@ -3,7 +3,7 @@ import warnings
 import os
 
 from w3lib.http import basic_auth_header
-from scrapy import log, signals
+from scrapy import signals
 from scrapy.exceptions import ScrapyDeprecationWarning
 from twisted.internet.error import ConnectionRefusedError
 
@@ -50,16 +50,14 @@ class CrawleraMiddleware(object):
             self.url += '?noconnect'
 
         self._proxyauth = self.get_proxyauth(spider)
-        log.msg("Using crawlera at %s (user: %s)" % (self.url, self.user),
-                spider=spider)
+        spider.logger.info("Using crawlera at %s (user: %s)", self.url, self.user)
 
         if not self.preserve_delay:
             # Setting spider download delay to 0 to get maximum crawl rate
             spider.download_delay = 0
-            log.msg("Setting spider download delay to 0. It's default "
+            spider.logger.info("Setting spider download delay to 0. It's default "
                     "CrawleraMiddleware behavior, to preserve original delay"
-                    " set CRAWLERA_PRESERVE_DELAY = True in settings.",
-                    spider=spider)
+                    " set CRAWLERA_PRESERVE_DELAY = True in settings.")
 
     def _settings_get(self, type_, *a, **kw):
         if type_ is int:
