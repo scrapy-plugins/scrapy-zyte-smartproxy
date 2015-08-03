@@ -2,11 +2,11 @@ from unittest import TestCase
 
 from w3lib.http import basic_auth_header
 from scrapy.http import Request, Response
-from scrapy.spider import Spider
+from scrapy.spiders import Spider
 from scrapy.utils.test import get_crawler
 from twisted.internet.error import ConnectionRefusedError
 
-from scrapylib.crawlera import CrawleraMiddleware
+from scrapy_crawlera import CrawleraMiddleware
 import os
 
 
@@ -25,7 +25,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.spider = Spider('foo')
         self.settings = {'CRAWLERA_USER': 'user', 'CRAWLERA_PASS': 'pass'}
 
-    def _mock_crawler(self, settings=None):
+    def _mock_crawler(self, spider, settings=None):
 
         class MockedDownloader(object):
             slots = {}
@@ -37,12 +37,12 @@ class CrawleraMiddlewareTestCase(TestCase):
             def close_spider(self, spider, reason):
                 self.fake_spider_closed_result = (spider, reason)
 
-        crawler = get_crawler(settings)
+        crawler = get_crawler(spider, settings)
         crawler.engine = MockedEngine()
         return crawler
 
     def _assert_disabled(self, spider, settings=None):
-        crawler = self._mock_crawler(settings)
+        crawler = self._mock_crawler(spider, settings)
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(spider)
         req = Request('http://www.scrapytest.org')
@@ -62,7 +62,7 @@ class CrawleraMiddlewareTestCase(TestCase):
                         proxyauth=basic_auth_header('user', 'pass'),
                         maxbans=400,
                         download_timeout=1800):
-        crawler = self._mock_crawler(settings)
+        crawler = self._mock_crawler(spider, settings)
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(spider)
         req = Request('http://www.scrapytest.org')
@@ -197,7 +197,7 @@ class CrawleraMiddlewareTestCase(TestCase):
 
         self.spider.crawlera_enabled = True
 
-        crawler = self._mock_crawler(self.settings)
+        crawler = self._mock_crawler(self.spider, self.settings)
         # ignore spider delay by default
         self.spider.download_delay = delay
         mw = self.mwcls.from_crawler(crawler)
@@ -256,7 +256,7 @@ class CrawleraMiddlewareTestCase(TestCase):
     def test_jobid_header(self):
         # test without the environment variable 'SCRAPY_JOB'
         self.spider.crawlera_enabled = True
-        crawler = self._mock_crawler(self.settings)
+        crawler = self._mock_crawler(self.spider, self.settings)
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(self.spider)
         req = Request('http://www.scrapytest.org')
@@ -266,7 +266,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         # test with the environment variable 'SCRAPY_JOB'
         os.environ['SCRAPY_JOB'] = '2816'
         self.spider.crawlera_enabled = True
-        crawler1 = self._mock_crawler(self.settings)
+        crawler1 = self._mock_crawler(self.spider, self.settings)
         mw1 = self.mwcls.from_crawler(crawler)
         mw1.open_spider(self.spider)
         req1 = Request('http://www.scrapytest.org')
