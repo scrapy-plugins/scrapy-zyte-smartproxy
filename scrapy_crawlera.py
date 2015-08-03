@@ -1,9 +1,10 @@
 from collections import defaultdict
 import warnings
 import os
+import logging
 
 from w3lib.http import basic_auth_header
-from scrapy import log, signals
+from scrapy import signals
 from scrapy.exceptions import ScrapyDeprecationWarning
 from twisted.internet.error import ConnectionRefusedError
 
@@ -50,16 +51,15 @@ class CrawleraMiddleware(object):
             self.url += '?noconnect'
 
         self._proxyauth = self.get_proxyauth(spider)
-        log.msg("Using crawlera at %s (user: %s)" % (self.url, self.user),
-                spider=spider)
+        logging.info("Using crawlera at %s (user: %s)" % (self.url, self.user))
 
         if not self.preserve_delay:
             # Setting spider download delay to 0 to get maximum crawl rate
             spider.download_delay = 0
-            log.msg("Setting spider download delay to 0. It's default "
-                    "CrawleraMiddleware behavior, to preserve original delay"
-                    " set CRAWLERA_PRESERVE_DELAY = True in settings.",
-                    spider=spider)
+            logging.info(
+                "Setting spider download delay to 0. It's default "
+                "CrawleraMiddleware behavior, to preserve original delay "
+                "set CRAWLERA_PRESERVE_DELAY = True in settings.")
 
     def _settings_get(self, type_, *a, **kw):
         if type_ is int:
@@ -85,10 +85,11 @@ class CrawleraMiddleware(object):
                           category=ScrapyDeprecationWarning, stacklevel=1)
 
         o = getattr(self, k, None)
-        s = self._settings_get(type_, 'CRAWLERA_' + k.upper(),
-            self._settings_get(type_, 'HUBPROXY_' + k.upper(), o))
-        return getattr(spider, 'crawlera_' + k,
-               getattr(spider, 'hubproxy_' + k, s))
+        s = self._settings_get(
+            type_, 'CRAWLERA_' + k.upper(), self._settings_get(
+                type_, 'HUBPROXY_' + k.upper(), o))
+        return getattr(
+            spider, 'crawlera_' + k, getattr(spider, 'hubproxy_' + k, s))
 
     def is_enabled(self, spider):
         """Hook to enable middleware by custom rules."""
