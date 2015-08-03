@@ -8,7 +8,7 @@ setup(
     author='Scrapinghub',
     author_email='opensource@scrapinghub.com',
     url='https://github.com/scrapinghub/scrapy-crawlera',
-    py_modules=['crawlera', 'hubproxy'],
+    py_modules=['scrapy_crawlera'],
     platforms=['Any'],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
