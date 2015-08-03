@@ -7,7 +7,7 @@ setup(
     description='Crawlera middleware for Scrapy',
     author='Scrapinghub',
     author_email='opensource@scrapinghub.com',
-    url='https://github.com/scrapinghub/scrapy-crawlera',
+    url='https://github.com/scrapy-plugins/scrapy-crawlera',
     py_modules=['scrapy_crawlera'],
     platforms=['Any'],
     classifiers=[

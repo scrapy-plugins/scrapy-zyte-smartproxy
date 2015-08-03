@@ -5,8 +5,8 @@ scrapy-crawlera
 .. image:: https://badge.fury.io/py/scrapy-crawlera.png
    :target: http://badge.fury.io/py/scrapy-crawlera
 
-.. image:: https://secure.travis-ci.org/scrapinghub/scrapy-crawlera.png?branch=master
-   :target: http://travis-ci.org/scrapinghub/scrapy-crawlera
+.. image:: https://secure.travis-ci.org/scrapy-plugins/scrapy-crawlera.png?branch=master
+   :target: http://travis-ci.org/scrapy-plugins/scrapy-crawlera
 
 scrapy-crawlera provides easy use of `Crawlera <http://scrapinghub.com/crawlera>`_ with Scrapy.
 
