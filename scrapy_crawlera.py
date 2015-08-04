@@ -56,10 +56,6 @@ class CrawleraMiddleware(object):
         if not self.preserve_delay:
             # Setting spider download delay to 0 to get maximum crawl rate
             spider.download_delay = 0
-            logging.info(
-                "Setting spider download delay to 0. It's default "
-                "CrawleraMiddleware behavior, to preserve original delay "
-                "set CRAWLERA_PRESERVE_DELAY = True in settings.")
 
     def _settings_get(self, type_, *a, **kw):
         if type_ is int:
