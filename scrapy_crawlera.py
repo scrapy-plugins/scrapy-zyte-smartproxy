@@ -57,9 +57,8 @@ class CrawleraMiddleware(object):
             # Setting spider download delay to 0 to get maximum crawl rate
             spider.download_delay = 0
             logging.info(
-                "Setting spider download delay to 0. It's default "
-                "CrawleraMiddleware behavior, to preserve original delay "
-                "set CRAWLERA_PRESERVE_DELAY = True in settings.")
+                "CrawleraMiddleware: disabling download delays on Scrapy side to optimize delays introduced by Crawlera. "
+                "To avoid this behaviour you can use the CRAWLERA_PRESERVE_DELAY setting but keep in mind that this may slow down the crawl significantly")
 
     def _settings_get(self, type_, *a, **kw):
         if type_ is int:
