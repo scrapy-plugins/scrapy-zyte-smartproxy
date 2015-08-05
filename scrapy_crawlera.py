@@ -9,6 +9,9 @@ from scrapy.exceptions import ScrapyDeprecationWarning
 from twisted.internet.error import ConnectionRefusedError
 
 
+__version__ = '1.0.2'
+
+
 class CrawleraMiddleware(object):
 
     url = 'http://paygo.crawlera.com:8010'
