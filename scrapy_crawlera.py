@@ -14,7 +14,7 @@ __version__ = '1.0.2'
 
 class CrawleraMiddleware(object):
 
-    url = 'http://paygo.crawlera.com:8010'
+    url = 'http://proxy.crawlera.com:8010'
     maxbans = 400
     ban_code = 503
     download_timeout = 1800
