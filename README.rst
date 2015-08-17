@@ -39,7 +39,7 @@ Through spider attributes::
         crawlera_user = 'username'
         crawlera_pass = 'password'
 
-You got an APIKEY? Replace `CRAWLERA_USER` with it:
+You got an APIKEY? Replace `CRAWLERA_USER` with it::
 
     CRAWLERA_USER = 'APIKEY'
     CRAWLERA_PASS = ''
