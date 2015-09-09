@@ -21,6 +21,7 @@ class CrawleraMiddleware(object):
     # Handle crawlera server failures
     connection_refused_delay = 90
     preserve_delay = False
+    cookies_disabled = False
 
     _settings = [
         ('user', str),
@@ -29,6 +30,7 @@ class CrawleraMiddleware(object):
         ('maxbans', int),
         ('download_timeout', int),
         ('preserve_delay', bool),
+        ('cookies_disabled', bool)
     ]
 
     def __init__(self, crawler):
@@ -122,6 +124,8 @@ class CrawleraMiddleware(object):
             request.headers['Proxy-Authorization'] = self._proxyauth
             if self.job_id:
                 request.headers['X-Crawlera-Jobid'] = self.job_id
+            if self.cookies_disabled:
+                request.headers['X-Crawlera-Cookies'] = 'disable'
 
     def process_response(self, request, response, spider):
         if not self._is_enabled_for_request(request):
