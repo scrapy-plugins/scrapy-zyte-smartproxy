@@ -272,3 +272,19 @@ class CrawleraMiddlewareTestCase(TestCase):
         req1 = Request('http://www.scrapytest.org')
         self.assertEqual(mw1.process_request(req1, self.spider), None)
         self.assertEqual(req1.headers.get('X-Crawlera-Jobid'), '2816')
+
+    def test_apikey_assignment(self):
+        self.spider.crawlera_enabled = True
+
+        apikey = 'someapikey'
+        self.settings['CRAWLERA_APIKEY'] = None
+        self.settings['CRAWLERA_USER'] = apikey
+        self.settings['CRAWLERA_PASS'] = ''
+        proxyauth = basic_auth_header(apikey, '')
+        self._assert_enabled(self.spider, self.settings, proxyauth=proxyauth)
+
+        self.settings['CRAWLERA_USER'] = None
+        self.settings['CRAWLERA_APIKEY'] = apikey
+        self.settings['CRAWLERA_PASS'] = ''
+        proxyauth = basic_auth_header(apikey, '')
+        self._assert_enabled(self.spider, self.settings, proxyauth=proxyauth)
