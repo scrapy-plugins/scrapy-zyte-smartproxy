@@ -33,20 +33,13 @@ There are two ways to specify credentials.
 Through `settings.py`::
 
     CRAWLERA_ENABLED = True
-    CRAWLERA_USER = 'username'
-    CRAWLERA_PASS = 'password'
+    CRAWLERA_APIKEY = 'apikey'
 
 Through spider attributes::
 
     class MySpider:
         crawlera_enabled = True
-        crawlera_user = 'username'
-        crawlera_pass = 'password'
-
-You got an APIKEY? Replace `CRAWLERA_USER` with it::
-
-    CRAWLERA_USER = 'APIKEY'
-    CRAWLERA_PASS = ''
+        crawlera_apikey = 'apikey'
 
 How to use it
 =============

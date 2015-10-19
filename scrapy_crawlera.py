@@ -23,6 +23,7 @@ class CrawleraMiddleware(object):
     preserve_delay = False
 
     _settings = [
+        ('apikey', str),
         ('user', str),
         ('pass', str),
         ('url', str),
@@ -54,7 +55,9 @@ class CrawleraMiddleware(object):
             self.url += '?noconnect'
 
         self._proxyauth = self.get_proxyauth(spider)
-        logging.info("Using crawlera at %s (user: %s)" % (self.url, self.user))
+        logging.info("Using crawlera at %s (user: %s)" % (
+            self.url,
+            self.apikey[:7] + '...' if self.apikey else self.user))
 
         if not self.preserve_delay:
             # Setting spider download delay to 0 to get maximum crawl rate
@@ -113,6 +116,8 @@ class CrawleraMiddleware(object):
 
     def get_proxyauth(self, spider):
         """Hook to compute Proxy-Authorization header by custom rules."""
+        if self.apikey:
+            return basic_auth_header(self.apikey, '')
         return basic_auth_header(self.user, getattr(self, 'pass'))
 
     def process_request(self, request, spider):
