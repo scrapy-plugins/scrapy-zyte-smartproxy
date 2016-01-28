@@ -21,14 +21,14 @@ You can then enable the middleware in your `settings.py`::
 
     DOWNLOADER_MIDDLEWARES = {
         ...
-        'scrapy_crawlera.CrawleraMiddleware': 600
+        'scrapy_crawlera.CrawleraMiddleware': 610
     }
 
 
 Credentials
 ===========
 
-There are two ways to specify credentials. 
+There are two ways to specify credentials.
 
 Through `settings.py`::
 
