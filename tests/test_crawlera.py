@@ -61,7 +61,7 @@ class CrawleraMiddlewareTestCase(TestCase):
                         proxyurl='http://proxy.crawlera.com:8010?noconnect',
                         proxyauth=basic_auth_header('user', 'pass'),
                         maxbans=400,
-                        download_timeout=1800):
+                        download_timeout=190):
         crawler = self._mock_crawler(spider, settings)
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(spider)
