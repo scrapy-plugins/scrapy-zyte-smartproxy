@@ -17,7 +17,7 @@ class CrawleraMiddleware(object):
     url = 'http://proxy.crawlera.com:8010'
     maxbans = 400
     ban_code = 503
-    download_timeout = 1800
+    download_timeout = 190
     # Handle crawlera server failures
     connection_refused_delay = 90
     preserve_delay = False
