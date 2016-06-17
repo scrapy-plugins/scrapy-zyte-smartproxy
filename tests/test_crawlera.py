@@ -95,7 +95,7 @@ class CrawleraMiddlewareTestCase(TestCase):
             self.assertEqual(mw._bans[None], 0)
 
         # check for not banning before maxbans for bancode
-        for x in xrange(maxbans + 1):
+        for x in range(maxbans + 1):
             self.assertEqual(crawler.engine.fake_spider_closed_result, None)
             res = Response('http://ban.me/%d' % x, status=self.bancode)
             assert mw.process_response(req, res, spider) is res
@@ -185,7 +185,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         wascalled[:] = []  # reset
         enabled = True
         self.spider.crawlera_enabled = False
-        proxyauth = 'Basic Foo'
+        proxyauth = b'Basic Foo'
         self._assert_enabled(self.spider, self.settings, proxyauth=proxyauth)
         self.assertEqual(wascalled, ['is_enabled', 'get_proxyauth'])
 
@@ -271,7 +271,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         mw1.open_spider(self.spider)
         req1 = Request('http://www.scrapytest.org')
         self.assertEqual(mw1.process_request(req1, self.spider), None)
-        self.assertEqual(req1.headers.get('X-Crawlera-Jobid'), '2816')
+        self.assertEqual(req1.headers.get('X-Crawlera-Jobid'), b'2816')
 
     def test_apikey_assignment(self):
         self.spider.crawlera_enabled = True
