@@ -5,6 +5,8 @@ setup(
     version='1.1.0',
     license='BSD',
     description='Crawlera middleware for Scrapy',
+    maintainer='Raul Gallegos',
+    maintainer_email='raul.ogh@gmail.com',
     author='Scrapinghub',
     author_email='opensource@scrapinghub.com',
     url='https://github.com/scrapy-plugins/scrapy-crawlera',
@@ -17,5 +19,14 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Framework :: Scrapy',
+        'Intended Audience :: Developers',
+        'Topic :: Internet :: WWW/HTTP',
+        'Topic :: Internet :: Proxy Servers',
+        'Topic :: Software Development :: Libraries :: Application Frameworks',
+        'Topic :: Software Development :: Libraries :: Python Modules',
     ]
 )

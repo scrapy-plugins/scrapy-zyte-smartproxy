@@ -1,6 +1,9 @@
 # .travis.yml
 language: python
-python: 3.5
+
+python:
+  - 3.5
+
 sudo: false
 
 env:
@@ -19,3 +22,14 @@ after_success:
 cache:
     directories:
         - $HOME/.cache/pip
+
+deploy:
+  provider: pypi
+  distributions: "sdist bdist_wheel"
+  user: scrapinghub
+  password:
+    secure: rU/nBv26TZbZhO22zDeSWtQjmglSeG+ujWqfYUiLuAl4+JcNnQSFtqK14S4CZOLCjl8lfIJjZV073+X2zhy0AUVQrNlbVFRCwnAL9KsDG3s9ixGNhNdZB82R0+VdViI39M+Fhty8X1g0XhPmAoDz7Ol9G5Voyu5gCINQHFCaAxs=
+  on:
+    tags: true
+    repo: scrapy-plugins/scrapy-crawlera
+    condition: "$TOXENV == py27"
