@@ -10,7 +10,7 @@ setup(
     author='Scrapinghub',
     author_email='opensource@scrapinghub.com',
     url='https://github.com/scrapy-plugins/scrapy-crawlera',
-    py_modules=['scrapy_crawlera'],
+    packages=['scrapy_crawlera'],
     platforms=['Any'],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
