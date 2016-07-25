@@ -124,6 +124,8 @@ class CrawleraMiddleware(object):
             request.headers['Proxy-Authorization'] = self._proxyauth
             if self.job_id:
                 request.headers['X-Crawlera-Jobid'] = self.job_id
+            self.crawler.stats.inc_value('crawlera/request')
+            self.crawler.stats.inc_value('crawlera/request/method/%s' % request.method)
 
     def process_response(self, request, response, spider):
         if not self._is_enabled_for_request(request):
@@ -138,8 +140,16 @@ class CrawleraMiddleware(object):
                 after = response.headers.get('retry-after')
                 if after:
                     self._set_custom_delay(request, float(after))
+            self.crawler.stats.inc_value('crawlera/response/banned')
         else:
             self._bans[key] = 0
+        # If placed behind `RedirectMiddleware`, it would not count 3xx responses
+        self.crawler.stats.inc_value('crawlera/response')
+        self.crawler.stats.inc_value('crawlera/response/status/%s' % response.status)
+        crawlera_error = response.headers.get('X-Crawlera-Error')
+        if crawlera_error:
+            self.crawler.stats.inc_value('crawlera/response/error')
+            self.crawler.stats.inc_value('crawlera/response/error/%s' % crawlera_error)
         return response
 
     def process_exception(self, request, exception, spider):
