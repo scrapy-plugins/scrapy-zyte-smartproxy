@@ -1,12 +1,14 @@
-from collections import defaultdict
-import warnings
 import os
 import logging
+import warnings
+from collections import defaultdict
 
+from six.moves.urllib.parse import urlparse
 from w3lib.http import basic_auth_header
 from scrapy import signals
+from scrapy.resolver import dnscache
 from scrapy.exceptions import ScrapyDeprecationWarning
-from twisted.internet.error import ConnectionRefusedError
+from twisted.internet.error import ConnectionRefusedError, ConnectionDone
 
 
 class CrawleraMiddleware(object):
@@ -48,6 +50,7 @@ class CrawleraMiddleware(object):
 
         for k, type_ in self._settings:
             setattr(self, k, self._get_setting_value(spider, k, type_))
+
         if '?noconnect' not in self.url:
             self.url += '?noconnect'
 
@@ -145,9 +148,15 @@ class CrawleraMiddleware(object):
     def process_exception(self, request, exception, spider):
         if not self._is_enabled_for_request(request):
             return
-        if isinstance(exception, ConnectionRefusedError):
+        if isinstance(exception, (ConnectionRefusedError, ConnectionDone)):
             # Handle crawlera downtime
+            self._clear_dns_cache()
             self._set_custom_delay(request, self.connection_refused_delay)
+
+    def _clear_dns_cache(self):
+        # Scrapy doesn't expire dns records by default, so we force it here,
+        # so client can reconnect trough DNS failover.
+        dnscache.pop(urlparse(self.url).hostname, None)
 
     def _is_enabled_for_request(self, request):
         return self.enabled and 'dont_proxy' not in request.meta

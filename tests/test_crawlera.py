@@ -4,7 +4,8 @@ from w3lib.http import basic_auth_header
 from scrapy.http import Request, Response
 from scrapy.spiders import Spider
 from scrapy.utils.test import get_crawler
-from twisted.internet.error import ConnectionRefusedError
+from scrapy.resolver import dnscache
+from twisted.internet.error import ConnectionRefusedError, ConnectionDone
 
 from scrapy_crawlera import CrawleraMiddleware
 import os
@@ -229,29 +230,44 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(slot.delay, retry_after)
         self.assertEqual(self.spider.download_delay, delay)
 
+        # DNS cache should be cleared in case of errors
+        dnscache['proxy.crawlera.com'] = '1.1.1.1'
+
         res = Response(url, request=req)
         mw.process_response(req, res, self.spider)
         self.assertEqual(slot.delay, delay)
         self.assertEqual(self.spider.download_delay, delay)
+        self.assertIn('proxy.crawlera.com', dnscache)
 
         # server failures
         mw.process_exception(req, ConnectionRefusedError(), self.spider)
         self.assertEqual(slot.delay, mw.connection_refused_delay)
         self.assertEqual(self.spider.download_delay, delay)
+        self.assertNotIn('proxy.crawlera.com', dnscache)
 
+        dnscache['proxy.crawlera.com'] = '1.1.1.1'
         res = Response(ban_url, request=req)
         mw.process_response(req, res, self.spider)
         self.assertEqual(slot.delay, delay)
         self.assertEqual(self.spider.download_delay, delay)
+        self.assertIn('proxy.crawlera.com', dnscache)
 
         mw.process_exception(req, ConnectionRefusedError(), self.spider)
         self.assertEqual(slot.delay, mw.connection_refused_delay)
         self.assertEqual(self.spider.download_delay, delay)
+        self.assertNotIn('proxy.crawlera.com', dnscache)
 
+        dnscache['proxy.crawlera.com'] = '1.1.1.1'
         res = Response(ban_url, status=self.bancode, request=req)
         mw.process_response(req, res, self.spider)
         self.assertEqual(slot.delay, delay)
         self.assertEqual(self.spider.download_delay, delay)
+        self.assertIn('proxy.crawlera.com', dnscache)
+
+        mw.process_exception(req, ConnectionDone(), self.spider)
+        self.assertEqual(slot.delay, mw.connection_refused_delay)
+        self.assertEqual(self.spider.download_delay, delay)
+        self.assertNotIn('proxy.crawlera.com', dnscache)
 
     def test_jobid_header(self):
         # test without the environment variable 'SCRAPY_JOB'
