@@ -62,3 +62,18 @@ You just need to specify the headers when making a request like::
 
 Remember that you could also set which headers to use by default by all
 requests with `DEFAULT_REQUEST_HEADERS <http://doc.scrapy.org/en/1.0/topics/settings.html#default-request-headers>`_
+
+
+Changes
+=======
+
+v1.2.0 (YYYY-MM-DD)
+-------------------
+
+- Recommend middleware order to be ``610`` to run before ``RedirectMiddleware``.
+- Change default download timeout to 190s or 3 minutes 10 seconds
+  (instead of 1800s or 30 minutes).
+- Test and advertize Python 3 compatiblity.
+- New ``crawlera/request`` and ``crawlera/request/method/*`` stats counts.
+- Clear Scrapy DNS cache for proxy URL in case of connection errors.
+- Distribute plugin as universal wheel.
