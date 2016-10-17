@@ -67,7 +67,13 @@ requests with `DEFAULT_REQUEST_HEADERS <http://doc.scrapy.org/en/1.0/topics/sett
 Changes
 =======
 
-v1.2.0 (YYYY-MM-DD)
+v1.2.1 (2016-10-17)
+-------------------
+
+Fix release date in README.
+
+
+v1.2.0 (2016-10-17)
 -------------------
 
 - Recommend middleware order to be ``610`` to run before ``RedirectMiddleware``.
