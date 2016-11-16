@@ -23,34 +23,39 @@ You can install scrapy-crawlera using pip::
 
     pip install scrapy-crawlera
 
-You can then enable the middleware in your `settings.py`::
+Configuration
+=============
+
+* Add the Crawlera middleware including it into the ``DOWNLOADER_MIDDLEWARES`` in your ``settings.py`` file::
 
     DOWNLOADER_MIDDLEWARES = {
         ...
         'scrapy_crawlera.CrawleraMiddleware': 610
     }
 
+* Then there are two ways to enable it.
 
-Credentials
-===========
+  * Through ``settings.py``::
 
-There are two ways to specify credentials.
+      CRAWLERA_ENABLED = True
+      CRAWLERA_APIKEY = 'apikey'
 
-Through `settings.py`::
+  * Through spider attributes::
 
-    CRAWLERA_ENABLED = True
-    CRAWLERA_APIKEY = 'apikey'
-
-Through spider attributes::
-
-    class MySpider:
-        crawlera_enabled = True
-        crawlera_apikey = 'apikey'
+      class MySpider:
+          crawlera_enabled = True
+          crawlera_apikey = 'apikey'
 
 How to use it
 =============
 
-You just need to specify the headers when making a request like::
+With the middleware, the usage of crawlera is automatic, every request will go through crawlera without nothing to worry about.
+
+Remember that you are now making request to Crawlera, and the Crawlera service will be the one actually making the requests to the different sites.
+
+If you need to specify special `Crawlera Headers <https://doc.scrapinghub.com/crawlera.html#request-headers>`_, just apply them as normal `Scrapy Headers <https://doc.scrapy.org/en/latest/topics/request-response.html#scrapy.http.Request.headers>`_.
+
+Here we have an example of specifying a Crawlera header into a Scrapy request::
 
     scrapy.Request(
         'http://example.com',
