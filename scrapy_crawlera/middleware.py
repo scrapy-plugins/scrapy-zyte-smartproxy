@@ -34,7 +34,7 @@ class CrawleraMiddleware(object):
     def __init__(self, crawler):
         self.crawler = crawler
         self.job_id = os.environ.get('SCRAPY_JOB')
-        self._bans = defaultdict(int)
+        self._bans = defaultdict(lambda: {'count': 0, 'sessions': set()})
         self._saved_delays = defaultdict(lambda: None)
 
     @classmethod
@@ -135,17 +135,24 @@ class CrawleraMiddleware(object):
             return response
         key = self._get_slot_key(request)
         self._restore_original_delay(request)
+        session = response.headers.get('X-Crawlera-Session')
         if response.status == self.ban_code:
-            self._bans[key] += 1
-            if self._bans[key] > self.maxbans:
-                self.crawler.engine.close_spider(spider, 'banned')
-            else:
-                after = response.headers.get('retry-after')
-                if after:
-                    self._set_custom_delay(request, float(after))
-            self.crawler.stats.inc_value('crawlera/response/banned')
+            if not session or session not in self._bans[key]['sessions']:
+                if session:
+                    self._bans[key]['sessions'].add(session)
+                self._bans[key]['count'] += 1
+                if self._bans[key]['count'] > self.maxbans:
+                    self.crawler.engine.close_spider(spider, 'banned')
+                else:
+                    after = response.headers.get('retry-after')
+                    if after:
+                        self._set_custom_delay(request, float(after))
+                self.crawler.stats.inc_value('crawlera/response/banned')
         else:
-            self._bans[key] = 0
+            try:
+                del self._bans[key]
+            except KeyError:
+                pass
         # If placed behind `RedirectMiddleware`, it would not count 3xx responses
         self.crawler.stats.inc_value('crawlera/response')
         self.crawler.stats.inc_value('crawlera/response/status/%s' % response.status)

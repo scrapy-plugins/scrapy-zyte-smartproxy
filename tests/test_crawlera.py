@@ -93,7 +93,7 @@ class CrawleraMiddlewareTestCase(TestCase):
             res = Response('http://unban.me')
             assert mw.process_response(req, res, spider) is res
             self.assertEqual(crawler.engine.fake_spider_closed_result, None)
-            self.assertEqual(mw._bans[None], 0)
+            self.assertEqual(mw._bans[None]['count'], 0)
 
         # check for not banning before maxbans for bancode
         for x in range(maxbans + 1):
