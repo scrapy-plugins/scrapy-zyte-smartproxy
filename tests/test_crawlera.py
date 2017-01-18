@@ -304,3 +304,32 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.settings['CRAWLERA_PASS'] = ''
         proxyauth = basic_auth_header(apikey, '')
         self._assert_enabled(self.spider, self.settings, proxyauth=proxyauth)
+
+    def test_stats(self):
+        self.spider.crawlera_enabled = True
+        spider = self.spider
+        crawler = self._mock_crawler(spider, None)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(spider)
+
+        req = Request('http://www.scrapytest.org')
+        assert mw.process_request(req, spider) is None
+        self.assertEqual(crawler.stats.get_value('crawlera/request'), 1)
+        self.assertEqual(crawler.stats.get_value('crawlera/request/method/GET'), 1)
+
+        res = Response(req.url)
+        assert mw.process_response(req, res, spider) is res
+        self.assertEqual(crawler.stats.get_value('crawlera/response'), 1)
+        self.assertEqual(crawler.stats.get_value('crawlera/response/status/200'), 1)
+
+        req = Request('http://www.scrapytest.org/other', method='POST')
+        assert mw.process_request(req, spider) is None
+        self.assertEqual(crawler.stats.get_value('crawlera/request'), 2)
+        self.assertEqual(crawler.stats.get_value('crawlera/request/method/POST'), 1)
+
+        res = Response(req.url, status=mw.ban_code, headers={'X-Crawlera-Error': 'somethingbad'})
+        assert mw.process_response(req, res, spider) is res
+        self.assertEqual(crawler.stats.get_value('crawlera/response'), 2)
+        self.assertEqual(crawler.stats.get_value('crawlera/response/status/{}'.format(mw.ban_code)), 1)
+        self.assertEqual(crawler.stats.get_value('crawlera/response/banned'), 1)
+        self.assertEqual(crawler.stats.get_value('crawlera/response/error/somethingbad'), 1)

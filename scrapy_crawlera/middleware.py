@@ -152,7 +152,8 @@ class CrawleraMiddleware(object):
         crawlera_error = response.headers.get('X-Crawlera-Error')
         if crawlera_error:
             self.crawler.stats.inc_value('crawlera/response/error')
-            self.crawler.stats.inc_value('crawlera/response/error/%s' % crawlera_error)
+            self.crawler.stats.inc_value(
+                'crawlera/response/error/%s' % crawlera_error.decode('utf8'))
         return response
 
     def process_exception(self, request, exception, spider):
