@@ -72,6 +72,13 @@ requests with `DEFAULT_REQUEST_HEADERS <http://doc.scrapy.org/en/1.0/topics/sett
 Changes
 =======
 
+v1.2.2 (2017-01-19)
+-------------------
+
+- Fix Crawlera error stats key in Python 3.
+- Add support for Python 3.6.
+
+
 v1.2.1 (2016-10-17)
 -------------------
 
