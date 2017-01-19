@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='scrapy-crawlera',
-    version='1.2.1',
+    version='1.2.2',
     license='BSD',
     description='Crawlera middleware for Scrapy',
     maintainer='Raul Gallegos',
