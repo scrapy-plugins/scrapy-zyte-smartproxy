@@ -85,4 +85,4 @@ All the rest
    news
 
 :doc:`news`
-    See what has changed in recent Scrapy versions.
+    See what has changed in recent scrapy-crawlera versions.
