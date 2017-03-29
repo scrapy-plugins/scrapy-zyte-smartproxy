@@ -33,4 +33,4 @@ You can install scrapy-crawlera using pip::
 Documentation
 =============
 
-Documentation is available online at scrapy-crawlera.readthedocs.io and in the ``docs`` directory.
+Documentation is available online at https://scrapy-crawlera.readthedocs.io/ and in the ``docs`` directory.
