@@ -59,7 +59,7 @@ class CrawleraMiddlewareTestCase(TestCase):
 
     def _assert_enabled(self, spider,
                         settings=None,
-                        proxyurl='http://proxy.crawlera.com:8010?noconnect',
+                        proxyurl='http://proxy.crawlera.com:8010',
                         proxyauth=basic_auth_header('user', 'pass'),
                         maxbans=400,
                         download_timeout=190):
@@ -135,7 +135,7 @@ class CrawleraMiddlewareTestCase(TestCase):
     def test_proxyurl(self):
         self.spider.crawlera_enabled = True
         self.settings['CRAWLERA_URL'] = 'http://localhost:8010'
-        self._assert_enabled(self.spider, self.settings, proxyurl='http://localhost:8010?noconnect')
+        self._assert_enabled(self.spider, self.settings, proxyurl='http://localhost:8010')
 
     def test_proxyurl_including_noconnect(self):
         self.spider.crawlera_enabled = True
