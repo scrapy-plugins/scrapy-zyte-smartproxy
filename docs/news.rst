@@ -3,6 +3,13 @@
 Changes
 =======
 
+v1.2.3 (2017-06-29)
+-------------------
+
+- Multiple documentation fixes
+- Test scrapy-crawlera on combinations of software used by scrapinghub stacks
+
+
 v1.2.2 (2017-01-19)
 -------------------
 
