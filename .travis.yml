@@ -31,4 +31,4 @@ deploy:
   on:
     tags: true
     repo: scrapy-plugins/scrapy-crawlera
-    condition: "$TOXENV == py27"
+    condition: "$TOXENV =~ ^py27,"
