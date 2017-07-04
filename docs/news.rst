@@ -3,6 +3,11 @@
 Changes
 =======
 
+v1.2.4 (2017-07-04)
+-------------------
+
+- Trigger PYPI deployments after changes made to TOXENV in v1.2.3
+
 v1.2.3 (2017-06-29)
 -------------------
 
