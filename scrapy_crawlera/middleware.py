@@ -51,9 +51,6 @@ class CrawleraMiddleware(object):
         for k, type_ in self._settings:
             setattr(self, k, self._get_setting_value(spider, k, type_))
 
-        if '?noconnect' not in self.url:
-            self.url += '?noconnect'
-
         self._proxyauth = self.get_proxyauth(spider)
         logging.info("Using crawlera at %s (user: %s)" % (
             self.url,

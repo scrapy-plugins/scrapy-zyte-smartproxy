@@ -29,5 +29,6 @@ setup(
         'Topic :: Internet :: Proxy Servers',
         'Topic :: Software Development :: Libraries :: Application Frameworks',
         'Topic :: Software Development :: Libraries :: Python Modules',
-    ]
+    ],
+    install_requires=['scrapy>=0.22', 'six', 'w3lib'],
 )
