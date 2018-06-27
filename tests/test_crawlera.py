@@ -333,3 +333,44 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(crawler.stats.get_value('crawlera/response/status/{}'.format(mw.ban_code)), 1)
         self.assertEqual(crawler.stats.get_value('crawlera/response/banned'), 1)
         self.assertEqual(crawler.stats.get_value('crawlera/response/error/somethingbad'), 1)
+
+    def test_crawlera_headers(self):
+        # test settings
+        spider = self.spider
+        self.spider.crawlera_enabled = True
+        crawler = self._mock_crawler(spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(spider)
+        self.assertEqual(mw.headers_enabled, True)
+
+        self.settings['CRAWLERA_HEADERS_ENABLED'] = False
+        crawler = self._mock_crawler(spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(spider)
+        self.assertEqual(mw.headers_enabled, False)
+
+        self.settings['CRAWLERA_HEADERS_ENABLED'] = True
+        crawler = self._mock_crawler(spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(spider)
+        self.assertEqual(mw.headers_enabled, True)
+
+        # test req without headers
+        req = Request('http://www.scrapytest.org/other')
+        assert mw.process_request(req, spider) is None
+        self.assertEqual(req.headers['X-Crawlera-Cookies'], b'disabled')
+        self.assertEqual(req.headers['X-Crawlera-Profile'], b'desktop')
+        self.assertEqual(req.headers['Accept-Encoding'], b'gzip, deflate')
+        # test req with other headers
+        req = Request('http://www.scrapytest.org/other', headers={'X-Crawlera-Profile': 'mobile'})
+        assert mw.process_request(req, spider) is None
+        self.assertEqual(req.headers['X-Crawlera-Cookies'], b'disabled')
+        self.assertEqual(req.headers['X-Crawlera-Profile'], b'mobile')
+        self.assertEqual(req.headers['Accept-Encoding'], b'gzip, deflate')
+        # test req with conflicting headers
+        req = Request('http://www.scrapytest.org/other', headers={'X-Crawlera-UA': 'desktop'})
+        assert mw.process_request(req, spider) is None
+        self.assertEqual(req.headers['X-Crawlera-Cookies'], b'disabled')
+        self.assertEqual(req.headers['X-Crawlera-UA'], b'desktop')
+        self.assertNotIn('X-Crawlera-Profile', req.headers)
+        self.assertEqual(req.headers['Accept-Encoding'], b'gzip, deflate')

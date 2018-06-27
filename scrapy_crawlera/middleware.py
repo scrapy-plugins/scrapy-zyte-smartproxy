@@ -21,6 +21,8 @@ class CrawleraMiddleware(object):
     connection_refused_delay = 90
     preserve_delay = False
 
+    headers_enabled = True
+
     _settings = [
         ('apikey', str),
         ('user', str),
@@ -29,6 +31,13 @@ class CrawleraMiddleware(object):
         ('maxbans', int),
         ('download_timeout', int),
         ('preserve_delay', bool),
+        ('headers_enabled', bool),
+    ]
+
+    _crawlera_headers = [
+        ('X-Crawlera-Cookies', 'disabled'),
+        ('X-Crawlera-Profile', 'desktop'),
+        ('Accept-Encoding', 'gzip, deflate')
     ]
 
     def __init__(self, crawler):
@@ -119,6 +128,8 @@ class CrawleraMiddleware(object):
 
     def process_request(self, request, spider):
         if self._is_enabled_for_request(request):
+            if self.headers_enabled:
+                self._set_crawlera_headers(request)
             request.meta['proxy'] = self.url
             request.meta['download_timeout'] = self.download_timeout
             request.headers['Proxy-Authorization'] = self._proxyauth
@@ -192,3 +203,11 @@ class CrawleraMiddleware(object):
             return
         if self._saved_delays[key] is not None:
             slot.delay, self._saved_delays[key] = self._saved_delays[key], None
+
+    def _set_crawlera_headers(self, request):
+        has_crawlera_ua = 'X-Crawlera-UA' in request.headers
+        for header, value in self._crawlera_headers:
+            if has_crawlera_ua and header == 'X-Crawlera-Profile':
+                continue
+            if header not in request.headers:
+                request.headers[header] = value
