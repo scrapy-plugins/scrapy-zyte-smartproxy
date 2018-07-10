@@ -333,3 +333,20 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(crawler.stats.get_value('crawlera/response/status/{}'.format(mw.ban_code)), 1)
         self.assertEqual(crawler.stats.get_value('crawlera/response/banned'), 1)
         self.assertEqual(crawler.stats.get_value('crawlera/response/error/somethingbad'), 1)
+
+    def test_spider_attributes_headers(self):
+        self.spider.crawlera_enabled = True
+        self.spider.crawlera_profile = 'mobile'
+        self.spider.crawlera_max_retries = 10
+
+        crawler = self._mock_crawler(self.spider, None)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+
+        req = Request('http://www.scrapytest.org')
+        out = mw.process_request(req, self.spider)
+        self.assertIsNone(out)
+        self.assertEqual(req.headers.get('X-Crawlera-Profile'), b'mobile')
+        self.assertEqual(req.headers.get('X-Crawlera-Max-Retries'), b'10')
+        self.assertIsNone(req.headers.get('X-Crawlera-Cookies'))
+        self.assertIsNone(req.headers.get('X-Crawlera-Debug'))

@@ -31,6 +31,13 @@ class CrawleraMiddleware(object):
         ('preserve_delay', bool),
     ]
 
+    _attr_headers = [
+        ('crawlera_debug', 'X-Crawlera-Debug'),
+        ('crawlera_profile', 'X-Crawlera-Profile'),
+        ('crawlera_cookies', 'X-Crawlera-Cookies'),
+        ('crawlera_max_retries', 'X-Crawlera-Max-Retries'),
+    ]
+
     def __init__(self, crawler):
         self.crawler = crawler
         self.job_id = os.environ.get('SCRAPY_JOB')
@@ -117,11 +124,20 @@ class CrawleraMiddleware(object):
             return basic_auth_header(self.apikey, '')
         return basic_auth_header(self.user, getattr(self, 'pass'))
 
+    def _get_headers_from_attributes(self, spider):
+        return {
+            header:getattr(spider, attr)
+            for attr, header in self._attr_headers
+            if hasattr(spider, attr)
+        }
+
     def process_request(self, request, spider):
         if self._is_enabled_for_request(request):
             request.meta['proxy'] = self.url
             request.meta['download_timeout'] = self.download_timeout
             request.headers['Proxy-Authorization'] = self._proxyauth
+            headers_from_attrs = self._get_headers_from_attributes(spider)
+            request.headers.update(headers_from_attrs)
             if self.job_id:
                 request.headers['X-Crawlera-Jobid'] = self.job_id
             self.crawler.stats.inc_value('crawlera/request')
