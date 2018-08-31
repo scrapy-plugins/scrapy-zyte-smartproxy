@@ -20,6 +20,7 @@ class CrawleraMiddleware(object):
     # Handle crawlera server failures
     connection_refused_delay = 90
     preserve_delay = False
+    header_prefix = 'X-Crawlera-'
 
     _settings = [
         ('apikey', str),
@@ -126,6 +127,8 @@ class CrawleraMiddleware(object):
                 request.headers['X-Crawlera-Jobid'] = self.job_id
             self.crawler.stats.inc_value('crawlera/request')
             self.crawler.stats.inc_value('crawlera/request/method/%s' % request.method)
+        else:
+            self._clean_crawlera_headers(request)
 
     def process_response(self, request, response, spider):
         if not self._is_enabled_for_request(request):
@@ -192,3 +195,19 @@ class CrawleraMiddleware(object):
             return
         if self._saved_delays[key] is not None:
             slot.delay, self._saved_delays[key] = self._saved_delays[key], None
+
+    def _clean_crawlera_headers(self, request):
+        """Remove X-Crawlera-* headers from the request."""
+        targets = [
+            header
+            for header in request.headers
+            if self._is_crawlera_header(header)
+        ]
+        for header in targets:
+            request.headers.pop(header, None)
+
+    def _is_crawlera_header(self, header_name):
+        if not header_name:
+            return False
+        header_name = header_name.decode('utf-8').lower()
+        return header_name.startswith(self.header_prefix.lower())
