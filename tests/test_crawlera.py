@@ -342,7 +342,8 @@ class CrawleraMiddlewareTestCase(TestCase):
         headers = {
             'X-Crawlera-Debug': True,
             'X-Crawlera-Profile': 'desktop',
-            'User-Agent': 'Scrapy'
+            'User-Agent': 'Scrapy',
+            '': None,
         }
         req = Request('http://www.scrapytest.org', headers=headers)
         out = mw.process_request(req, spider)
