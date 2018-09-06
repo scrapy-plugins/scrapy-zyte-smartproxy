@@ -333,3 +333,32 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(crawler.stats.get_value('crawlera/response/status/{}'.format(mw.ban_code)), 1)
         self.assertEqual(crawler.stats.get_value('crawlera/response/banned'), 1)
         self.assertEqual(crawler.stats.get_value('crawlera/response/error/somethingbad'), 1)
+
+    def _make_fake_request(self, spider, crawlera_enabled):
+        spider.crawlera_enabled = crawlera_enabled
+        crawler = self._mock_crawler(spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(spider)
+        headers = {
+            'X-Crawlera-Debug': True,
+            'X-Crawlera-Profile': 'desktop',
+            'User-Agent': 'Scrapy',
+            '': None,
+        }
+        req = Request('http://www.scrapytest.org', headers=headers)
+        out = mw.process_request(req, spider)
+        return req
+
+    def test_clean_headers_when_disabled(self):
+        req = self._make_fake_request(self.spider, crawlera_enabled=False)
+
+        self.assertNotIn(b'X-Crawlera-Debug', req.headers)
+        self.assertNotIn(b'X-Crawlera-Profile', req.headers)
+        self.assertIn(b'User-Agent', req.headers)
+
+    def test_clean_headers_when_enabled(self):
+        req = self._make_fake_request(self.spider, crawlera_enabled=True)
+
+        self.assertIn(b'X-Crawlera-Debug', req.headers)
+        self.assertIn(b'X-Crawlera-Profile', req.headers)
+        self.assertIn(b'User-Agent', req.headers)

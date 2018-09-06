@@ -73,6 +73,12 @@ Here we have an example of specifying a Crawlera header into a Scrapy request::
 Remember that you could also set which headers to use by default by all
 requests with `DEFAULT_REQUEST_HEADERS <http://doc.scrapy.org/en/1.0/topics/settings.html#default-request-headers>`_
 
+.. note:: Crawlera headers are removed from requests when the middleware is activated but Crawlera
+    is disabled. For example, if you accidentally disable Crawlera via ``crawlera_enabled = False``
+    but keep sending ``X-Crawlera-*`` headers in your requests, those will be removed from the
+    request headers.
+
+
 This Middleware also adds some configurable Scrapy Settings, check :ref:`the complete list here <settings>`.
 
 All the rest
