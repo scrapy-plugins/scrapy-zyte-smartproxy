@@ -8,6 +8,7 @@ from w3lib.http import basic_auth_header
 from scrapy import signals
 from scrapy.resolver import dnscache
 from scrapy.exceptions import ScrapyDeprecationWarning
+from scrapy.utils.python import without_none_values
 from twisted.internet.error import ConnectionRefusedError, ConnectionDone
 
 
@@ -63,6 +64,9 @@ class CrawleraMiddleware(object):
             logging.info(
                 "CrawleraMiddleware: disabling download delays on Scrapy side to optimize delays introduced by Crawlera. "
                 "To avoid this behaviour you can use the CRAWLERA_PRESERVE_DELAY setting but keep in mind that this may slow down the crawl significantly")
+
+        headers = without_none_values(self.crawler.settings.get('CRAWLERA_DEFAULT_HEADERS', {}))
+        self._headers = headers.items()
 
     def _settings_get(self, type_, *a, **kw):
         if type_ is int:
@@ -120,6 +124,7 @@ class CrawleraMiddleware(object):
 
     def process_request(self, request, spider):
         if self._is_enabled_for_request(request):
+            self._set_crawlera_default_headers(request)
             request.meta['proxy'] = self.url
             request.meta['download_timeout'] = self.download_timeout
             request.headers['Proxy-Authorization'] = self._proxyauth
@@ -211,3 +216,10 @@ class CrawleraMiddleware(object):
             return False
         header_name = header_name.decode('utf-8').lower()
         return header_name.startswith(self.header_prefix.lower())
+
+    def _set_crawlera_default_headers(self, request):
+        has_crawlera_ua = 'X-Crawlera-UA' in request.headers
+        for header, value in self._headers:
+            if has_crawlera_ua and header == 'X-Crawlera-Profile':
+                continue
+            request.headers.setdefault(header, value)

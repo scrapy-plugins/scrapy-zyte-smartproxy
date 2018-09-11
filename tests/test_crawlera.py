@@ -362,3 +362,23 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertIn(b'X-Crawlera-Debug', req.headers)
         self.assertIn(b'X-Crawlera-Profile', req.headers)
         self.assertIn(b'User-Agent', req.headers)
+
+    def test_crawlera_default_headers(self):
+        spider = self.spider
+        self.spider.crawlera_enabled = True
+
+        self.settings['CRAWLERA_DEFAULT_HEADERS'] = {
+            'X-Crawlera-Profile': 'desktop'
+        }
+        crawler = self._mock_crawler(spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(spider)
+        req = Request('http://www.scrapytest.org/other')
+        assert mw.process_request(req, spider) is None
+        self.assertEqual(req.headers['X-Crawlera-Profile'], b'desktop')
+
+        # test req with conflicting headers
+        req = Request('http://www.scrapytest.org/other', headers={'X-Crawlera-UA': 'desktop'})
+        assert mw.process_request(req, spider) is None
+        self.assertEqual(req.headers['X-Crawlera-UA'], b'desktop')
+        self.assertNotIn('X-Crawlera-Profile', req.headers)
