@@ -382,3 +382,16 @@ class CrawleraMiddlewareTestCase(TestCase):
         assert mw.process_request(req, spider) is None
         self.assertEqual(req.headers['X-Crawlera-UA'], b'desktop')
         self.assertNotIn('X-Crawlera-Profile', req.headers)
+
+        # test ignore None headers
+        self.settings['CRAWLERA_DEFAULT_HEADERS'] = {
+            'X-Crawlera-Profile': None,
+            'X-Crawlera-Cookies': 'disable'
+        }
+        crawler = self._mock_crawler(spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(spider)
+        req = Request('http://www.scrapytest.org/other')
+        assert mw.process_request(req, spider) is None
+        self.assertEqual(req.headers['X-Crawlera-Cookies'], b'disable')
+        self.assertNotIn('X-Crawlera-Profile', req.headers)
