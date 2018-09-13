@@ -1,4 +1,8 @@
-from unittest import TestCase, mock
+from unittest import TestCase
+try:
+    from unittest.mock import patch
+except ImportError:
+    from mock import patch
 
 from w3lib.http import basic_auth_header
 from scrapy.http import Request, Response
@@ -390,7 +394,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(req.headers['X-Crawlera-Cookies'], b'disable')
         self.assertNotIn('X-Crawlera-Profile', req.headers)
 
-    @mock.patch('scrapy_crawlera.middleware.logging')
+    @patch('scrapy_crawlera.middleware.logging')
     def test_crawlera_default_headers_conflicting_headers(self, mock_logger):
         spider = self.spider
         self.spider.crawlera_enabled = True
