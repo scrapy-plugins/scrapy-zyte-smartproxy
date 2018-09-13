@@ -21,6 +21,7 @@ class CrawleraMiddleware(object):
     connection_refused_delay = 90
     preserve_delay = False
     header_prefix = 'X-Crawlera-'
+    conflicting_headers = ('X-Crawlera-Profile', 'X-Crawlera-UA')
 
     _settings = [
         ('apikey', str),
@@ -216,10 +217,17 @@ class CrawleraMiddleware(object):
         return header_name.startswith(self.header_prefix.lower())
 
     def _set_crawlera_default_headers(self, request):
-        has_crawlera_ua = 'X-Crawlera-UA' in request.headers
         for header, value in self._headers:
             if value is None:
                 continue
-            if has_crawlera_ua and header == 'X-Crawlera-Profile':
-                continue
             request.headers.setdefault(header, value)
+        lower_case_headers = [
+            header.decode('utf-8').lower() for header in request.headers
+        ]
+        if all(h.lower() in lower_case_headers for h in self.conflicting_headers):
+            logging.warn(
+                'The headers %s are conflicting, X-Crawlera-UA will be ignored. '
+                'Please check https://doc.scrapinghub.com/crawlera.html for '
+                'more information'
+                % str(self.conflicting_headers)
+            )
