@@ -58,3 +58,12 @@ Default: ``False``
 
 If ``False`` Sets Scrapy's ``DOWNLOAD_DELAY`` to ``0``, making the spider to crawl faster. If set to ``True``, it will
 respect the provided ``DOWNLOAD_DELAY`` from Scrapy.
+
+CRAWLERA_DEFAULT_HEADERS
+-----------------------
+
+Default: ``{}``
+
+Default headers added only to crawlera requests. Headers defined on ``DEFAULT_REQUEST_HEADERS`` will take precedence as long as the ``CrawleraMiddleware`` is placed after the ``DefaultHeadersMiddleware``*. Headers set on the requests have precedence over the two settings.
+
+*This is the default behavior, ``DefaultHeadersMiddleware`` default priority is ``400`` and we recommend ``CrawleraMiddleware`` priority to be ``610``
