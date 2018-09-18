@@ -413,8 +413,9 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(req.headers['X-Crawlera-Profile'], b'desktop')
         mock_logger.warn.assert_called_with(
             "The headers ('X-Crawlera-Profile', 'X-Crawlera-UA') are conflictin"
-            "g, X-Crawlera-UA will be ignored. Please check https://doc.scraping"
-            "hub.com/crawlera.html for more information"
+            "g on request http://www.scrapytest.org/other. X-Crawlera-UA will b"
+            "e ignored. Please check https://doc.scrapinghub.com/crawlera.html "
+            "for more information"
         )
 
         # test it ignores case
@@ -425,6 +426,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(req.headers['X-Crawlera-Profile'], b'desktop')
         mock_logger.warn.assert_called_with(
             "The headers ('X-Crawlera-Profile', 'X-Crawlera-UA') are conflictin"
-            "g, X-Crawlera-UA will be ignored. Please check https://doc.scraping"
-            "hub.com/crawlera.html for more information"
+            "g on request http://www.scrapytest.org/other. X-Crawlera-UA will b"
+            "e ignored. Please check https://doc.scrapinghub.com/crawlera.html "
+            "for more information"
         )

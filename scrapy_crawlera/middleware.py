@@ -226,8 +226,8 @@ class CrawleraMiddleware(object):
         ]
         if all(h.lower() in lower_case_headers for h in self.conflicting_headers):
             logging.warn(
-                'The headers %s are conflicting, X-Crawlera-UA will be ignored. '
-                'Please check https://doc.scrapinghub.com/crawlera.html for '
-                'more information'
-                % str(self.conflicting_headers)
+                'The headers %s are conflicting on request %s. X-Crawlera-UA '
+                'will be ignored. Please check https://doc.scrapinghub.com/cr'
+                'awlera.html for more information'
+                % (str(self.conflicting_headers), request.url)
             )
