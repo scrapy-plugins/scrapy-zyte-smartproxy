@@ -1,4 +1,8 @@
 from unittest import TestCase
+try:
+    from unittest.mock import patch
+except ImportError:
+    from mock import patch
 
 from w3lib.http import basic_auth_header
 from scrapy.http import Request, Response
@@ -362,3 +366,67 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertIn(b'X-Crawlera-Debug', req.headers)
         self.assertIn(b'X-Crawlera-Profile', req.headers)
         self.assertIn(b'User-Agent', req.headers)
+
+    def test_crawlera_default_headers(self):
+        spider = self.spider
+        self.spider.crawlera_enabled = True
+
+        self.settings['CRAWLERA_DEFAULT_HEADERS'] = {
+            'X-Crawlera-Profile': 'desktop'
+        }
+        crawler = self._mock_crawler(spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(spider)
+        req = Request('http://www.scrapytest.org/other')
+        assert mw.process_request(req, spider) is None
+        self.assertEqual(req.headers['X-Crawlera-Profile'], b'desktop')
+
+        # test ignore None headers
+        self.settings['CRAWLERA_DEFAULT_HEADERS'] = {
+            'X-Crawlera-Profile': None,
+            'X-Crawlera-Cookies': 'disable'
+        }
+        crawler = self._mock_crawler(spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(spider)
+        req = Request('http://www.scrapytest.org/other')
+        assert mw.process_request(req, spider) is None
+        self.assertEqual(req.headers['X-Crawlera-Cookies'], b'disable')
+        self.assertNotIn('X-Crawlera-Profile', req.headers)
+
+    @patch('scrapy_crawlera.middleware.logging')
+    def test_crawlera_default_headers_conflicting_headers(self, mock_logger):
+        spider = self.spider
+        self.spider.crawlera_enabled = True
+
+        self.settings['CRAWLERA_DEFAULT_HEADERS'] = {
+            'X-Crawlera-Profile': 'desktop'
+        }
+        crawler = self._mock_crawler(spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(spider)
+
+        req = Request('http://www.scrapytest.org/other',
+                      headers={'X-Crawlera-UA': 'desktop'})
+        assert mw.process_request(req, spider) is None
+        self.assertEqual(req.headers['X-Crawlera-UA'], b'desktop')
+        self.assertEqual(req.headers['X-Crawlera-Profile'], b'desktop')
+        mock_logger.warn.assert_called_with(
+            "The headers ('X-Crawlera-Profile', 'X-Crawlera-UA') are conflictin"
+            "g on request http://www.scrapytest.org/other. X-Crawlera-UA will b"
+            "e ignored. Please check https://doc.scrapinghub.com/crawlera.html "
+            "for more information"
+        )
+
+        # test it ignores case
+        req = Request('http://www.scrapytest.org/other',
+                      headers={'x-crawlera-ua': 'desktop'})
+        assert mw.process_request(req, spider) is None
+        self.assertEqual(req.headers['X-Crawlera-UA'], b'desktop')
+        self.assertEqual(req.headers['X-Crawlera-Profile'], b'desktop')
+        mock_logger.warn.assert_called_with(
+            "The headers ('X-Crawlera-Profile', 'X-Crawlera-UA') are conflictin"
+            "g on request http://www.scrapytest.org/other. X-Crawlera-UA will b"
+            "e ignored. Please check https://doc.scrapinghub.com/crawlera.html "
+            "for more information"
+        )
