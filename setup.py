@@ -30,5 +30,5 @@ setup(
         'Topic :: Software Development :: Libraries :: Application Frameworks',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
-    install_requires=['scrapy>=0.22', 'six', 'w3lib'],
+    install_requires=['scrapy>=1.0.0', 'six', 'w3lib'],
 )
