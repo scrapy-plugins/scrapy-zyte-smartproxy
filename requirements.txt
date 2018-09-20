@@ -1,3 +1,3 @@
-scrapy>=0.22
+scrapy>=1.0
 six
 w3lib
