@@ -3,6 +3,17 @@
 Changes
 =======
 
+v1.4.0 (2018-09-20)
+-------------------
+
+- Remove X-Crawlera-* headers when Crawlera is disabled.
+- Introduction of DEFAULT_CRAWLERA_HEADERS settings.
+
+v1.3.0 (2018-01-10)
+-------------------
+
+- Use CONNECT method to contact Crawlera proxy.
+
 v1.2.4 (2017-07-04)
 -------------------
 
