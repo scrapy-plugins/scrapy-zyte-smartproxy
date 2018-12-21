@@ -134,12 +134,18 @@ class CrawleraMiddleware(object):
         else:
             self._clean_crawlera_headers(request)
 
+    def _is_banned(self, response):
+        return (
+            response.status == self.ban_code and
+            response.headers.get('X-Crawlera-Error') == 'banned'
+        )
+
     def process_response(self, request, response, spider):
         if not self._is_enabled_for_request(request):
             return response
         key = self._get_slot_key(request)
         self._restore_original_delay(request)
-        if response.status == self.ban_code:
+        if self._is_banned(response):
             self._bans[key] += 1
             if self._bans[key] > self.maxbans:
                 self.crawler.engine.close_spider(spider, 'banned')

@@ -441,3 +441,16 @@ class CrawleraMiddlewareTestCase(TestCase):
         req.meta['dont_proxy'] = False
         assert mw.process_request(req, spider) is None
         self.assertIsNotNone(req.meta.get('proxy'))
+
+    def test_is_banned(self):
+        self.spider.crawlera_enabled = True
+        crawler = self._mock_crawler(self.spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+        req = self._make_fake_request(self.spider, crawlera_enabled=True)
+        res = Response(req.url, status=200)
+        self.assertFalse(mw._is_banned(res))
+        res = Response(req.url, status=503, headers={'X-Crawlera-Error': 'no_proxies'})
+        self.assertFalse(mw._is_banned(res))
+        res = Response(req.url, status=503, headers={'X-Crawlera-Error': 'banned'})
+        self.assertTrue(mw._is_banned(res))
