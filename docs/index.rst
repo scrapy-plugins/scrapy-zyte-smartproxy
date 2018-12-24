@@ -31,17 +31,6 @@ Configuration
       class MySpider:
           crawlera_enabled = True
           crawlera_apikey = 'apikey'
-          
-* There is also one way to manually disable it through a spider when making a Request ::
-
-    scrapy.Request(
-        'http://example.com',
-        meta={
-            'dont_proxy': 1,
-            ...
-        },
-    )
-
 
 
 **Hint**: You can also use :ref:`CRAWLERA_USER` and :ref:`CRAWLERA_PASS` instead of :ref:`CRAWLERA_APIKEY`.
@@ -65,9 +54,20 @@ How to use it
     All configurable Scrapy Settings added by the Middleware.
 
 
-With the middleware, the usage of crawlera is automatic, every request will go through crawlera without nothing to worry about. 
+With the middleware, the usage of crawlera is automatic, every request will go through crawlera without nothing to worry about.
+If you want to *disable* crawlera on a specific Request, you can do so by updating `meta` with `dont_proxy=True`::
 
-Remember that you are now making request to Crawlera, and the Crawlera service will be the one actually making the requests to the different sites.
+
+    scrapy.Request(
+        'http://example.com',
+        meta={
+            'dont_proxy': True,
+            ...
+        },
+    )
+
+
+Remember that you are now making requests to Crawlera, and the Crawlera service will be the one actually making the requests to the different sites.
 
 If you need to specify special `Crawlera Headers <https://doc.scrapinghub.com/crawlera.html#request-headers>`_, just apply them as normal `Scrapy Headers <https://doc.scrapy.org/en/latest/topics/request-response.html#scrapy.http.Request.headers>`_.
 
