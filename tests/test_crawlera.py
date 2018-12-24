@@ -78,7 +78,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         res = Response(req.url)
         assert mw.process_response(req, res, spider) is res
 
-        # disabled if 'dont_proxy' is set
+        # disabled if 'dont_proxy=True' is set
         req = Request('http://www.scrapytest.org')
         req.meta['dont_proxy'] = True
         assert mw.process_request(req, spider) is None
@@ -372,7 +372,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.spider.crawlera_enabled = True
 
         self.settings['CRAWLERA_DEFAULT_HEADERS'] = {
-            'X-Crawlera-Profile': 'desktop'
+            'X-Crawlera-Profile': 'desktop',
         }
         crawler = self._mock_crawler(spider, self.settings)
         mw = self.mwcls.from_crawler(crawler)
@@ -384,7 +384,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         # test ignore None headers
         self.settings['CRAWLERA_DEFAULT_HEADERS'] = {
             'X-Crawlera-Profile': None,
-            'X-Crawlera-Cookies': 'disable'
+            'X-Crawlera-Cookies': 'disable',
         }
         crawler = self._mock_crawler(spider, self.settings)
         mw = self.mwcls.from_crawler(crawler)
@@ -400,7 +400,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.spider.crawlera_enabled = True
 
         self.settings['CRAWLERA_DEFAULT_HEADERS'] = {
-            'X-Crawlera-Profile': 'desktop'
+            'X-Crawlera-Profile': 'desktop',
         }
         crawler = self._mock_crawler(spider, self.settings)
         mw = self.mwcls.from_crawler(crawler)
@@ -430,3 +430,14 @@ class CrawleraMiddlewareTestCase(TestCase):
             "e ignored. Please check https://doc.scrapinghub.com/crawlera.html "
             "for more information"
         )
+
+    def test_dont_proxy_false_does_nothing(self):
+        spider = self.spider
+        spider.crawlera_enabled = True
+        crawler = self._mock_crawler(spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(spider)
+        req = Request('http://www.scrapytest.org/other')
+        req.meta['dont_proxy'] = False
+        assert mw.process_request(req, spider) is None
+        self.assertIsNotNone(req.meta.get('proxy'))
