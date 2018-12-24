@@ -137,7 +137,7 @@ class CrawleraMiddleware(object):
     def _is_banned(self, response):
         return (
             response.status == self.ban_code and
-            response.headers.get('X-Crawlera-Error') == 'banned'
+            response.headers.get('X-Crawlera-Error') == b'banned'
         )
 
     def process_response(self, request, response, spider):

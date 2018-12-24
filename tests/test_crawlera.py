@@ -102,7 +102,11 @@ class CrawleraMiddlewareTestCase(TestCase):
         # check for not banning before maxbans for bancode
         for x in range(maxbans + 1):
             self.assertEqual(crawler.engine.fake_spider_closed_result, None)
-            res = Response('http://ban.me/%d' % x, status=self.bancode)
+            res = Response(
+                'http://ban.me/%d' % x,
+                status=self.bancode,
+                headers={'X-Crawlera-Error': 'banned'}
+            )
             assert mw.process_response(req, res, spider) is res
 
         # max bans reached and close_spider called
@@ -219,15 +223,31 @@ class CrawleraMiddlewareTestCase(TestCase):
         slot = MockedSlot(self.spider.download_delay)
         crawler.engine.downloader.slots[slot_key] = slot
 
-        # ban
+        # no ban
         req = Request(url, meta={'download_slot': slot_key})
-        res = Response(ban_url, status=self.bancode, request=req)
+        headers = {'X-Crawlera-Error': 'no_proxies'}
+        res = Response(
+            ban_url, status=self.bancode, headers=headers, request=req)
         mw.process_response(req, res, self.spider)
         self.assertEqual(slot.delay, delay)
         self.assertEqual(self.spider.download_delay, delay)
 
+        # ban without retry-after
+        req = Request(url, meta={'download_slot': slot_key})
+        headers = {'X-Crawlera-Error': 'banned'}
+        res = Response(
+            ban_url, status=self.bancode, headers=headers, request=req)
+        mw.process_response(req, res, self.spider)
+        self.assertEqual(slot.delay, delay)
+        self.assertEqual(self.spider.download_delay, delay)
+
+
+        # ban with retry-after
         retry_after = 1.5
-        headers = {'retry-after': str(retry_after)}
+        headers = {
+            'retry-after': str(retry_after),
+            'X-Crawlera-Error': 'banned'
+        }
         res = Response(
             ban_url, status=self.bancode, headers=headers, request=req)
         mw.process_response(req, res, self.spider)
@@ -335,8 +355,12 @@ class CrawleraMiddlewareTestCase(TestCase):
         assert mw.process_response(req, res, spider) is res
         self.assertEqual(crawler.stats.get_value('crawlera/response'), 2)
         self.assertEqual(crawler.stats.get_value('crawlera/response/status/{}'.format(mw.ban_code)), 1)
-        self.assertEqual(crawler.stats.get_value('crawlera/response/banned'), 1)
         self.assertEqual(crawler.stats.get_value('crawlera/response/error/somethingbad'), 1)
+        res = Response(req.url, status=mw.ban_code, headers={'X-Crawlera-Error': 'banned'})
+        assert mw.process_response(req, res, spider) is res
+        self.assertEqual(crawler.stats.get_value('crawlera/response'), 3)
+        self.assertEqual(crawler.stats.get_value('crawlera/response/status/{}'.format(mw.ban_code)), 2)
+        self.assertEqual(crawler.stats.get_value('crawlera/response/banned'), 1)
 
     def _make_fake_request(self, spider, crawlera_enabled):
         spider.crawlera_enabled = crawlera_enabled
