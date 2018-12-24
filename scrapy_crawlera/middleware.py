@@ -174,7 +174,7 @@ class CrawleraMiddleware(object):
         dnscache.pop(urlparse(self.url).hostname, None)
 
     def _is_enabled_for_request(self, request):
-        return self.enabled and 'dont_proxy' not in request.meta
+        return self.enabled and not request.meta.get('dont_proxy', False)
 
     def _get_slot_key(self, request):
         return request.meta.get('download_slot')
