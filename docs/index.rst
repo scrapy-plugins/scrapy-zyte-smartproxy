@@ -55,8 +55,19 @@ How to use it
 
 
 With the middleware, the usage of crawlera is automatic, every request will go through crawlera without nothing to worry about.
+If you want to *disable* crawlera on a specific Request, you can do so by updating `meta` with `dont_proxy=True`::
 
-Remember that you are now making request to Crawlera, and the Crawlera service will be the one actually making the requests to the different sites.
+
+    scrapy.Request(
+        'http://example.com',
+        meta={
+            'dont_proxy': True,
+            ...
+        },
+    )
+
+
+Remember that you are now making requests to Crawlera, and the Crawlera service will be the one actually making the requests to the different sites.
 
 If you need to specify special `Crawlera Headers <https://doc.scrapinghub.com/crawlera.html#request-headers>`_, just apply them as normal `Scrapy Headers <https://doc.scrapy.org/en/latest/topics/request-response.html#scrapy.http.Request.headers>`_.
 
@@ -77,7 +88,6 @@ requests with `DEFAULT_REQUEST_HEADERS <http://doc.scrapy.org/en/1.0/topics/sett
     is disabled. For example, if you accidentally disable Crawlera via ``crawlera_enabled = False``
     but keep sending ``X-Crawlera-*`` headers in your requests, those will be removed from the
     request headers.
-
 
 This Middleware also adds some configurable Scrapy Settings, check :ref:`the complete list here <settings>`.
 
