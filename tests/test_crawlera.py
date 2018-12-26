@@ -105,7 +105,7 @@ class CrawleraMiddlewareTestCase(TestCase):
             res = Response(
                 'http://ban.me/%d' % x,
                 status=self.bancode,
-                headers={'X-Crawlera-Error': 'banned'}
+                headers={'X-Crawlera-Error': 'banned'},
             )
             assert mw.process_response(req, res, spider) is res
 
@@ -240,7 +240,6 @@ class CrawleraMiddlewareTestCase(TestCase):
         mw.process_response(req, res, self.spider)
         self.assertEqual(slot.delay, delay)
         self.assertEqual(self.spider.download_delay, delay)
-
 
         # ban with retry-after
         retry_after = 1.5
