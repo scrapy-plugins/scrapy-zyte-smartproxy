@@ -223,15 +223,6 @@ class CrawleraMiddlewareTestCase(TestCase):
         slot = MockedSlot(self.spider.download_delay)
         crawler.engine.downloader.slots[slot_key] = slot
 
-        # no ban
-        req = Request(url, meta={'download_slot': slot_key})
-        headers = {'X-Crawlera-Error': 'no_proxies'}
-        res = Response(
-            ban_url, status=self.bancode, headers=headers, request=req)
-        mw.process_response(req, res, self.spider)
-        self.assertEqual(slot.delay, delay)
-        self.assertEqual(self.spider.download_delay, delay)
-
         # ban without retry-after
         req = Request(url, meta={'download_slot': slot_key})
         headers = {'X-Crawlera-Error': 'banned'}
@@ -477,3 +468,55 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertFalse(mw._is_banned(res))
         res = Response(req.url, status=503, headers={'X-Crawlera-Error': 'banned'})
         self.assertTrue(mw._is_banned(res))
+
+    def test_no_proxies_delays(self):
+        slot_key = 'www.scrapytest.org'
+        url = 'http://www.scrapytest.org'
+        ban_url = 'http://ban.me'
+        max_delay = 70
+        initial_delay = 15
+        default_delay = 0
+
+        self.spider.crawlera_enabled = True
+        crawler = self._mock_crawler(self.spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+        mw.no_proxies_max_delay = max_delay
+
+        slot = MockedSlot()
+        crawler.engine.downloader.slots[slot_key] = slot
+
+        no_proxies_req = Request(url, meta={'download_slot': slot_key})
+        headers = {'X-Crawlera-Error': 'no_proxies'}
+        no_proxies_res = Response(
+            ban_url, status=self.bancode, headers=headers, request=no_proxies_req)
+
+        # delays grow exponentially
+        mw.process_response(no_proxies_req, no_proxies_res, self.spider)
+        self.assertEqual(slot.delay, initial_delay)
+
+        mw.process_response(no_proxies_req, no_proxies_res, self.spider)
+        self.assertEqual(slot.delay, initial_delay * 2 ** 1)
+
+        mw.process_response(no_proxies_req, no_proxies_res, self.spider)
+        self.assertEqual(slot.delay, initial_delay * 2 ** 2)
+
+        mw.process_response(no_proxies_req, no_proxies_res, self.spider)
+        self.assertEqual(slot.delay, max_delay)
+
+        # other responses reset delay
+        ban_req = Request(url, meta={'download_slot': slot_key})
+        ban_headers = {'X-Crawlera-Error': 'banned'}
+        ban_res = Response(
+            ban_url, status=self.bancode, headers=ban_headers, request=ban_req)
+        mw.process_response(ban_req, ban_res, self.spider)
+        self.assertEqual(slot.delay, default_delay)
+
+        mw.process_response(no_proxies_req, no_proxies_res, self.spider)
+        self.assertEqual(slot.delay, initial_delay)
+
+        good_req = Request(url, meta={'download_slot': slot_key})
+        good_res = Response(
+            url, status=200, request=good_req)
+        mw.process_response(good_req, good_res, self.spider)
+        self.assertEqual(slot.delay, default_delay)
