@@ -469,7 +469,11 @@ class CrawleraMiddlewareTestCase(TestCase):
         res = Response(req.url, status=503, headers={'X-Crawlera-Error': 'banned'})
         self.assertTrue(mw._is_banned(res))
 
-    def test_no_proxies_delays(self):
+    @patch('random.uniform')
+    def test_no_proxies_delays(self, random_uniform_patch):
+        # mock random.uniform to just return the max delay
+        random_uniform_patch.side_effect = lambda x, y: y
+
         slot_key = 'www.scrapytest.org'
         url = 'http://www.scrapytest.org'
         ban_url = 'http://ban.me'
