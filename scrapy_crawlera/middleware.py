@@ -24,9 +24,9 @@ class CrawleraMiddleware(object):
     preserve_delay = False
     header_prefix = 'X-Crawlera-'
     conflicting_headers = ('X-Crawlera-Profile', 'X-Crawlera-UA')
-    no_proxies_attempts = 0
-    no_proxies_base_delay = 15
-    no_proxies_max_delay = 180
+    noslaves_attempts = 0
+    noslaves_base_delay = 15
+    noslaves_max_delay = 180
 
     _settings = [
         ('apikey', str),
@@ -148,7 +148,7 @@ class CrawleraMiddleware(object):
     def _is_no_available_proxies(self, response):
         return (
             response.status == self.ban_code and
-            response.headers.get('X-Crawlera-Error') == b'no_proxies'
+            response.headers.get('X-Crawlera-Error') == b'noslaves'
         )
 
     def process_response(self, request, response, spider):
@@ -158,10 +158,10 @@ class CrawleraMiddleware(object):
         self._restore_original_delay(request)
 
         if self._is_no_available_proxies(response):
-            after = self._get_no_proxies_delay()
+            after = self._get_noslaves_delay()
             self._set_custom_delay(request, after)
         else:
-            self._reset_no_proxies_delay()
+            self._reset_noslaves_delay()
 
         if self._is_banned(response):
             self._bans[key] += 1
@@ -207,22 +207,22 @@ class CrawleraMiddleware(object):
         key = self._get_slot_key(request)
         return key, self.crawler.engine.downloader.slots.get(key)
 
-    def _get_no_proxies_delay(self):
+    def _get_noslaves_delay(self):
         """
         Returns the amount of delay to use in case of no available proxies,
         also increments the number of attempts due to no proxies
         """
         delay = exp_backoff_full_jitter(
-            self.no_proxies_attempts,
-            self.no_proxies_max_delay,
-            self.no_proxies_base_delay
+            self.noslaves_attempts,
+            self.noslaves_max_delay,
+            self.noslaves_base_delay
         )
-        self.no_proxies_attempts += 1
+        self.noslaves_attempts += 1
         return delay
 
-    def _reset_no_proxies_delay(self):
+    def _reset_noslaves_delay(self):
         """Reset the number of attempts due to no available proxies"""
-        self.no_proxies_attempts = 0
+        self.noslaves_attempts = 0
 
     def _set_custom_delay(self, request, delay):
         """Set custom delay for slot and save original one."""
