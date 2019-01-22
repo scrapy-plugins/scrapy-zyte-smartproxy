@@ -21,6 +21,7 @@ class CrawleraMiddleware(object):
     connection_refused_delay = 90
     preserve_delay = False
     header_prefix = 'X-Crawlera-'
+    conflicting_headers = ('X-Crawlera-Profile', 'X-Crawlera-UA')
 
     _settings = [
         ('apikey', str),
@@ -64,7 +65,7 @@ class CrawleraMiddleware(object):
                 "CrawleraMiddleware: disabling download delays on Scrapy side to optimize delays introduced by Crawlera. "
                 "To avoid this behaviour you can use the CRAWLERA_PRESERVE_DELAY setting but keep in mind that this may slow down the crawl significantly")
 
-        self._headers = self.crawler.settings.get('DEFAULT_CRAWLERA_HEADERS', {}).items()
+        self._headers = self.crawler.settings.get('CRAWLERA_DEFAULT_HEADERS', {}).items()
 
     def _settings_get(self, type_, *a, **kw):
         if type_ is int:
@@ -122,7 +123,7 @@ class CrawleraMiddleware(object):
 
     def process_request(self, request, spider):
         if self._is_enabled_for_request(request):
-            self._set_default_crawlera_headers(request)
+            self._set_crawlera_default_headers(request)
             request.meta['proxy'] = self.url
             request.meta['download_timeout'] = self.download_timeout
             request.headers['Proxy-Authorization'] = self._proxyauth
@@ -221,7 +222,7 @@ class CrawleraMiddleware(object):
         header_name = header_name.decode('utf-8').lower()
         return header_name.startswith(self.header_prefix.lower())
 
-    def _set_default_crawlera_headers(self, request):
+    def _set_crawlera_default_headers(self, request):
         for header, value in self._headers:
             if value is None:
                 continue
@@ -229,9 +230,17 @@ class CrawleraMiddleware(object):
         lower_case_headers = [
             header.decode('utf-8').lower() for header in request.headers
         ]
-        if 'X-Crawlera-Profile'.lower() in lower_case_headers:
+        if all(h.lower() in lower_case_headers for h in self.conflicting_headers):
+            # Send a general warning once, and specific urls if LOG_LEVEL = DEBUG
+            warnings.warn(
+                'The headers %s are conflicting on some of your requests. '
+                'Please check https://doc.scrapinghub.com/crawlera.html '
+                'for more information. You can set LOG_LEVEL=DEBUG to see the urls with problems'
+                % str(self.conflicting_headers)
+            )
             logging.debug(
-                "The header 'X-Crawlera-Profile' is conflicting on request '%s'. 'X-Crawlera-UA' "
-                "will be ignored. Please check https://doc.scrapinghub.com/crawlera.html for more information"
-                % request.url
+                'The headers %s are conflicting on request %s. X-Crawlera-UA '
+                'will be ignored. Please check https://doc.scrapinghub.com/cr'
+                'awlera.html for more information'
+                % (str(self.conflicting_headers), request.url)
             )

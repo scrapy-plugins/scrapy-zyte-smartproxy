@@ -59,7 +59,7 @@ Default: ``False``
 If ``False`` Sets Scrapy's ``DOWNLOAD_DELAY`` to ``0``, making the spider to crawl faster. If set to ``True``, it will
 respect the provided ``DOWNLOAD_DELAY`` from Scrapy.
 
-DEFAULT_CRAWLERA_HEADERS
+CRAWLERA_DEFAULT_HEADERS
 -----------------------
 
 Default: ``{}``
