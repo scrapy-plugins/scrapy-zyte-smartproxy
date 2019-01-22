@@ -14,6 +14,8 @@ from twisted.internet.error import ConnectionRefusedError, ConnectionDone
 from scrapy_crawlera import CrawleraMiddleware
 import os
 
+from scrapy_crawlera.utils import exp_backoff
+
 
 class MockedSlot(object):
 
@@ -478,8 +480,11 @@ class CrawleraMiddlewareTestCase(TestCase):
         url = 'http://www.scrapytest.org'
         ban_url = 'http://ban.me'
         max_delay = 70
-        initial_delay = 15
+        backoff_step = 15
         default_delay = 0
+
+        self.settings['CRAWLERA_BACKOFF_STEP'] = backoff_step
+        self.settings['CRAWLERA_BACKOFF_MAX'] = max_delay
 
         self.spider.crawlera_enabled = True
         crawler = self._mock_crawler(self.spider, self.settings)
@@ -497,13 +502,12 @@ class CrawleraMiddlewareTestCase(TestCase):
 
         # delays grow exponentially
         mw.process_response(noslaves_req, noslaves_res, self.spider)
-        self.assertEqual(slot.delay, initial_delay)
+        self.assertEqual(slot.delay, backoff_step)
+        mw.process_response(noslaves_req, noslaves_res, self.spider)
+        self.assertEqual(slot.delay, backoff_step * 2 ** 1)
 
         mw.process_response(noslaves_req, noslaves_res, self.spider)
-        self.assertEqual(slot.delay, initial_delay * 2 ** 1)
-
-        mw.process_response(noslaves_req, noslaves_res, self.spider)
-        self.assertEqual(slot.delay, initial_delay * 2 ** 2)
+        self.assertEqual(slot.delay, backoff_step * 2 ** 2)
 
         mw.process_response(noslaves_req, noslaves_res, self.spider)
         self.assertEqual(slot.delay, max_delay)
@@ -517,7 +521,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(slot.delay, default_delay)
 
         mw.process_response(noslaves_req, noslaves_res, self.spider)
-        self.assertEqual(slot.delay, initial_delay)
+        self.assertEqual(slot.delay, backoff_step)
 
         good_req = Request(url, meta={'download_slot': slot_key})
         good_res = Response(

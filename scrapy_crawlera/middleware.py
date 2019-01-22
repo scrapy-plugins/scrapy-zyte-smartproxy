@@ -10,7 +10,7 @@ from scrapy.resolver import dnscache
 from scrapy.exceptions import ScrapyDeprecationWarning
 from twisted.internet.error import ConnectionRefusedError, ConnectionDone
 
-from scrapy_crawlera.utils import exp_backoff_full_jitter
+from scrapy_crawlera.utils import exp_backoff
 
 
 class CrawleraMiddleware(object):
@@ -24,9 +24,9 @@ class CrawleraMiddleware(object):
     preserve_delay = False
     header_prefix = 'X-Crawlera-'
     conflicting_headers = ('X-Crawlera-Profile', 'X-Crawlera-UA')
-    noslaves_attempts = 0
-    noslaves_base_delay = 15
-    noslaves_max_delay = 180
+    backoff_step = 15
+    backoff_max = 180
+    exp_backoff = None
 
     _settings = [
         ('apikey', str),
@@ -36,6 +36,8 @@ class CrawleraMiddleware(object):
         ('maxbans', int),
         ('download_timeout', int),
         ('preserve_delay', bool),
+        ('backoff_step', int),
+        ('backoff_max', int),
     ]
 
     def __init__(self, crawler):
@@ -71,6 +73,7 @@ class CrawleraMiddleware(object):
                 "To avoid this behaviour you can use the CRAWLERA_PRESERVE_DELAY setting but keep in mind that this may slow down the crawl significantly")
 
         self._headers = self.crawler.settings.get('CRAWLERA_DEFAULT_HEADERS', {}).items()
+        self.exp_backoff = exp_backoff(self.backoff_step, self.backoff_max)
 
     def _settings_get(self, type_, *a, **kw):
         if type_ is int:
@@ -158,8 +161,7 @@ class CrawleraMiddleware(object):
         self._restore_original_delay(request)
 
         if self._is_no_available_proxies(response):
-            after = self._get_noslaves_delay()
-            self._set_custom_delay(request, after)
+            self._set_custom_delay(request, next(self.exp_backoff))
         else:
             self._reset_noslaves_delay()
 
@@ -207,22 +209,9 @@ class CrawleraMiddleware(object):
         key = self._get_slot_key(request)
         return key, self.crawler.engine.downloader.slots.get(key)
 
-    def _get_noslaves_delay(self):
-        """
-        Returns the amount of delay to use in case of no available proxies,
-        also increments the number of attempts due to no proxies
-        """
-        delay = exp_backoff_full_jitter(
-            self.noslaves_attempts,
-            self.noslaves_max_delay,
-            self.noslaves_base_delay
-        )
-        self.noslaves_attempts += 1
-        return delay
-
     def _reset_noslaves_delay(self):
         """Reset the number of attempts due to no available proxies"""
-        self.noslaves_attempts = 0
+        self.exp_backoff = exp_backoff(self.backoff_step, self.backoff_max)
 
     def _set_custom_delay(self, request, delay):
         """Set custom delay for slot and save original one."""
