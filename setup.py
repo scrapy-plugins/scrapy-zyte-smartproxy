@@ -1,10 +1,15 @@
 from setuptools import setup
 
+with open("README.rst") as f:
+    readme = f.read()
+
+
 setup(
     name='scrapy-crawlera',
     version='1.4.0',
     license='BSD',
     description='Crawlera middleware for Scrapy',
+    long_description=readme,
     maintainer='Raul Gallegos',
     maintainer_email='raul.ogh@gmail.com',
     author='Scrapinghub',
