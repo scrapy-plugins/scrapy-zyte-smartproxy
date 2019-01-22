@@ -3,6 +3,13 @@
 Changes
 =======
 
+v1.5.0 (2019-01-23)
+-------------------
+
+- Correctly check for bans in crawlera (Jobs will not get banned on non ban 503's).
+- Exponential backoff when crawlera doesn't have proxies available.
+- Fix ``dont_proxy=False`` header disabling crawlera when it is enabled.
+
 v1.4.0 (2018-09-20)
 -------------------
 
