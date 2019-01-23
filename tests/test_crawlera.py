@@ -434,7 +434,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         assert mw.process_request(req, spider) is None
         self.assertEqual(req.headers['X-Crawlera-UA'], b'desktop')
         self.assertEqual(req.headers['X-Crawlera-Profile'], b'desktop')
-        mock_logger.warn.assert_called_with(
+        mock_logger.debug.assert_called_with(
             "The headers ('X-Crawlera-Profile', 'X-Crawlera-UA') are conflictin"
             "g on request http://www.scrapytest.org/other. X-Crawlera-UA will b"
             "e ignored. Please check https://doc.scrapinghub.com/crawlera.html "
@@ -447,7 +447,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         assert mw.process_request(req, spider) is None
         self.assertEqual(req.headers['X-Crawlera-UA'], b'desktop')
         self.assertEqual(req.headers['X-Crawlera-Profile'], b'desktop')
-        mock_logger.warn.assert_called_with(
+        mock_logger.debug.assert_called_with(
             "The headers ('X-Crawlera-Profile', 'X-Crawlera-UA') are conflictin"
             "g on request http://www.scrapytest.org/other. X-Crawlera-UA will b"
             "e ignored. Please check https://doc.scrapinghub.com/crawlera.html "
