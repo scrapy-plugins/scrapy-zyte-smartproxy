@@ -503,6 +503,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         # delays grow exponentially
         mw.process_response(noslaves_req, noslaves_res, self.spider)
         self.assertEqual(slot.delay, backoff_step)
+
         mw.process_response(noslaves_req, noslaves_res, self.spider)
         self.assertEqual(slot.delay, backoff_step * 2 ** 1)
 

@@ -163,7 +163,7 @@ class CrawleraMiddleware(object):
         if self._is_no_available_proxies(response):
             self._set_custom_delay(request, next(self.exp_backoff))
         else:
-            self._reset_noslaves_delay()
+            self.exp_backoff = exp_backoff(self.backoff_step, self.backoff_max)
 
         if self._is_banned(response):
             self._bans[key] += 1
@@ -208,10 +208,6 @@ class CrawleraMiddleware(object):
     def _get_slot(self, request):
         key = self._get_slot_key(request)
         return key, self.crawler.engine.downloader.slots.get(key)
-
-    def _reset_noslaves_delay(self):
-        """Reset the number of attempts due to no available proxies"""
-        self.exp_backoff = exp_backoff(self.backoff_step, self.backoff_max)
 
     def _set_custom_delay(self, request, delay):
         """Set custom delay for slot and save original one."""
