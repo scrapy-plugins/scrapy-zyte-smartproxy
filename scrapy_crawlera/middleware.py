@@ -10,6 +10,8 @@ from scrapy.resolver import dnscache
 from scrapy.exceptions import ScrapyDeprecationWarning
 from twisted.internet.error import ConnectionRefusedError, ConnectionDone
 
+from scrapy_crawlera.utils import exp_backoff
+
 
 class CrawleraMiddleware(object):
 
@@ -22,6 +24,9 @@ class CrawleraMiddleware(object):
     preserve_delay = False
     header_prefix = 'X-Crawlera-'
     conflicting_headers = ('X-Crawlera-Profile', 'X-Crawlera-UA')
+    backoff_step = 15
+    backoff_max = 180
+    exp_backoff = None
 
     _settings = [
         ('apikey', str),
@@ -31,6 +36,8 @@ class CrawleraMiddleware(object):
         ('maxbans', int),
         ('download_timeout', int),
         ('preserve_delay', bool),
+        ('backoff_step', int),
+        ('backoff_max', int),
     ]
 
     def __init__(self, crawler):
@@ -66,6 +73,7 @@ class CrawleraMiddleware(object):
                 "To avoid this behaviour you can use the CRAWLERA_PRESERVE_DELAY setting but keep in mind that this may slow down the crawl significantly")
 
         self._headers = self.crawler.settings.get('CRAWLERA_DEFAULT_HEADERS', {}).items()
+        self.exp_backoff = exp_backoff(self.backoff_step, self.backoff_max)
 
     def _settings_get(self, type_, *a, **kw):
         if type_ is int:
@@ -140,11 +148,23 @@ class CrawleraMiddleware(object):
             response.headers.get('X-Crawlera-Error') == b'banned'
         )
 
+    def _is_no_available_proxies(self, response):
+        return (
+            response.status == self.ban_code and
+            response.headers.get('X-Crawlera-Error') == b'noslaves'
+        )
+
     def process_response(self, request, response, spider):
         if not self._is_enabled_for_request(request):
             return response
         key = self._get_slot_key(request)
         self._restore_original_delay(request)
+
+        if self._is_no_available_proxies(response):
+            self._set_custom_delay(request, next(self.exp_backoff))
+        else:
+            self.exp_backoff = exp_backoff(self.backoff_step, self.backoff_max)
+
         if self._is_banned(response):
             self._bans[key] += 1
             if self._bans[key] > self.maxbans:

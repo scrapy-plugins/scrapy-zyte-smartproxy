@@ -64,6 +64,20 @@ CRAWLERA_DEFAULT_HEADERS
 
 Default: ``{}``
 
-Default headers added only to crawlera requests. Headers defined on ``DEFAULT_REQUEST_HEADERS`` will take precedence as long as the ``CrawleraMiddleware`` is placed after the ``DefaultHeadersMiddleware``*. Headers set on the requests have precedence over the two settings.
+Default headers added only to crawlera requests. Headers defined on ``DEFAULT_REQUEST_HEADERS`` will take precedence as long as the ``CrawleraMiddleware`` is placed after the ``DefaultHeadersMiddleware``. Headers set on the requests have precedence over the two settings.
 
-*This is the default behavior, ``DefaultHeadersMiddleware`` default priority is ``400`` and we recommend ``CrawleraMiddleware`` priority to be ``610``
+* This is the default behavior, ``DefaultHeadersMiddleware`` default priority is ``400`` and we recommend ``CrawleraMiddleware`` priority to be ``610``
+
+CRAWLERA_BACKOFF_STEP
+-----------------------
+
+Default: ``15``
+
+Step size used for calculating exponential backoff according to the formula: ``random.uniform(0, min(max, step * 2 ** attempt))``.
+
+CRAWLERA_BACKOFF_MAX
+-----------------------
+
+Default: ``180``
+
+Max value for exponential backoff as showed in the formula above.

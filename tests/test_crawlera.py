@@ -14,6 +14,8 @@ from twisted.internet.error import ConnectionRefusedError, ConnectionDone
 from scrapy_crawlera import CrawleraMiddleware
 import os
 
+from scrapy_crawlera.utils import exp_backoff
+
 
 class MockedSlot(object):
 
@@ -222,15 +224,6 @@ class CrawleraMiddlewareTestCase(TestCase):
 
         slot = MockedSlot(self.spider.download_delay)
         crawler.engine.downloader.slots[slot_key] = slot
-
-        # no ban
-        req = Request(url, meta={'download_slot': slot_key})
-        headers = {'X-Crawlera-Error': 'no_proxies'}
-        res = Response(
-            ban_url, status=self.bancode, headers=headers, request=req)
-        mw.process_response(req, res, self.spider)
-        self.assertEqual(slot.delay, delay)
-        self.assertEqual(self.spider.download_delay, delay)
 
         # ban without retry-after
         req = Request(url, meta={'download_slot': slot_key})
@@ -473,7 +466,66 @@ class CrawleraMiddlewareTestCase(TestCase):
         req = self._make_fake_request(self.spider, crawlera_enabled=True)
         res = Response(req.url, status=200)
         self.assertFalse(mw._is_banned(res))
-        res = Response(req.url, status=503, headers={'X-Crawlera-Error': 'no_proxies'})
+        res = Response(req.url, status=503, headers={'X-Crawlera-Error': 'noslaves'})
         self.assertFalse(mw._is_banned(res))
         res = Response(req.url, status=503, headers={'X-Crawlera-Error': 'banned'})
         self.assertTrue(mw._is_banned(res))
+
+    @patch('random.uniform')
+    def test_noslaves_delays(self, random_uniform_patch):
+        # mock random.uniform to just return the max delay
+        random_uniform_patch.side_effect = lambda x, y: y
+
+        slot_key = 'www.scrapytest.org'
+        url = 'http://www.scrapytest.org'
+        ban_url = 'http://ban.me'
+        max_delay = 70
+        backoff_step = 15
+        default_delay = 0
+
+        self.settings['CRAWLERA_BACKOFF_STEP'] = backoff_step
+        self.settings['CRAWLERA_BACKOFF_MAX'] = max_delay
+
+        self.spider.crawlera_enabled = True
+        crawler = self._mock_crawler(self.spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+        mw.noslaves_max_delay = max_delay
+
+        slot = MockedSlot()
+        crawler.engine.downloader.slots[slot_key] = slot
+
+        noslaves_req = Request(url, meta={'download_slot': slot_key})
+        headers = {'X-Crawlera-Error': 'noslaves'}
+        noslaves_res = Response(
+            ban_url, status=self.bancode, headers=headers, request=noslaves_req)
+
+        # delays grow exponentially
+        mw.process_response(noslaves_req, noslaves_res, self.spider)
+        self.assertEqual(slot.delay, backoff_step)
+
+        mw.process_response(noslaves_req, noslaves_res, self.spider)
+        self.assertEqual(slot.delay, backoff_step * 2 ** 1)
+
+        mw.process_response(noslaves_req, noslaves_res, self.spider)
+        self.assertEqual(slot.delay, backoff_step * 2 ** 2)
+
+        mw.process_response(noslaves_req, noslaves_res, self.spider)
+        self.assertEqual(slot.delay, max_delay)
+
+        # other responses reset delay
+        ban_req = Request(url, meta={'download_slot': slot_key})
+        ban_headers = {'X-Crawlera-Error': 'banned'}
+        ban_res = Response(
+            ban_url, status=self.bancode, headers=ban_headers, request=ban_req)
+        mw.process_response(ban_req, ban_res, self.spider)
+        self.assertEqual(slot.delay, default_delay)
+
+        mw.process_response(noslaves_req, noslaves_res, self.spider)
+        self.assertEqual(slot.delay, backoff_step)
+
+        good_req = Request(url, meta={'download_slot': slot_key})
+        good_res = Response(
+            url, status=200, request=good_req)
+        mw.process_response(good_req, good_res, self.spider)
+        self.assertEqual(slot.delay, default_delay)
