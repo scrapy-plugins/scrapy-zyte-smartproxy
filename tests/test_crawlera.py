@@ -30,7 +30,7 @@ class CrawleraMiddlewareTestCase(TestCase):
 
     def setUp(self):
         self.spider = Spider('foo')
-        self.settings = {'CRAWLERA_USER': 'user', 'CRAWLERA_PASS': 'pass'}
+        self.settings = {'CRAWLERA_APIKEY': 'apikey'}
 
     def _mock_crawler(self, spider, settings=None):
 
@@ -66,7 +66,7 @@ class CrawleraMiddlewareTestCase(TestCase):
     def _assert_enabled(self, spider,
                         settings=None,
                         proxyurl='http://proxy.crawlera.com:8010',
-                        proxyauth=basic_auth_header('user', 'pass'),
+                        proxyauth=basic_auth_header('apikey', ''),
                         maxbans=400,
                         download_timeout=190):
         crawler = self._mock_crawler(spider, settings)
@@ -132,14 +132,12 @@ class CrawleraMiddlewareTestCase(TestCase):
 
     def test_userpass(self):
         self.spider.crawlera_enabled = True
-        self.settings['CRAWLERA_USER'] = user = 'other'
-        self.settings['CRAWLERA_PASS'] = pass_ = 'secret'
-        proxyauth = basic_auth_header(user, pass_)
+        self.settings['CRAWLERA_APIKEY'] = apikey = 'apikey'
+        proxyauth = basic_auth_header(apikey, '')
         self._assert_enabled(self.spider, self.settings, proxyauth=proxyauth)
 
-        self.spider.crawlera_user = user = 'notfromsettings'
-        self.spider.crawlera_pass = pass_ = 'anothersecret'
-        proxyauth = basic_auth_header(user, pass_)
+        self.spider.crawlera_apikey = apikey = 'notfromsettings'
+        proxyauth = basic_auth_header(apikey, '')
         self._assert_enabled(self.spider, self.settings, proxyauth=proxyauth)
 
     def test_proxyurl(self):
@@ -305,26 +303,10 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(mw1.process_request(req1, self.spider), None)
         self.assertEqual(req1.headers.get('X-Crawlera-Jobid'), b'2816')
 
-    def test_apikey_assignment(self):
-        self.spider.crawlera_enabled = True
-
-        apikey = 'someapikey'
-        self.settings['CRAWLERA_APIKEY'] = None
-        self.settings['CRAWLERA_USER'] = apikey
-        self.settings['CRAWLERA_PASS'] = ''
-        proxyauth = basic_auth_header(apikey, '')
-        self._assert_enabled(self.spider, self.settings, proxyauth=proxyauth)
-
-        self.settings['CRAWLERA_USER'] = None
-        self.settings['CRAWLERA_APIKEY'] = apikey
-        self.settings['CRAWLERA_PASS'] = ''
-        proxyauth = basic_auth_header(apikey, '')
-        self._assert_enabled(self.spider, self.settings, proxyauth=proxyauth)
-
     def test_stats(self):
         self.spider.crawlera_enabled = True
         spider = self.spider
-        crawler = self._mock_crawler(spider, None)
+        crawler = self._mock_crawler(spider, self.settings)
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(spider)
 
