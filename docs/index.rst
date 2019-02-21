@@ -33,8 +33,6 @@ Configuration
           crawlera_apikey = 'apikey'
 
 
-**Hint**: You can also use :ref:`CRAWLERA_USER` and :ref:`CRAWLERA_PASS` instead of :ref:`CRAWLERA_APIKEY`.
-
 * (optional) If you are not using the default Crawlera proxy (``http://proxy.crawlera.com:8010``),
   for example if you have a dedicated or private instance,
   make sure to also set ``CRAWLERA_URL`` in ``settings.py``, e.g.::

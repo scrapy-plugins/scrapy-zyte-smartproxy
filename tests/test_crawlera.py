@@ -130,7 +130,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.settings['CRAWLERA_ENABLED'] = True
         self._assert_enabled(self.spider, self.settings)
 
-    def test_userpass(self):
+    def test_apikey(self):
         self.spider.crawlera_enabled = True
         self.settings['CRAWLERA_APIKEY'] = apikey = 'apikey'
         proxyauth = basic_auth_header(apikey, '')
