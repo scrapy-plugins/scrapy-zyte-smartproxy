@@ -11,24 +11,6 @@ Default: ``None``
 
 Unique Crawlera API Key provided for authentication.
 
-CRAWLERA_USER
--------------
-
-*deprecated*
-
-Default: ``None``
-
-Old authentication user for the Crawlera service. It works with :ref:`CRAWLERA_PASS`.
-
-CRAWLERA_PASS
--------------
-
-*deprecated*
-
-Default: ``None``
-
-Old authentication password for the Crawlera service: It works with :ref:`CRAWLERA_USER`.
-
 CRAWLERA_URL
 ------------
 
