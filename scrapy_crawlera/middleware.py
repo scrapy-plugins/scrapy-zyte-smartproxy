@@ -27,6 +27,7 @@ class CrawleraMiddleware(object):
     backoff_step = 15
     backoff_max = 180
     exp_backoff = None
+    max_auth_retry_times = 10
 
     _settings = [
         ('apikey', str),
@@ -151,16 +152,32 @@ class CrawleraMiddleware(object):
             response.headers.get('X-Crawlera-Error') == b'noslaves'
         )
 
+    def _is_auth_error(self, response):
+        return (
+            response.status == 407 and
+            response.headers.get('X-Crawlera-Error') == b'bad_proxy_auth'
+        )
+
     def process_response(self, request, response, spider):
         if not self._is_enabled_for_request(request):
             return response
         key = self._get_slot_key(request)
         self._restore_original_delay(request)
 
-        if self._is_no_available_proxies(response):
+        if self._is_no_available_proxies(response) or self._is_auth_error(response):
             self._set_custom_delay(request, next(self.exp_backoff))
         else:
             self.exp_backoff = exp_backoff(self.backoff_step, self.backoff_max)
+
+        if self._is_auth_error(response):
+            # When crawlera has issues it might not be able to authenticate users
+            # we must retry
+            retries = response.meta.get('crawlera_auth_retry_times', 0)
+            if retries < self.max_auth_retry_times:
+                return self._retry_auth(response, request)
+            else:
+                logging.warning("Max retries for authentication issues reached, please check"
+                                "auth information settings")
 
         if self._is_banned(response):
             self._bans[key] += 1
@@ -190,6 +207,14 @@ class CrawleraMiddleware(object):
             # Handle crawlera downtime
             self._clear_dns_cache()
             self._set_custom_delay(request, self.connection_refused_delay)
+
+    def _retry_auth(self, response, request):
+        logging.debug("Retrying crawlera request for authentication issue")
+        retries = response.meta.get('crawlera_auth_retry_times', 0) + 1
+        retryreq = request.copy()
+        retryreq.meta['crawlera_auth_retry_times'] = retries
+        retryreq.dont_filter = True
+        return retryreq
 
     def _clear_dns_cache(self):
         # Scrapy doesn't expire dns records by default, so we force it here,
