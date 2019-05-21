@@ -1,8 +1,8 @@
 from unittest import TestCase
 try:
-    from unittest.mock import patch
+    from unittest.mock import call, patch
 except ImportError:
-    from mock import patch
+    from mock import call, patch
 
 from w3lib.http import basic_auth_header
 from scrapy.http import Request, Response
@@ -414,7 +414,8 @@ class CrawleraMiddlewareTestCase(TestCase):
             "The headers ('X-Crawlera-Profile', 'X-Crawlera-UA') are conflictin"
             "g on request http://www.scrapytest.org/other. X-Crawlera-UA will b"
             "e ignored. Please check https://doc.scrapinghub.com/crawlera.html "
-            "for more information"
+            "for more information",
+            extra={'spider': spider}
         )
 
         # test it ignores case
@@ -427,7 +428,8 @@ class CrawleraMiddlewareTestCase(TestCase):
             "The headers ('X-Crawlera-Profile', 'X-Crawlera-UA') are conflictin"
             "g on request http://www.scrapytest.org/other. X-Crawlera-UA will b"
             "e ignored. Please check https://doc.scrapinghub.com/crawlera.html "
-            "for more information"
+            "for more information",
+            extra={'spider': spider}
         )
 
     def test_dont_proxy_false_does_nothing(self):
@@ -583,3 +585,24 @@ class CrawleraMiddlewareTestCase(TestCase):
         res = mw.process_response(auth_error_req, non_crawlera_407_response, self.spider)
         self.assertIsInstance(res, Response)
 
+    @patch('scrapy_crawlera.middleware.logging')
+    def test_open_spider_logging(self, mock_logger):
+        spider = self.spider
+        self.spider.crawlera_enabled = True
+        crawler = self._mock_crawler(spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(spider)
+        expected_calls = [
+            call(
+                "Using crawlera at %s (apikey: %s)" % (
+                    self.mwcls.url, 'apikey'
+                ),
+                extra={'spider': spider},
+            ),
+            call(
+                "CrawleraMiddleware: disabling download delays on Scrapy side to optimize delays introduced by Crawlera. "
+                "To avoid this behaviour you can use the CRAWLERA_PRESERVE_DELAY setting but keep in mind that this may slow down the crawl significantly",
+                extra={'spider': spider},
+            ),
+        ]
+        assert mock_logger.info.call_args_list == expected_calls
