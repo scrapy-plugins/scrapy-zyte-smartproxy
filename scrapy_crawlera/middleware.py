@@ -41,6 +41,7 @@ class CrawleraMiddleware(object):
     def __init__(self, crawler):
         self.crawler = crawler
         self.job_id = os.environ.get('SCRAPY_JOB')
+        self.spider = None
         self._bans = defaultdict(int)
         self._saved_delays = defaultdict(lambda: None)
 
@@ -55,13 +56,15 @@ class CrawleraMiddleware(object):
         if not self.enabled:
             return
 
+        self.spider = spider
+
         for k, type_ in self._settings:
             setattr(self, k, self._get_setting_value(spider, k, type_))
 
         self._proxyauth = self.get_proxyauth(spider)
-        logging.info("Using crawlera at %s (apikey: %s)" % (
-            self.url,
-            self.apikey[:7])
+        logging.info(
+            "Using crawlera at %s (apikey: %s)" % (self.url, self.apikey[:7]),
+            extra={'spider': spider},
         )
 
         if not self.preserve_delay:
@@ -69,7 +72,9 @@ class CrawleraMiddleware(object):
             spider.download_delay = 0
             logging.info(
                 "CrawleraMiddleware: disabling download delays on Scrapy side to optimize delays introduced by Crawlera. "
-                "To avoid this behaviour you can use the CRAWLERA_PRESERVE_DELAY setting but keep in mind that this may slow down the crawl significantly")
+                "To avoid this behaviour you can use the CRAWLERA_PRESERVE_DELAY setting but keep in mind that this may slow down the crawl significantly",
+                extra={'spider': spider},
+            )
 
         self._headers = self.crawler.settings.get('CRAWLERA_DEFAULT_HEADERS', {}).items()
         self.exp_backoff = exp_backoff(self.backoff_step, self.backoff_max)
@@ -259,5 +264,6 @@ class CrawleraMiddleware(object):
                 'The headers %s are conflicting on request %s. X-Crawlera-UA '
                 'will be ignored. Please check https://doc.scrapinghub.com/cr'
                 'awlera.html for more information'
-                % (str(self.conflicting_headers), request.url)
+                % (str(self.conflicting_headers), request.url),
+                extra={'spider': self.spider},
             )
