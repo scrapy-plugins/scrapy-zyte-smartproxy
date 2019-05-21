@@ -209,7 +209,7 @@ class CrawleraMiddleware(object):
             self._set_custom_delay(request, self.connection_refused_delay)
 
     def _retry_auth(self, response, request):
-        logging.debug("Retrying crawlera request for authentication issue")
+        logging.warning("Retrying crawlera request for authentication issue")
         retries = response.meta.get('crawlera_auth_retry_times', 0) + 1
         retryreq = request.copy()
         retryreq.meta['crawlera_auth_retry_times'] = retries
