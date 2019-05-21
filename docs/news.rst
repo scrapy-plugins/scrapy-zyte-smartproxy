@@ -3,6 +3,14 @@
 Changes
 =======
 
+v1.5.1 (2019-05-21)
+-------------------
+
+- Remove username and password from settings since it's removed from crawlera.
+- Include affected spider in logs.
+- Handle situations when crawlera is restarted and reply with 407's for a few minutes
+  by retrying the requests with a exponential backoff system.
+
 v1.5.0 (2019-01-23)
 -------------------
 

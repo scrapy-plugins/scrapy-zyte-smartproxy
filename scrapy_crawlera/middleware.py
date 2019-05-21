@@ -179,10 +179,13 @@ class CrawleraMiddleware(object):
             # we must retry
             retries = response.meta.get('crawlera_auth_retry_times', 0)
             if retries < self.max_auth_retry_times:
-                return self._retry_auth(response, request)
+                return self._retry_auth(response, request, spider)
             else:
-                logging.warning("Max retries for authentication issues reached, please check"
-                                "auth information settings")
+                logging.warning(
+                    "Max retries for authentication issues reached, please check auth"
+                    " information settings",
+                    extra={'spider': self.spider},
+                )
 
         if self._is_banned(response):
             self._bans[key] += 1
@@ -213,8 +216,11 @@ class CrawleraMiddleware(object):
             self._clear_dns_cache()
             self._set_custom_delay(request, self.connection_refused_delay)
 
-    def _retry_auth(self, response, request):
-        logging.warning("Retrying crawlera request for authentication issue")
+    def _retry_auth(self, response, request, spider):
+        logging.warning(
+            "Retrying crawlera request for authentication issue",
+            extra={'spider': self.spider},
+        )
         retries = response.meta.get('crawlera_auth_retry_times', 0) + 1
         retryreq = request.copy()
         retryreq.meta['crawlera_auth_retry_times'] = retries
