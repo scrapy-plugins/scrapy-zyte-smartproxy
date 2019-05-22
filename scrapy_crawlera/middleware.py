@@ -27,7 +27,8 @@ class CrawleraMiddleware(object):
     backoff_step = 15
     backoff_max = 180
     exp_backoff = None
-    enable_http_codes = []
+    force_enable_on_http_codes = []
+    force_enable_for_all_requests = False
 
     _settings = [
         ('apikey', str),
@@ -37,7 +38,8 @@ class CrawleraMiddleware(object):
         ('preserve_delay', bool),
         ('backoff_step', int),
         ('backoff_max', int),
-        ('enable_http_codes', list),
+        ('force_enable_on_http_codes', list),
+        ('force_enable_for_all_requests', bool),
     ]
 
     def __init__(self, crawler):
@@ -162,10 +164,11 @@ class CrawleraMiddleware(object):
 
     def process_response(self, request, response, spider):
         if not self._is_enabled_for_request(request):
-            if self._should_enable_for_response(response):
-                request.meta["force_proxy"] = True
-                return request
-            return response
+            return self._handle_not_enabled_response(request, response)
+
+        if not self._is_crawlera_response(response):
+            return request
+
         key = self._get_slot_key(request)
         self._restore_original_delay(request)
 
@@ -203,19 +206,31 @@ class CrawleraMiddleware(object):
             self._clear_dns_cache()
             self._set_custom_delay(request, self.connection_refused_delay)
 
+    def _handle_not_enabled_response(self, request, response):
+        if self._should_enable_for_response(response):
+            if self.force_enable_for_all_requests:
+                self.enabled = True
+            else:
+                request.meta["force_proxy"] = True
+            return request
+        return response
+
     def _clear_dns_cache(self):
         # Scrapy doesn't expire dns records by default, so we force it here,
         # so client can reconnect trough DNS failover.
         dnscache.pop(urlparse(self.url).hostname, None)
 
     def _should_enable_for_response(self, response):
-        enable_http_codes = response.meta.get("enable_http_codes", self.enable_http_codes)
-        return response.status in enable_http_codes
+        force_enable_on_http_codes = response.meta.get("force_enable_on_http_codes", self.force_enable_on_http_codes)
+        return response.status in force_enable_on_http_codes
 
     def _is_enabled_for_request(self, request):
         return request.meta.get('force_proxy', False) or (
             self.enabled and not request.meta.get('dont_proxy', False)
         )
+
+    def _is_crawlera_response(self, response):
+        return bool(response.headers.get("X-Crawlera-Version"))
 
     def _get_slot_key(self, request):
         return request.meta.get('download_slot')
