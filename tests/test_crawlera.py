@@ -27,6 +27,7 @@ class CrawleraMiddlewareTestCase(TestCase):
 
     mwcls = CrawleraMiddleware
     bancode = 503
+    auth_error_code = 407
 
     def setUp(self):
         self.spider = Spider('foo')
@@ -498,7 +499,6 @@ class CrawleraMiddlewareTestCase(TestCase):
         crawler = self._mock_crawler(self.spider, self.settings)
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(self.spider)
-        mw.noslaves_max_delay = max_delay
 
         slot = MockedSlot()
         crawler.engine.downloader.slots[slot_key] = slot
@@ -548,6 +548,77 @@ class CrawleraMiddlewareTestCase(TestCase):
         )
         mw.process_response(good_req, good_res, self.spider)
         self.assertEqual(slot.delay, default_delay)
+
+    @patch('random.uniform')
+    def test_auth_error_retries(self, random_uniform_patch):
+        # mock random.uniform to just return the max delay
+        random_uniform_patch.side_effect = lambda x, y: y
+
+        slot_key = 'www.scrapytest.org'
+        url = 'http://www.scrapytest.org'
+        ban_url = 'http://auth.error'
+        max_delay = 70
+        backoff_step = 15
+        default_delay = 0
+
+        self.settings['CRAWLERA_BACKOFF_STEP'] = backoff_step
+        self.settings['CRAWLERA_BACKOFF_MAX'] = max_delay
+
+        self.spider.crawlera_enabled = True
+        crawler = self._mock_crawler(self.spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+        mw.max_auth_retry_times = 4
+
+        slot = MockedSlot()
+        crawler.engine.downloader.slots[slot_key] = slot
+
+        auth_error_req = Request(url, meta={'download_slot': slot_key})
+        auth_error_headers = {'X-Crawlera-Error': 'bad_proxy_auth'}
+        auth_error_response = self._mock_crawlera_response(
+            ban_url,
+            status=self.auth_error_code,
+            request=auth_error_req,
+            headers=auth_error_headers
+        )
+
+        # delays grow exponentially, retry times increase accordingly
+        req = mw.process_response(auth_error_req, auth_error_response, self.spider)
+        self.assertEqual(slot.delay, backoff_step)
+        retry_times = req.meta["crawlera_auth_retry_times"]
+        self.assertEqual(retry_times, 1)
+
+        auth_error_response.meta["crawlera_auth_retry_times"] = retry_times
+        req = mw.process_response(auth_error_req, auth_error_response, self.spider)
+        self.assertEqual(slot.delay, backoff_step * 2 ** 1)
+        retry_times = req.meta["crawlera_auth_retry_times"]
+        self.assertEqual(retry_times, 2)
+
+        auth_error_response.meta["crawlera_auth_retry_times"] = retry_times
+        req = mw.process_response(auth_error_req, auth_error_response, self.spider)
+        self.assertEqual(slot.delay, backoff_step * 2 ** 2)
+        retry_times = req.meta["crawlera_auth_retry_times"]
+        self.assertEqual(retry_times, 3)
+
+        auth_error_response.meta["crawlera_auth_retry_times"] = retry_times
+        req = mw.process_response(auth_error_req, auth_error_response, self.spider)
+        self.assertEqual(slot.delay, max_delay)
+        retry_times = req.meta["crawlera_auth_retry_times"]
+        self.assertEqual(retry_times, 4)
+
+        # Should return a response when after max number of retries
+        auth_error_response.meta["crawlera_auth_retry_times"] = retry_times
+        res = mw.process_response(auth_error_req, auth_error_response, self.spider)
+        self.assertIsInstance(res, Response)
+
+        # non crawlera 407 is not retried
+        non_crawlera_407_response = self._mock_crawlera_response(
+            ban_url,
+            status=self.auth_error_code,
+            request=auth_error_req,
+        )
+        res = mw.process_response(auth_error_req, non_crawlera_407_response, self.spider)
+        self.assertIsInstance(res, Response)
 
     @patch('scrapy_crawlera.middleware.logging')
     def test_open_spider_logging(self, mock_logger):

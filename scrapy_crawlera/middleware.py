@@ -29,6 +29,7 @@ class CrawleraMiddleware(object):
     exp_backoff = None
     force_enable_on_http_codes = []
     force_enable_for_all_requests = False
+    max_auth_retry_times = 10
 
     _settings = [
         ('apikey', str),
@@ -162,6 +163,12 @@ class CrawleraMiddleware(object):
             response.headers.get('X-Crawlera-Error') == b'noslaves'
         )
 
+    def _is_auth_error(self, response):
+        return (
+            response.status == 407 and
+            response.headers.get('X-Crawlera-Error') == b'bad_proxy_auth'
+        )
+
     def process_response(self, request, response, spider):
         if not self._is_enabled_for_request(request):
             return self._handle_not_enabled_response(request, response)
@@ -172,10 +179,23 @@ class CrawleraMiddleware(object):
         key = self._get_slot_key(request)
         self._restore_original_delay(request)
 
-        if self._is_no_available_proxies(response):
+        if self._is_no_available_proxies(response) or self._is_auth_error(response):
             self._set_custom_delay(request, next(self.exp_backoff))
         else:
             self.exp_backoff = exp_backoff(self.backoff_step, self.backoff_max)
+
+        if self._is_auth_error(response):
+            # When crawlera has issues it might not be able to authenticate users
+            # we must retry
+            retries = response.meta.get('crawlera_auth_retry_times', 0)
+            if retries < self.max_auth_retry_times:
+                return self._retry_auth(response, request, spider)
+            else:
+                logging.warning(
+                    "Max retries for authentication issues reached, please check auth"
+                    " information settings",
+                    extra={'spider': self.spider},
+                )
 
         if self._is_banned(response):
             self._bans[key] += 1
@@ -214,6 +234,17 @@ class CrawleraMiddleware(object):
                 request.meta["force_proxy"] = True
             return request
         return response
+
+    def _retry_auth(self, response, request, spider):
+        logging.warning(
+            "Retrying crawlera request for authentication issue",
+            extra={'spider': self.spider},
+        )
+        retries = response.meta.get('crawlera_auth_retry_times', 0) + 1
+        retryreq = request.copy()
+        retryreq.meta['crawlera_auth_retry_times'] = retries
+        retryreq.dont_filter = True
+        return retryreq
 
     def _clear_dns_cache(self):
         # Scrapy doesn't expire dns records by default, so we force it here,
