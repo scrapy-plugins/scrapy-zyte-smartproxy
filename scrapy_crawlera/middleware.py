@@ -2,6 +2,7 @@ import os
 import logging
 import warnings
 from collections import defaultdict
+from urllib.parse import urlparse
 
 from six.moves.urllib.parse import urlparse
 from w3lib.http import basic_auth_header
@@ -28,8 +29,8 @@ class CrawleraMiddleware(object):
     backoff_max = 180
     exp_backoff = None
     force_enable_on_http_codes = []
-    force_enable_for_all_requests = False
     max_auth_retry_times = 10
+    enabled_for_domain = {}
 
     _settings = [
         ('apikey', str),
@@ -40,7 +41,6 @@ class CrawleraMiddleware(object):
         ('backoff_step', int),
         ('backoff_max', int),
         ('force_enable_on_http_codes', list),
-        ('force_enable_for_all_requests', bool),
     ]
 
     def __init__(self, crawler):
@@ -228,10 +228,8 @@ class CrawleraMiddleware(object):
 
     def _handle_not_enabled_response(self, request, response):
         if self._should_enable_for_response(response):
-            if self.force_enable_for_all_requests:
-                self.enabled = True
-            else:
-                request.meta["force_proxy"] = True
+            domain = self._get_url_domain(request.url)
+            self.enabled_for_domain[domain] = True
             return request
         return response
 
@@ -256,9 +254,15 @@ class CrawleraMiddleware(object):
         return response.status in force_enable_on_http_codes
 
     def _is_enabled_for_request(self, request):
-        return request.meta.get('force_proxy', False) or (
-            self.enabled and not request.meta.get('dont_proxy', False)
-        )
+        domain = self._get_url_domain(request.url)
+        domain_enabled = self.enabled_for_domain.get(domain, False)
+        force_proxy = request.meta.get('force_proxy', False)
+        dont_proxy = request.meta.get('dont_proxy', False)
+        return force_proxy or ((domain_enabled or self.enabled) and not dont_proxy)
+
+    def _get_url_domain(self, url):
+        parsed = urlparse(url)
+        return parsed.netloc
 
     def _is_crawlera_response(self, response):
         return bool(response.headers.get("X-Crawlera-Version"))

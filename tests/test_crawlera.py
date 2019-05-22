@@ -661,38 +661,11 @@ class CrawleraMiddlewareTestCase(TestCase):
         assert mw.process_request(req, self.spider) is None
         self.assertIsNone(req.meta.get('proxy'))
 
-    def test_process_response_force_proxy(self):
-        url = "https://scrapy.org"
-
-        self.spider.crawlera_enabled = False
-        self.settings['CRAWLERA_FORCE_ENABLE_ON_HTTP_CODES'] = [403]
-        crawler = self._mock_crawler(self.spider, self.settings)
-        mw = self.mwcls.from_crawler(crawler)
-        mw.open_spider(self.spider)
-
-        req = Request(url)
-        res = Response(url, status=403, request=req)
-        out = mw.process_response(req, res, self.spider)
-        self.assertIsInstance(out, Request)
-        self.assertEqual(out.meta["force_proxy"], True)
-
-        req = Request(url, meta={"force_enable_on_http_codes": [503]})
-        res = Response(url, status=503, request=req)
-        out = mw.process_response(req, res, self.spider)
-        self.assertIsInstance(out, Request)
-        self.assertEqual(out.meta["force_proxy"], True)
-
-        req = Request(url, meta={"force_enable_on_http_codes": [503]})
-        res = Response(url, status=403, request=req)
-        out = mw.process_response(req, res, self.spider)
-        self.assertIsInstance(out, Response)
-
     def test_process_response_enables_crawlera(self):
         url = "https://scrapy.org"
 
         self.spider.crawlera_enabled = False
         self.settings['CRAWLERA_FORCE_ENABLE_ON_HTTP_CODES'] = [403]
-        self.settings['CRAWLERA_FORCE_ENABLE_FOR_ALL_REQUESTS'] = True
         crawler = self._mock_crawler(self.spider, self.settings)
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(self.spider)
@@ -701,32 +674,48 @@ class CrawleraMiddlewareTestCase(TestCase):
         res = Response(url, status=403, request=req)
         out = mw.process_response(req, res, self.spider)
         self.assertIsInstance(out, Request)
-        self.assertEqual(mw.enabled, True)
+        self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
+        self.assertEqual(mw.enabled, False)
 
-        mw.enabled = False
+        mw.enabled_for_domain = {}
         req = Request(url, meta={"force_enable_on_http_codes": [503]})
         res = Response(url, status=503, request=req)
         out = mw.process_response(req, res, self.spider)
         self.assertIsInstance(out, Request)
-        self.assertEqual(mw.enabled, True)
+        self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
+        self.assertEqual(mw.enabled, False)
 
-        mw.enabled = False
+        mw.enabled_for_domain = {}
+        req = Request(url, meta={"force_enable_on_http_codes": [503]})
         res = Response(url, status=403, request=req)
         out = mw.process_response(req, res, self.spider)
         self.assertIsInstance(out, Response)
+        self.assertEqual(mw.enabled, False)
+        self.assertEqual(mw.enabled_for_domain, {})
 
-        mw.enabled = False
+        # A good response shouldnt enable it
+        mw.enabled_for_domain = {}
+        req = Request(url)
+        res = Response(url, status=200, request=req)
+        out = mw.process_response(req, res, self.spider)
+        self.assertIsInstance(out, Response)
+        self.assertEqual(mw.enabled_for_domain, {})
+        self.assertEqual(mw.enabled, False)
+
         req = Request(url)
         res = Response(url, status=403, request=req)
         out = mw.process_response(req, res, self.spider)
         self.assertIsInstance(out, Request)
-        self.assertEqual(mw.enabled, True)
+        self.assertEqual(mw.enabled, False)
+        self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
         # Another regular response with bad code should be retried
         out = mw.process_response(req, res, self.spider)
         self.assertIsInstance(out, Request)
-        self.assertEqual(mw.enabled, True)
+        self.assertEqual(mw.enabled, False)
+        self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
         # A crawlera response with bad code should not
         res = self._mock_crawlera_response(url, status=403, request=req)
         out = mw.process_response(req, res, self.spider)
         self.assertIsInstance(out, Response)
-        self.assertEqual(mw.enabled, True)
+        self.assertEqual(mw.enabled, False)
+        self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
