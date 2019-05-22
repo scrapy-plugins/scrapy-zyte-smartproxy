@@ -2,7 +2,11 @@ import os
 import logging
 import warnings
 from collections import defaultdict
-from urllib.parse import urlparse
+
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 
 from six.moves.urllib.parse import urlparse
 from w3lib.http import basic_auth_header
