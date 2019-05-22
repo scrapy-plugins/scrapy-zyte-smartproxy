@@ -27,6 +27,7 @@ class CrawleraMiddleware(object):
     backoff_step = 15
     backoff_max = 180
     exp_backoff = None
+    enable_http_codes = []
 
     _settings = [
         ('apikey', str),
@@ -36,6 +37,7 @@ class CrawleraMiddleware(object):
         ('preserve_delay', bool),
         ('backoff_step', int),
         ('backoff_max', int),
+        ('enable_http_codes', list),
     ]
 
     def __init__(self, crawler):
@@ -53,15 +55,20 @@ class CrawleraMiddleware(object):
 
     def open_spider(self, spider):
         self.enabled = self.is_enabled(spider)
-        if not self.enabled:
-            return
-
         self.spider = spider
 
         for k, type_ in self._settings:
             setattr(self, k, self._get_setting_value(spider, k, type_))
 
+        self._headers = self.crawler.settings.get('CRAWLERA_DEFAULT_HEADERS', {}).items()
+        self.exp_backoff = exp_backoff(self.backoff_step, self.backoff_max)
+
+        if not self.apikey:
+            logging.warning("Crawlera can't be used without a APIKEY", extra={'spider': spider})
+            return
+
         self._proxyauth = self.get_proxyauth(spider)
+
         logging.info(
             "Using crawlera at %s (apikey: %s)" % (self.url, self.apikey[:7]),
             extra={'spider': spider},
@@ -75,9 +82,6 @@ class CrawleraMiddleware(object):
                 "To avoid this behaviour you can use the CRAWLERA_PRESERVE_DELAY setting but keep in mind that this may slow down the crawl significantly",
                 extra={'spider': spider},
             )
-
-        self._headers = self.crawler.settings.get('CRAWLERA_DEFAULT_HEADERS', {}).items()
-        self.exp_backoff = exp_backoff(self.backoff_step, self.backoff_max)
 
     def _settings_get(self, type_, *a, **kw):
         if type_ is int:
@@ -158,6 +162,9 @@ class CrawleraMiddleware(object):
 
     def process_response(self, request, response, spider):
         if not self._is_enabled_for_request(request):
+            if self._should_enable_for_response(response):
+                request.meta["force_proxy"] = True
+                return request
             return response
         key = self._get_slot_key(request)
         self._restore_original_delay(request)
@@ -201,8 +208,14 @@ class CrawleraMiddleware(object):
         # so client can reconnect trough DNS failover.
         dnscache.pop(urlparse(self.url).hostname, None)
 
+    def _should_enable_for_response(self, response):
+        enable_http_codes = response.meta.get("enable_http_codes", self.enable_http_codes)
+        return response.status in enable_http_codes
+
     def _is_enabled_for_request(self, request):
-        return self.enabled and not request.meta.get('dont_proxy', False)
+        return request.meta.get('force_proxy', False) or (
+            self.enabled and not request.meta.get('dont_proxy', False)
+        )
 
     def _get_slot_key(self, request):
         return request.meta.get('download_slot')

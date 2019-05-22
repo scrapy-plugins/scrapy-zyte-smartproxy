@@ -58,9 +58,9 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(req.meta.get('proxy'), None)
         self.assertEqual(req.meta.get('download_timeout'), None)
         self.assertEqual(req.headers.get('Proxy-Authorization'), None)
-        res = Response(req.url)
+        res = Response(req.url, request=req)
         assert mw.process_response(req, res, spider) is res
-        res = Response(req.url, status=mw.ban_code)
+        res = Response(req.url, status=mw.ban_code, request=req)
         assert mw.process_response(req, res, spider) is res
 
     def _assert_enabled(self, spider,
@@ -77,7 +77,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(req.meta.get('proxy'), proxyurl)
         self.assertEqual(req.meta.get('download_timeout'), download_timeout)
         self.assertEqual(req.headers.get('Proxy-Authorization'), proxyauth)
-        res = Response(req.url)
+        res = Response(req.url, request=req)
         assert mw.process_response(req, res, spider) is res
 
         # disabled if 'dont_proxy=True' is set
@@ -87,7 +87,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(req.meta.get('proxy'), None)
         self.assertEqual(req.meta.get('download_timeout'), None)
         self.assertEqual(req.headers.get('Proxy-Authorization'), None)
-        res = Response(req.url)
+        res = Response(req.url, request=req)
         assert mw.process_response(req, res, spider) is res
         del req.meta['dont_proxy']
 
@@ -173,6 +173,8 @@ class CrawleraMiddlewareTestCase(TestCase):
         self._assert_enabled(self.spider, self.settings, download_timeout=120)
 
     def test_hooks(self):
+        proxyauth = b'Basic Foo'
+
         class _ECLS(self.mwcls):
             def is_enabled(self, spider):
                 wascalled.append('is_enabled')
@@ -189,12 +191,12 @@ class CrawleraMiddlewareTestCase(TestCase):
         enabled = False
         self.spider.crawlera_enabled = True
         self._assert_disabled(self.spider, self.settings)
-        self.assertEqual(wascalled, ['is_enabled'])
+        # Even if disabled, get_proxyauth should be called
+        self.assertEqual(wascalled, ['is_enabled', 'get_proxyauth'])
 
         wascalled[:] = []  # reset
         enabled = True
         self.spider.crawlera_enabled = False
-        proxyauth = b'Basic Foo'
         self._assert_enabled(self.spider, self.settings, proxyauth=proxyauth)
         self.assertEqual(wascalled, ['is_enabled', 'get_proxyauth'])
 
@@ -535,3 +537,47 @@ class CrawleraMiddlewareTestCase(TestCase):
             ),
         ]
         assert mock_logger.info.call_args_list == expected_calls
+
+    def test_force_proxy(self):
+        self.spider.crawlera_enabled = False
+        crawler = self._mock_crawler(self.spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+
+        req = Request('http://www.scrapytest.org', meta={"force_proxy": True})
+        assert mw.process_request(req, self.spider) is None
+        self.assertIsNotNone(req.meta.get('proxy'))
+
+        # force_proxy has precedence
+        req = Request('http://www.scrapytest.org', meta={"force_proxy": True, "dont_proxy": True})
+        assert mw.process_request(req, self.spider) is None
+        self.assertIsNotNone(req.meta.get('proxy'))
+
+        req = Request('http://www.scrapytest.org')
+        assert mw.process_request(req, self.spider) is None
+        self.assertIsNone(req.meta.get('proxy'))
+
+    def test_process_response_force_proxy(self):
+        url = "https://scrapy.org"
+
+        self.spider.crawlera_enabled = False
+        self.settings['CRAWLERA_ENABLE_HTTP_CODES'] = [403]
+        crawler = self._mock_crawler(self.spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+
+        req = Request(url)
+        res = Response(url, status=403, request=req)
+        out = mw.process_response(req, res, self.spider)
+        self.assertIsInstance(out, Request)
+        self.assertEqual(out.meta["force_proxy"], True)
+
+        req = Request(url, meta={"enable_http_codes": [503]})
+        res = Response(url, status=503, request=req)
+        out = mw.process_response(req, res, self.spider)
+        self.assertIsInstance(out, Request)
+        self.assertEqual(out.meta["force_proxy"], True)
+
+        res = Response(url, status=403, request=req)
+        out = mw.process_response(req, res, self.spider)
+        self.assertIsInstance(out, Response)
