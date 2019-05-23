@@ -642,25 +642,6 @@ class CrawleraMiddlewareTestCase(TestCase):
         ]
         assert mock_logger.info.call_args_list == expected_calls
 
-    def test_force_proxy(self):
-        self.spider.crawlera_enabled = False
-        crawler = self._mock_crawler(self.spider, self.settings)
-        mw = self.mwcls.from_crawler(crawler)
-        mw.open_spider(self.spider)
-
-        req = Request('http://www.scrapytest.org', meta={"force_proxy": True})
-        assert mw.process_request(req, self.spider) is None
-        self.assertIsNotNone(req.meta.get('proxy'))
-
-        # force_proxy has precedence
-        req = Request('http://www.scrapytest.org', meta={"force_proxy": True, "dont_proxy": True})
-        assert mw.process_request(req, self.spider) is None
-        self.assertIsNotNone(req.meta.get('proxy'))
-
-        req = Request('http://www.scrapytest.org')
-        assert mw.process_request(req, self.spider) is None
-        self.assertIsNone(req.meta.get('proxy'))
-
     def test_process_response_enables_crawlera(self):
         url = "https://scrapy.org"
 

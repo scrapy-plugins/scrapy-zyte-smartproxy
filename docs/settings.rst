@@ -69,4 +69,9 @@ CRAWLERA_FORCE_ENABLE_ON_HTTP_CODES
 
 Default: ``[]``
 
-List of http resṕmse status codes that when, ``scrapy-crawlera`` gets a response with one of them and is disabled, it should retry the request forcing the middleware to use crawlera and enable crawlera for all requests from that domain.
+List of HTTP response status codes that warrant enabling Crawlera for the
+corresponding domain.
+
+When a response with one of these HTTP status codes is received after a request
+that did not go through Crawlera, the request is retried with Crawlera, and any
+new request to the same domain is also sent through Crawlera.

@@ -3,11 +3,6 @@ import logging
 import warnings
 from collections import defaultdict
 
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    from urlparse import urlparse
-
 from six.moves.urllib.parse import urlparse
 from w3lib.http import basic_auth_header
 from scrapy import signals
@@ -69,6 +64,9 @@ class CrawleraMiddleware(object):
 
         self._headers = self.crawler.settings.get('CRAWLERA_DEFAULT_HEADERS', {}).items()
         self.exp_backoff = exp_backoff(self.backoff_step, self.backoff_max)
+
+        if not self.enabled and not self.force_enable_on_http_codes:
+            return
 
         if not self.apikey:
             logging.warning("Crawlera can't be used without a APIKEY", extra={'spider': spider})
@@ -260,9 +258,8 @@ class CrawleraMiddleware(object):
     def _is_enabled_for_request(self, request):
         domain = self._get_url_domain(request.url)
         domain_enabled = self.enabled_for_domain.get(domain, False)
-        force_proxy = request.meta.get('force_proxy', False)
         dont_proxy = request.meta.get('dont_proxy', False)
-        return force_proxy or ((domain_enabled or self.enabled) and not dont_proxy)
+        return (domain_enabled or self.enabled) and not dont_proxy
 
     def _get_url_domain(self, url):
         parsed = urlparse(url)
