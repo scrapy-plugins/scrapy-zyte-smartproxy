@@ -683,3 +683,52 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertIsInstance(out, Response)
         self.assertEqual(mw.enabled, False)
         self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
+
+    @patch('scrapy_crawlera.middleware.logging')
+    def test_no_apikey_warning_crawlera_disabled(self, mock_logger):
+        self.spider.crawlera_enabled = False
+        settings = {}
+        crawler = self._mock_crawler(self.spider, settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+        self.assertFalse(mw.enabled)
+        mock_logger.warning.assert_not_called()
+
+    @patch('scrapy_crawlera.middleware.logging')
+    def test_apikey_warning_crawlera_enabled(self, mock_logger):
+        self.spider.crawlera_enabled = True
+        settings = {}
+        crawler = self._mock_crawler(self.spider, settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+        self.assertTrue(mw.enabled)
+        mock_logger.warning.assert_called_with(
+            "Crawlera can't be used without a APIKEY",
+            extra={'spider': self.spider}
+        )
+
+    @patch('scrapy_crawlera.middleware.logging')
+    def test_apikey_warning_force_enable(self, mock_logger):
+        self.spider.crawlera_enabled = False
+        settings = {'CRAWLERA_FORCE_ENABLE_ON_HTTP_CODES': [403]}
+        crawler = self._mock_crawler(self.spider, settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+        self.assertFalse(mw.enabled)
+        mock_logger.warning.assert_called_with(
+            "Crawlera can't be used without a APIKEY",
+            extra={'spider': self.spider}
+        )
+
+    @patch('scrapy_crawlera.middleware.logging')
+    def test_no_apikey_warning_force_enable(self, mock_logger):
+        self.spider.crawlera_enabled = False
+        settings = {
+            'CRAWLERA_FORCE_ENABLE_ON_HTTP_CODES': [403],
+            'CRAWLERA_APIKEY': 'apikey'
+        }
+        crawler = self._mock_crawler(self.spider, settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+        self.assertFalse(mw.enabled)
+        mock_logger.warning.assert_not_called()
