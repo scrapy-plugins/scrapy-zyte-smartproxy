@@ -198,8 +198,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         enabled = False
         self.spider.crawlera_enabled = True
         self._assert_disabled(self.spider, self.settings)
-        # Even if disabled, get_proxyauth should be called
-        self.assertEqual(wascalled, ['is_enabled', 'get_proxyauth'])
+        self.assertEqual(wascalled, ['is_enabled'])
 
         wascalled[:] = []  # reset
         enabled = True
@@ -657,22 +656,6 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertIsInstance(out, Request)
         self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
         self.assertEqual(mw.enabled, False)
-
-        mw.enabled_for_domain = {}
-        req = Request(url, meta={"force_enable_on_http_codes": [503]})
-        res = Response(url, status=503, request=req)
-        out = mw.process_response(req, res, self.spider)
-        self.assertIsInstance(out, Request)
-        self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
-        self.assertEqual(mw.enabled, False)
-
-        mw.enabled_for_domain = {}
-        req = Request(url, meta={"force_enable_on_http_codes": [503]})
-        res = Response(url, status=403, request=req)
-        out = mw.process_response(req, res, self.spider)
-        self.assertIsInstance(out, Response)
-        self.assertEqual(mw.enabled, False)
-        self.assertEqual(mw.enabled_for_domain, {})
 
         # A good response shouldnt enable it
         mw.enabled_for_domain = {}

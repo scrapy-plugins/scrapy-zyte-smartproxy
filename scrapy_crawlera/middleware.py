@@ -252,8 +252,7 @@ class CrawleraMiddleware(object):
         dnscache.pop(urlparse(self.url).hostname, None)
 
     def _should_enable_for_response(self, response):
-        force_enable_on_http_codes = response.meta.get("force_enable_on_http_codes", self.force_enable_on_http_codes)
-        return response.status in force_enable_on_http_codes
+        return response.status in self.force_enable_on_http_codes
 
     def _is_enabled_for_request(self, request):
         domain = self._get_url_domain(request.url)
