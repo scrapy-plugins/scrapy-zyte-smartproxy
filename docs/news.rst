@@ -3,6 +3,11 @@
 Changes
 =======
 
+v1.6.0 (2019-05-27)
+-------------------
+
+- Enable crawlera on demand by setting ``CRAWLERA_FORCE_ENABLE_ON_HTTP_CODES``
+
 v1.5.1 (2019-05-21)
 -------------------
 
