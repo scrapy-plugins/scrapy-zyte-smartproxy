@@ -33,6 +33,12 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.spider = Spider('foo')
         self.settings = {'CRAWLERA_APIKEY': 'apikey'}
 
+    def _mock_crawlera_response(self, url, headers=None, **kwargs):
+        crawlera_headers = {"X-Crawlera-Version": "1.36.3-cd5e44"}
+        if headers:
+            crawlera_headers.update(headers)
+        return Response(url, headers=crawlera_headers, **kwargs)
+
     def _mock_crawler(self, spider, settings=None):
 
         class MockedDownloader(object):
@@ -59,9 +65,9 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(req.meta.get('proxy'), None)
         self.assertEqual(req.meta.get('download_timeout'), None)
         self.assertEqual(req.headers.get('Proxy-Authorization'), None)
-        res = Response(req.url)
+        res = Response(req.url, request=req)
         assert mw.process_response(req, res, spider) is res
-        res = Response(req.url, status=mw.ban_code)
+        res = Response(req.url, status=mw.ban_code, request=req)
         assert mw.process_response(req, res, spider) is res
 
     def _assert_enabled(self, spider,
@@ -78,7 +84,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(req.meta.get('proxy'), proxyurl)
         self.assertEqual(req.meta.get('download_timeout'), download_timeout)
         self.assertEqual(req.headers.get('Proxy-Authorization'), proxyauth)
-        res = Response(req.url)
+        res = self._mock_crawlera_response(req.url, request=req)
         assert mw.process_response(req, res, spider) is res
 
         # disabled if 'dont_proxy=True' is set
@@ -88,16 +94,16 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(req.meta.get('proxy'), None)
         self.assertEqual(req.meta.get('download_timeout'), None)
         self.assertEqual(req.headers.get('Proxy-Authorization'), None)
-        res = Response(req.url)
+        res = self._mock_crawlera_response(req.url, request=req)
         assert mw.process_response(req, res, spider) is res
         del req.meta['dont_proxy']
 
         if maxbans > 0:
             # assert ban count is reseted after a succesful response
-            res = Response('http://ban.me', status=self.bancode)
+            res = self._mock_crawlera_response('http://ban.me', status=self.bancode)
             assert mw.process_response(req, res, spider) is res
             self.assertEqual(crawler.engine.fake_spider_closed_result, None)
-            res = Response('http://unban.me')
+            res = self._mock_crawlera_response('http://unban.me')
             assert mw.process_response(req, res, spider) is res
             self.assertEqual(crawler.engine.fake_spider_closed_result, None)
             self.assertEqual(mw._bans[None], 0)
@@ -105,7 +111,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         # check for not banning before maxbans for bancode
         for x in range(maxbans + 1):
             self.assertEqual(crawler.engine.fake_spider_closed_result, None)
-            res = Response(
+            res = self._mock_crawlera_response(
                 'http://ban.me/%d' % x,
                 status=self.bancode,
                 headers={'X-Crawlera-Error': 'banned'},
@@ -174,6 +180,8 @@ class CrawleraMiddlewareTestCase(TestCase):
         self._assert_enabled(self.spider, self.settings, download_timeout=120)
 
     def test_hooks(self):
+        proxyauth = b'Basic Foo'
+
         class _ECLS(self.mwcls):
             def is_enabled(self, spider):
                 wascalled.append('is_enabled')
@@ -195,7 +203,6 @@ class CrawleraMiddlewareTestCase(TestCase):
         wascalled[:] = []  # reset
         enabled = True
         self.spider.crawlera_enabled = False
-        proxyauth = b'Basic Foo'
         self._assert_enabled(self.spider, self.settings, proxyauth=proxyauth)
         self.assertEqual(wascalled, ['is_enabled', 'get_proxyauth'])
 
@@ -227,8 +234,12 @@ class CrawleraMiddlewareTestCase(TestCase):
         # ban without retry-after
         req = Request(url, meta={'download_slot': slot_key})
         headers = {'X-Crawlera-Error': 'banned'}
-        res = Response(
-            ban_url, status=self.bancode, headers=headers, request=req)
+        res = self._mock_crawlera_response(
+            ban_url,
+            status=self.bancode,
+            headers=headers,
+            request=req
+        )
         mw.process_response(req, res, self.spider)
         self.assertEqual(slot.delay, delay)
         self.assertEqual(self.spider.download_delay, delay)
@@ -239,8 +250,12 @@ class CrawleraMiddlewareTestCase(TestCase):
             'retry-after': str(retry_after),
             'X-Crawlera-Error': 'banned'
         }
-        res = Response(
-            ban_url, status=self.bancode, headers=headers, request=req)
+        res = self._mock_crawlera_response(
+            ban_url,
+            status=self.bancode,
+            headers=headers,
+            request=req
+        )
         mw.process_response(req, res, self.spider)
         self.assertEqual(slot.delay, retry_after)
         self.assertEqual(self.spider.download_delay, delay)
@@ -248,7 +263,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         # DNS cache should be cleared in case of errors
         dnscache['proxy.crawlera.com'] = '1.1.1.1'
 
-        res = Response(url, request=req)
+        res = self._mock_crawlera_response(url, request=req)
         mw.process_response(req, res, self.spider)
         self.assertEqual(slot.delay, delay)
         self.assertEqual(self.spider.download_delay, delay)
@@ -261,7 +276,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertNotIn('proxy.crawlera.com', dnscache)
 
         dnscache['proxy.crawlera.com'] = '1.1.1.1'
-        res = Response(ban_url, request=req)
+        res = self._mock_crawlera_response(ban_url, request=req)
         mw.process_response(req, res, self.spider)
         self.assertEqual(slot.delay, delay)
         self.assertEqual(self.spider.download_delay, delay)
@@ -273,7 +288,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertNotIn('proxy.crawlera.com', dnscache)
 
         dnscache['proxy.crawlera.com'] = '1.1.1.1'
-        res = Response(ban_url, status=self.bancode, request=req)
+        res = self._mock_crawlera_response(ban_url, status=self.bancode, request=req)
         mw.process_response(req, res, self.spider)
         self.assertEqual(slot.delay, delay)
         self.assertEqual(self.spider.download_delay, delay)
@@ -316,7 +331,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(crawler.stats.get_value('crawlera/request'), 1)
         self.assertEqual(crawler.stats.get_value('crawlera/request/method/GET'), 1)
 
-        res = Response(req.url)
+        res = self._mock_crawlera_response(req.url)
         assert mw.process_response(req, res, spider) is res
         self.assertEqual(crawler.stats.get_value('crawlera/response'), 1)
         self.assertEqual(crawler.stats.get_value('crawlera/response/status/200'), 1)
@@ -326,12 +341,20 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(crawler.stats.get_value('crawlera/request'), 2)
         self.assertEqual(crawler.stats.get_value('crawlera/request/method/POST'), 1)
 
-        res = Response(req.url, status=mw.ban_code, headers={'X-Crawlera-Error': 'somethingbad'})
+        res = self._mock_crawlera_response(
+            req.url,
+            status=mw.ban_code,
+            headers={'X-Crawlera-Error': 'somethingbad'}
+        )
         assert mw.process_response(req, res, spider) is res
         self.assertEqual(crawler.stats.get_value('crawlera/response'), 2)
         self.assertEqual(crawler.stats.get_value('crawlera/response/status/{}'.format(mw.ban_code)), 1)
         self.assertEqual(crawler.stats.get_value('crawlera/response/error/somethingbad'), 1)
-        res = Response(req.url, status=mw.ban_code, headers={'X-Crawlera-Error': 'banned'})
+        res = self._mock_crawlera_response(
+            req.url,
+            status=mw.ban_code,
+            headers={'X-Crawlera-Error': 'banned'}
+        )
         assert mw.process_response(req, res, spider) is res
         self.assertEqual(crawler.stats.get_value('crawlera/response'), 3)
         self.assertEqual(crawler.stats.get_value('crawlera/response/status/{}'.format(mw.ban_code)), 2)
@@ -481,8 +504,12 @@ class CrawleraMiddlewareTestCase(TestCase):
 
         noslaves_req = Request(url, meta={'download_slot': slot_key})
         headers = {'X-Crawlera-Error': 'noslaves'}
-        noslaves_res = Response(
-            ban_url, status=self.bancode, headers=headers, request=noslaves_req)
+        noslaves_res = self._mock_crawlera_response(
+            ban_url,
+            status=self.bancode,
+            headers=headers,
+            request=noslaves_req
+        )
 
         # delays grow exponentially
         mw.process_response(noslaves_req, noslaves_res, self.spider)
@@ -500,8 +527,12 @@ class CrawleraMiddlewareTestCase(TestCase):
         # other responses reset delay
         ban_req = Request(url, meta={'download_slot': slot_key})
         ban_headers = {'X-Crawlera-Error': 'banned'}
-        ban_res = Response(
-            ban_url, status=self.bancode, headers=ban_headers, request=ban_req)
+        ban_res = self._mock_crawlera_response(
+            ban_url,
+            status=self.bancode,
+            headers=ban_headers,
+            request=ban_req
+        )
         mw.process_response(ban_req, ban_res, self.spider)
         self.assertEqual(slot.delay, default_delay)
 
@@ -509,8 +540,11 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(slot.delay, backoff_step)
 
         good_req = Request(url, meta={'download_slot': slot_key})
-        good_res = Response(
-            url, status=200, request=good_req)
+        good_res = self._mock_crawlera_response(
+            url,
+            status=200,
+            request=good_req
+        )
         mw.process_response(good_req, good_res, self.spider)
         self.assertEqual(slot.delay, default_delay)
 
@@ -540,7 +574,7 @@ class CrawleraMiddlewareTestCase(TestCase):
 
         auth_error_req = Request(url, meta={'download_slot': slot_key})
         auth_error_headers = {'X-Crawlera-Error': 'bad_proxy_auth'}
-        auth_error_response = Response(
+        auth_error_response = self._mock_crawlera_response(
             ban_url,
             status=self.auth_error_code,
             request=auth_error_req,
@@ -577,7 +611,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertIsInstance(res, Response)
 
         # non crawlera 407 is not retried
-        non_crawlera_407_response = Response(
+        non_crawlera_407_response = self._mock_crawlera_response(
             ban_url,
             status=self.auth_error_code,
             request=auth_error_req,
@@ -606,3 +640,95 @@ class CrawleraMiddlewareTestCase(TestCase):
             ),
         ]
         assert mock_logger.info.call_args_list == expected_calls
+
+    def test_process_response_enables_crawlera(self):
+        url = "https://scrapy.org"
+
+        self.spider.crawlera_enabled = False
+        self.settings['CRAWLERA_FORCE_ENABLE_ON_HTTP_CODES'] = [403]
+        crawler = self._mock_crawler(self.spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+
+        req = Request(url)
+        res = Response(url, status=403, request=req)
+        out = mw.process_response(req, res, self.spider)
+        self.assertIsInstance(out, Request)
+        self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
+        self.assertEqual(mw.enabled, False)
+
+        # A good response shouldnt enable it
+        mw.enabled_for_domain = {}
+        req = Request(url)
+        res = Response(url, status=200, request=req)
+        out = mw.process_response(req, res, self.spider)
+        self.assertIsInstance(out, Response)
+        self.assertEqual(mw.enabled_for_domain, {})
+        self.assertEqual(mw.enabled, False)
+
+        req = Request(url)
+        res = Response(url, status=403, request=req)
+        out = mw.process_response(req, res, self.spider)
+        self.assertIsInstance(out, Request)
+        self.assertEqual(mw.enabled, False)
+        self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
+        # Another regular response with bad code should be retried
+        out = mw.process_response(req, res, self.spider)
+        self.assertIsInstance(out, Request)
+        self.assertEqual(mw.enabled, False)
+        self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
+        # A crawlera response with bad code should not
+        res = self._mock_crawlera_response(url, status=403, request=req)
+        out = mw.process_response(req, res, self.spider)
+        self.assertIsInstance(out, Response)
+        self.assertEqual(mw.enabled, False)
+        self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
+
+    @patch('scrapy_crawlera.middleware.logging')
+    def test_no_apikey_warning_crawlera_disabled(self, mock_logger):
+        self.spider.crawlera_enabled = False
+        settings = {}
+        crawler = self._mock_crawler(self.spider, settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+        self.assertFalse(mw.enabled)
+        mock_logger.warning.assert_not_called()
+
+    @patch('scrapy_crawlera.middleware.logging')
+    def test_apikey_warning_crawlera_enabled(self, mock_logger):
+        self.spider.crawlera_enabled = True
+        settings = {}
+        crawler = self._mock_crawler(self.spider, settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+        self.assertTrue(mw.enabled)
+        mock_logger.warning.assert_called_with(
+            "Crawlera can't be used without a APIKEY",
+            extra={'spider': self.spider}
+        )
+
+    @patch('scrapy_crawlera.middleware.logging')
+    def test_apikey_warning_force_enable(self, mock_logger):
+        self.spider.crawlera_enabled = False
+        settings = {'CRAWLERA_FORCE_ENABLE_ON_HTTP_CODES': [403]}
+        crawler = self._mock_crawler(self.spider, settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+        self.assertFalse(mw.enabled)
+        mock_logger.warning.assert_called_with(
+            "Crawlera can't be used without a APIKEY",
+            extra={'spider': self.spider}
+        )
+
+    @patch('scrapy_crawlera.middleware.logging')
+    def test_no_apikey_warning_force_enable(self, mock_logger):
+        self.spider.crawlera_enabled = False
+        settings = {
+            'CRAWLERA_FORCE_ENABLE_ON_HTTP_CODES': [403],
+            'CRAWLERA_APIKEY': 'apikey'
+        }
+        crawler = self._mock_crawler(self.spider, settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+        self.assertFalse(mw.enabled)
+        mock_logger.warning.assert_not_called()
