@@ -734,7 +734,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         )
 
     @patch('scrapy_crawlera.middleware.logging')
-    def test_apikey_warning_force_enable(self, mock_logger):
+    def test_no_apikey_warning_force_enable(self, mock_logger):
         self.spider.crawlera_enabled = False
         settings = {'CRAWLERA_FORCE_ENABLE_ON_HTTP_CODES': [403]}
         crawler = self._mock_crawler(self.spider, settings)
@@ -747,7 +747,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         )
 
     @patch('scrapy_crawlera.middleware.logging')
-    def test_no_apikey_warning_force_enable(self, mock_logger):
+    def test_apikey_warning_force_enable(self, mock_logger):
         self.spider.crawlera_enabled = False
         settings = {
             'CRAWLERA_FORCE_ENABLE_ON_HTTP_CODES': [403],
