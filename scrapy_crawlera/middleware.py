@@ -233,7 +233,10 @@ class CrawleraMiddleware(object):
         if self._should_enable_for_response(response):
             domain = self._get_url_domain(request.url)
             self.enabled_for_domain[domain] = True
-            return request
+
+            retryreq = request.copy()
+            retryreq.dont_filter = True
+            return retryreq
         return response
 
     def _retry_auth(self, response, request, spider):

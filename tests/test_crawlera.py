@@ -650,39 +650,43 @@ class CrawleraMiddlewareTestCase(TestCase):
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(self.spider)
 
-        req = Request(url)
-        res = Response(url, status=403, request=req)
-        out = mw.process_response(req, res, self.spider)
-        self.assertIsInstance(out, Request)
-        self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
-        self.assertEqual(mw.enabled, False)
-
-        # A good response shouldnt enable it
-        mw.enabled_for_domain = {}
+        # A good code response should not enable it
         req = Request(url)
         res = Response(url, status=200, request=req)
+        mw.process_request(req, self.spider)
         out = mw.process_response(req, res, self.spider)
         self.assertIsInstance(out, Response)
         self.assertEqual(mw.enabled_for_domain, {})
         self.assertEqual(mw.enabled, False)
+        self.assertEqual(mw.crawler.stats.get_stats(), {})
 
-        req = Request(url)
+        # A bad code response should enable it
         res = Response(url, status=403, request=req)
+        mw.process_request(req, self.spider)
         out = mw.process_response(req, res, self.spider)
         self.assertIsInstance(out, Request)
         self.assertEqual(mw.enabled, False)
         self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
-        # Another regular response with bad code should be retried
+        self.assertEqual(mw.crawler.stats.get_stats(), {})
+
+        # Another regular response with bad code should be done on crawlera
+        # and not be retried
+        res = Response(url, status=403, request=req)
+        mw.process_request(req, self.spider)
         out = mw.process_response(req, res, self.spider)
-        self.assertIsInstance(out, Request)
+        self.assertIsInstance(out, Response)
         self.assertEqual(mw.enabled, False)
         self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
-        # A crawlera response with bad code should not
+        self.assertEqual(mw.crawler.stats.get_value("crawlera/request"), 1)
+
+        # A crawlera response with bad code should not be retried as well
+        mw.process_request(req, self.spider)
         res = self._mock_crawlera_response(url, status=403, request=req)
         out = mw.process_response(req, res, self.spider)
         self.assertIsInstance(out, Response)
         self.assertEqual(mw.enabled, False)
         self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
+        self.assertEqual(mw.crawler.stats.get_value("crawlera/request"), 2)
 
     @patch('scrapy_crawlera.middleware.logging')
     def test_no_apikey_warning_crawlera_disabled(self, mock_logger):
