@@ -299,6 +299,15 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(self.spider.download_delay, delay)
         self.assertNotIn('proxy.crawlera.com', dnscache)
 
+    def test_process_exception_outside_crawlera(self):
+        self.spider.crawlera_enabled = False
+        crawler = self._mock_crawler(self.spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+
+        req = Request("https://scrapy.org")
+        assert mw.process_exception(req, ConnectionDone(), self.spider) is None
+
     def test_jobid_header(self):
         # test without the environment variable 'SCRAPY_JOB'
         self.spider.crawlera_enabled = True
@@ -416,8 +425,9 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(req.headers['X-Crawlera-Cookies'], b'disable')
         self.assertNotIn('X-Crawlera-Profile', req.headers)
 
+    @patch('scrapy_crawlera.middleware.warnings')
     @patch('scrapy_crawlera.middleware.logging')
-    def test_crawlera_default_headers_conflicting_headers(self, mock_logger):
+    def test_crawlera_default_headers_conflicting_headers(self, mock_logger, mock_warnings):
         spider = self.spider
         self.spider.crawlera_enabled = True
 
@@ -433,6 +443,12 @@ class CrawleraMiddlewareTestCase(TestCase):
         assert mw.process_request(req, spider) is None
         self.assertEqual(req.headers['X-Crawlera-UA'], b'desktop')
         self.assertEqual(req.headers['X-Crawlera-Profile'], b'desktop')
+        mock_warnings.warn.assert_called_with(
+            "The headers ('X-Crawlera-Profile', 'X-Crawlera-UA') are conflictin"
+            "g on some of your requests. Please check https://doc.scrapinghub.c"
+            "om/crawlera.html for more information. You can set LOG_LEVEL=DEBUG"
+            " to see the urls with problems"
+        )
         mock_logger.debug.assert_called_with(
             "The headers ('X-Crawlera-Profile', 'X-Crawlera-UA') are conflictin"
             "g on request http://www.scrapytest.org/other. X-Crawlera-UA will b"
@@ -447,6 +463,12 @@ class CrawleraMiddlewareTestCase(TestCase):
         assert mw.process_request(req, spider) is None
         self.assertEqual(req.headers['X-Crawlera-UA'], b'desktop')
         self.assertEqual(req.headers['X-Crawlera-Profile'], b'desktop')
+        mock_warnings.warn.assert_called_with(
+            "The headers ('X-Crawlera-Profile', 'X-Crawlera-UA') are conflictin"
+            "g on some of your requests. Please check https://doc.scrapinghub.c"
+            "om/crawlera.html for more information. You can set LOG_LEVEL=DEBUG"
+            " to see the urls with problems"
+        )
         mock_logger.debug.assert_called_with(
             "The headers ('X-Crawlera-Profile', 'X-Crawlera-UA') are conflictin"
             "g on request http://www.scrapytest.org/other. X-Crawlera-UA will b"
