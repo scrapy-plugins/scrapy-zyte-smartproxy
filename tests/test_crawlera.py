@@ -689,7 +689,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(mw.crawler.stats.get_value("crawlera/request"), 2)
 
     @patch('scrapy_crawlera.middleware.logging')
-    def test_no_apikey_warning_crawlera_disabled(self, mock_logger):
+    def test_apikey_warning_crawlera_disabled(self, mock_logger):
         self.spider.crawlera_enabled = False
         settings = {}
         crawler = self._mock_crawler(self.spider, settings)
@@ -699,7 +699,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         mock_logger.warning.assert_not_called()
 
     @patch('scrapy_crawlera.middleware.logging')
-    def test_apikey_warning_crawlera_enabled(self, mock_logger):
+    def test_no_apikey_warning_crawlera_enabled(self, mock_logger):
         self.spider.crawlera_enabled = True
         settings = {}
         crawler = self._mock_crawler(self.spider, settings)
