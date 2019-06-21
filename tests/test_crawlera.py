@@ -710,6 +710,27 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
         self.assertEqual(mw.crawler.stats.get_value("crawlera/request"), 2)
 
+    def test_process_response_from_file_scheme(self):
+        url = "file:///tmp/foobar.txt"
+
+        self.spider.crawlera_enabled = False
+        self.settings['CRAWLERA_FORCE_ENABLE_ON_HTTP_CODES'] = [403]
+        crawler = self._mock_crawler(self.spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.enabled_for_domain = {}
+        mw.open_spider(self.spider)
+
+        # A good code response should not enable it
+        req = Request(url)
+        res = Response(url, status=200, request=req)
+        mw.process_request(req, self.spider)
+        out = mw.process_response(req, res, self.spider)
+        self.assertIsInstance(out, Response)
+        self.assertEqual(mw.enabled_for_domain, {})
+        self.assertEqual(mw.enabled, False)
+        self.assertEqual(mw.crawler.stats.get_stats(), {})
+        self.assertEqual(out.status, 200)
+
     @patch('scrapy_crawlera.middleware.logging')
     def test_apikey_warning_crawlera_disabled(self, mock_logger):
         self.spider.crawlera_enabled = False
