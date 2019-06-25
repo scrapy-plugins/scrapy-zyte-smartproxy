@@ -30,6 +30,7 @@ class CrawleraMiddleware(object):
     force_enable_on_http_codes = []
     max_auth_retry_times = 10
     enabled_for_domain = {}
+    apikey = ""
 
     _settings = [
         ('apikey', str),
@@ -176,7 +177,7 @@ class CrawleraMiddleware(object):
             return self._handle_not_enabled_response(request, response)
 
         if not self._is_crawlera_response(response):
-            return request
+            return response
 
         key = self._get_slot_key(request)
         self._restore_original_delay(request)
@@ -232,7 +233,10 @@ class CrawleraMiddleware(object):
         if self._should_enable_for_response(response):
             domain = self._get_url_domain(request.url)
             self.enabled_for_domain[domain] = True
-            return request
+
+            retryreq = request.copy()
+            retryreq.dont_filter = True
+            return retryreq
         return response
 
     def _retry_auth(self, response, request, spider):

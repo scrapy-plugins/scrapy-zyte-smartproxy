@@ -299,6 +299,15 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(self.spider.download_delay, delay)
         self.assertNotIn('proxy.crawlera.com', dnscache)
 
+    def test_process_exception_outside_crawlera(self):
+        self.spider.crawlera_enabled = False
+        crawler = self._mock_crawler(self.spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+
+        req = Request("https://scrapy.org")
+        assert mw.process_exception(req, ConnectionDone(), self.spider) is None
+
     def test_jobid_header(self):
         # test without the environment variable 'SCRAPY_JOB'
         self.spider.crawlera_enabled = True
@@ -416,8 +425,9 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(req.headers['X-Crawlera-Cookies'], b'disable')
         self.assertNotIn('X-Crawlera-Profile', req.headers)
 
+    @patch('scrapy_crawlera.middleware.warnings')
     @patch('scrapy_crawlera.middleware.logging')
-    def test_crawlera_default_headers_conflicting_headers(self, mock_logger):
+    def test_crawlera_default_headers_conflicting_headers(self, mock_logger, mock_warnings):
         spider = self.spider
         self.spider.crawlera_enabled = True
 
@@ -433,6 +443,12 @@ class CrawleraMiddlewareTestCase(TestCase):
         assert mw.process_request(req, spider) is None
         self.assertEqual(req.headers['X-Crawlera-UA'], b'desktop')
         self.assertEqual(req.headers['X-Crawlera-Profile'], b'desktop')
+        mock_warnings.warn.assert_called_with(
+            "The headers ('X-Crawlera-Profile', 'X-Crawlera-UA') are conflictin"
+            "g on some of your requests. Please check https://doc.scrapinghub.c"
+            "om/crawlera.html for more information. You can set LOG_LEVEL=DEBUG"
+            " to see the urls with problems"
+        )
         mock_logger.debug.assert_called_with(
             "The headers ('X-Crawlera-Profile', 'X-Crawlera-UA') are conflictin"
             "g on request http://www.scrapytest.org/other. X-Crawlera-UA will b"
@@ -447,6 +463,12 @@ class CrawleraMiddlewareTestCase(TestCase):
         assert mw.process_request(req, spider) is None
         self.assertEqual(req.headers['X-Crawlera-UA'], b'desktop')
         self.assertEqual(req.headers['X-Crawlera-Profile'], b'desktop')
+        mock_warnings.warn.assert_called_with(
+            "The headers ('X-Crawlera-Profile', 'X-Crawlera-UA') are conflictin"
+            "g on some of your requests. Please check https://doc.scrapinghub.c"
+            "om/crawlera.html for more information. You can set LOG_LEVEL=DEBUG"
+            " to see the urls with problems"
+        )
         mock_logger.debug.assert_called_with(
             "The headers ('X-Crawlera-Profile', 'X-Crawlera-UA') are conflictin"
             "g on request http://www.scrapytest.org/other. X-Crawlera-UA will b"
@@ -650,42 +672,67 @@ class CrawleraMiddlewareTestCase(TestCase):
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(self.spider)
 
-        req = Request(url)
-        res = Response(url, status=403, request=req)
-        out = mw.process_response(req, res, self.spider)
-        self.assertIsInstance(out, Request)
-        self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
-        self.assertEqual(mw.enabled, False)
-
-        # A good response shouldnt enable it
-        mw.enabled_for_domain = {}
+        # A good code response should not enable it
         req = Request(url)
         res = Response(url, status=200, request=req)
+        mw.process_request(req, self.spider)
         out = mw.process_response(req, res, self.spider)
         self.assertIsInstance(out, Response)
         self.assertEqual(mw.enabled_for_domain, {})
         self.assertEqual(mw.enabled, False)
+        self.assertEqual(mw.crawler.stats.get_stats(), {})
 
-        req = Request(url)
+        # A bad code response should enable it
         res = Response(url, status=403, request=req)
+        mw.process_request(req, self.spider)
         out = mw.process_response(req, res, self.spider)
         self.assertIsInstance(out, Request)
         self.assertEqual(mw.enabled, False)
         self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
-        # Another regular response with bad code should be retried
+        self.assertEqual(mw.crawler.stats.get_stats(), {})
+
+        # Another regular response with bad code should be done on crawlera
+        # and not be retried
+        res = Response(url, status=403, request=req)
+        mw.process_request(req, self.spider)
         out = mw.process_response(req, res, self.spider)
-        self.assertIsInstance(out, Request)
+        self.assertIsInstance(out, Response)
         self.assertEqual(mw.enabled, False)
         self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
-        # A crawlera response with bad code should not
+        self.assertEqual(mw.crawler.stats.get_value("crawlera/request"), 1)
+
+        # A crawlera response with bad code should not be retried as well
+        mw.process_request(req, self.spider)
         res = self._mock_crawlera_response(url, status=403, request=req)
         out = mw.process_response(req, res, self.spider)
         self.assertIsInstance(out, Response)
         self.assertEqual(mw.enabled, False)
         self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
+        self.assertEqual(mw.crawler.stats.get_value("crawlera/request"), 2)
+
+    def test_process_response_from_file_scheme(self):
+        url = "file:///tmp/foobar.txt"
+
+        self.spider.crawlera_enabled = False
+        self.settings['CRAWLERA_FORCE_ENABLE_ON_HTTP_CODES'] = [403]
+        crawler = self._mock_crawler(self.spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.enabled_for_domain = {}
+        mw.open_spider(self.spider)
+
+        # A good code response should not enable it
+        req = Request(url)
+        res = Response(url, status=200, request=req)
+        mw.process_request(req, self.spider)
+        out = mw.process_response(req, res, self.spider)
+        self.assertIsInstance(out, Response)
+        self.assertEqual(mw.enabled_for_domain, {})
+        self.assertEqual(mw.enabled, False)
+        self.assertEqual(mw.crawler.stats.get_stats(), {})
+        self.assertEqual(out.status, 200)
 
     @patch('scrapy_crawlera.middleware.logging')
-    def test_no_apikey_warning_crawlera_disabled(self, mock_logger):
+    def test_apikey_warning_crawlera_disabled(self, mock_logger):
         self.spider.crawlera_enabled = False
         settings = {}
         crawler = self._mock_crawler(self.spider, settings)
@@ -695,7 +742,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         mock_logger.warning.assert_not_called()
 
     @patch('scrapy_crawlera.middleware.logging')
-    def test_apikey_warning_crawlera_enabled(self, mock_logger):
+    def test_no_apikey_warning_crawlera_enabled(self, mock_logger):
         self.spider.crawlera_enabled = True
         settings = {}
         crawler = self._mock_crawler(self.spider, settings)
@@ -708,7 +755,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         )
 
     @patch('scrapy_crawlera.middleware.logging')
-    def test_apikey_warning_force_enable(self, mock_logger):
+    def test_no_apikey_warning_force_enable(self, mock_logger):
         self.spider.crawlera_enabled = False
         settings = {'CRAWLERA_FORCE_ENABLE_ON_HTTP_CODES': [403]}
         crawler = self._mock_crawler(self.spider, settings)
@@ -721,7 +768,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         )
 
     @patch('scrapy_crawlera.middleware.logging')
-    def test_no_apikey_warning_force_enable(self, mock_logger):
+    def test_apikey_warning_force_enable(self, mock_logger):
         self.spider.crawlera_enabled = False
         settings = {
             'CRAWLERA_FORCE_ENABLE_ON_HTTP_CODES': [403],
