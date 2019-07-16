@@ -42,7 +42,7 @@ If ``False`` Sets Scrapy's ``DOWNLOAD_DELAY`` to ``0``, making the spider to cra
 respect the provided ``DOWNLOAD_DELAY`` from Scrapy.
 
 CRAWLERA_DEFAULT_HEADERS
------------------------
+------------------------
 
 Default: ``{}``
 
