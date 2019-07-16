@@ -689,7 +689,9 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertIsInstance(out, Request)
         self.assertEqual(mw.enabled, False)
         self.assertEqual(mw.enabled_for_domain["scrapy.org"], True)
-        self.assertEqual(mw.crawler.stats.get_stats(), {})
+        self.assertEqual(mw.crawler.stats.get_stats(), {
+            'crawlera/retries/should_have_been_enabled': 1,
+        })
 
         # Another regular response with bad code should be done on crawlera
         # and not be retried

@@ -183,8 +183,13 @@ class CrawleraMiddleware(object):
         self._restore_original_delay(request)
 
         if self._is_no_available_proxies(response) or self._is_auth_error(response):
-            self._set_custom_delay(request, next(self.exp_backoff))
+            if self._is_no_available_proxies(response):
+                reason = 'noslaves'
+            else:
+                reason = 'autherror'
+            self._set_custom_delay(request, next(self.exp_backoff), reason=reason)
         else:
+            self.crawler.stats.inc_value('crawlera/delay/reset_backoff')
             self.exp_backoff = exp_backoff(self.backoff_step, self.backoff_max)
 
         if self._is_auth_error(response):
@@ -194,6 +199,7 @@ class CrawleraMiddleware(object):
             if retries < self.max_auth_retry_times:
                 return self._retry_auth(response, request, spider)
             else:
+                self.crawler.stats.inc_value('crawlera/retries/auth/max_reached')
                 logging.warning(
                     "Max retries for authentication issues reached, please check auth"
                     " information settings",
@@ -207,7 +213,7 @@ class CrawleraMiddleware(object):
             else:
                 after = response.headers.get('retry-after')
                 if after:
-                    self._set_custom_delay(request, float(after))
+                    self._set_custom_delay(request, float(after), reason='banned')
             self.crawler.stats.inc_value('crawlera/response/banned')
         else:
             self._bans[key] = 0
@@ -227,7 +233,7 @@ class CrawleraMiddleware(object):
         if isinstance(exception, (ConnectionRefusedError, ConnectionDone)):
             # Handle crawlera downtime
             self._clear_dns_cache()
-            self._set_custom_delay(request, self.connection_refused_delay)
+            self._set_custom_delay(request, self.connection_refused_delay, reason='conn_refused')
 
     def _handle_not_enabled_response(self, request, response):
         if self._should_enable_for_response(response):
@@ -236,6 +242,7 @@ class CrawleraMiddleware(object):
 
             retryreq = request.copy()
             retryreq.dont_filter = True
+            self.crawler.stats.inc_value('crawlera/retries/should_have_been_enabled')
             return retryreq
         return response
 
@@ -248,6 +255,7 @@ class CrawleraMiddleware(object):
         retryreq = request.copy()
         retryreq.meta['crawlera_auth_retry_times'] = retries
         retryreq.dont_filter = True
+        self.crawler.stats.inc_value('crawlera/retries/auth')
         return retryreq
 
     def _clear_dns_cache(self):
@@ -278,7 +286,7 @@ class CrawleraMiddleware(object):
         key = self._get_slot_key(request)
         return key, self.crawler.engine.downloader.slots.get(key)
 
-    def _set_custom_delay(self, request, delay):
+    def _set_custom_delay(self, request, delay, reason=None, update_stats=True):
         """Set custom delay for slot and save original one."""
         key, slot = self._get_slot(request)
         if not slot:
@@ -286,6 +294,9 @@ class CrawleraMiddleware(object):
         if self._saved_delays[key] is None:
             self._saved_delays[key] = slot.delay
         slot.delay = delay
+        if update_stats and reason:
+            self.crawler.stats.inc_value('crawlera/delay/%s' % reason)
+            self.crawler.stats.inc_value('crawlera/delay/%s/total' % reason, delay)
 
     def _restore_original_delay(self, request):
         """Restore original delay for slot if it was changed."""
