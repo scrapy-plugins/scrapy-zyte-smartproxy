@@ -286,7 +286,7 @@ class CrawleraMiddleware(object):
         key = self._get_slot_key(request)
         return key, self.crawler.engine.downloader.slots.get(key)
 
-    def _set_custom_delay(self, request, delay, reason=None, update_stats=True):
+    def _set_custom_delay(self, request, delay, reason=None):
         """Set custom delay for slot and save original one."""
         key, slot = self._get_slot(request)
         if not slot:
@@ -294,7 +294,7 @@ class CrawleraMiddleware(object):
         if self._saved_delays[key] is None:
             self._saved_delays[key] = slot.delay
         slot.delay = delay
-        if update_stats and reason:
+        if reason is not None:
             self.crawler.stats.inc_value('crawlera/delay/%s' % reason)
             self.crawler.stats.inc_value('crawlera/delay/%s/total' % reason, delay)
 
