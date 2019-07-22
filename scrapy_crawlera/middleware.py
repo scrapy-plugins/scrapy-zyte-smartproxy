@@ -122,9 +122,8 @@ class CrawleraMiddleware(object):
 
     def _fix_url_protocol(self):
         if self.url.startswith('https://'):
-            logging.warning('Replacing "https://" with "http://" in CRAWLERA_URL %s' % self.url)
-            self.url = self.url.replace('https://', 'http://')
-        if not self.url.startswith('http://'):
+            logging.warning('CRAWLERA_URL "%s" set with "https://" protocol.' % self.url)
+        elif not self.url.startswith('http://'):
             logging.warning('Adding "http://" to CRAWLERA_URL %s' % self.url)
             self.url = 'http://' + self.url
 
