@@ -72,3 +72,7 @@ target/
 
 # Pipenv
 Pipfile*
+
+# Eclipse
+.pydevproject
+.project
