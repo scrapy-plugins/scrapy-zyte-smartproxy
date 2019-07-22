@@ -1,9 +1,9 @@
 import pytest
 from unittest import TestCase
 try:
-    from unittest.mock import call, patch, PropertyMock
+    from unittest.mock import call, patch
 except ImportError:
-    from mock import call, patch, PropertyMock
+    from mock import call, patch
 
 from w3lib.http import basic_auth_header
 from scrapy.http import Request, Response
