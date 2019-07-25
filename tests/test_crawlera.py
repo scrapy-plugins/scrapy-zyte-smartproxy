@@ -1,3 +1,4 @@
+import pytest
 from unittest import TestCase
 try:
     from unittest.mock import call, patch
@@ -9,6 +10,7 @@ from scrapy.http import Request, Response
 from scrapy.spiders import Spider
 from scrapy.utils.test import get_crawler
 from scrapy.resolver import dnscache
+from scrapy.exceptions import ScrapyDeprecationWarning
 from twisted.internet.error import ConnectionRefusedError, ConnectionDone
 
 from scrapy_crawlera import CrawleraMiddleware
@@ -51,7 +53,8 @@ class CrawleraMiddlewareTestCase(TestCase):
             def close_spider(self, spider, reason):
                 self.fake_spider_closed_result = (spider, reason)
 
-        crawler = get_crawler(spider, settings)
+        # with `spider` instead of `type(spider)` raises an exception
+        crawler = get_crawler(type(spider), settings)
         crawler.engine = MockedEngine()
         return crawler
 
@@ -779,3 +782,86 @@ class CrawleraMiddlewareTestCase(TestCase):
         mw.open_spider(self.spider)
         self.assertFalse(mw.enabled)
         mock_logger.warning.assert_not_called()
+
+
+    def test_is_enabled_warnings(self):
+        self._assert_disabled(self.spider, self.settings)
+        self.settings['HUBPROXY_ENABLED'] = True
+        with pytest.warns(ScrapyDeprecationWarning) as record:
+            self._assert_enabled(self.spider, self.settings)
+            assert len(record) == 1
+            assert 'HUBPROXY_ENABLED setting is deprecated' in \
+                str(record[0].message)
+
+        del self.settings['HUBPROXY_ENABLED']
+        self.spider.use_hubproxy = False
+        with pytest.warns(ScrapyDeprecationWarning) as record:
+            self._assert_disabled(self.spider, self.settings)
+            assert len(record) == 1
+            assert 'use_hubproxy attribute is deprecated' in \
+                str(record[0].message)
+
+
+    def test_settings_warnings(self):
+        self.spider.hubproxy_maxbans = 10
+        crawler = self._mock_crawler(self.spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        with pytest.warns(ScrapyDeprecationWarning) as record:
+            mw.open_spider(self.spider)
+            assert len(record) == 1
+            assert 'hubproxy_maxbans attribute is deprecated' in \
+                str(record[0].message)
+        del self.spider.hubproxy_maxbans
+
+        self.settings['HUBPROXY_BACKOFF_MAX'] = 10
+        crawler = self._mock_crawler(self.spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        with pytest.warns(ScrapyDeprecationWarning) as record:
+            mw.open_spider(self.spider)
+            assert len(record) == 1
+            assert 'HUBPROXY_BACKOFF_MAX setting is deprecated' in \
+                str(record[0].message)
+
+
+    def test_no_slot(self):
+        url = 'http://www.scrapytest.org'
+        ban_url = 'http://ban.me'
+
+        self.spider.crawlera_enabled = True
+        crawler = self._mock_crawler(self.spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+
+        # there are no slot named 'www.scrapytest.org'
+        noslaves_req = Request(url,
+                               meta={'download_slot': 'www.scrapytest.org'})
+
+        headers = {'X-Crawlera-Error': 'noslaves'}
+        noslaves_res = self._mock_crawlera_response(
+            ban_url,
+            status=self.bancode,
+            headers=headers,
+            request=noslaves_req
+        )
+        # checking that response was processed
+        response = mw.process_response(noslaves_req, noslaves_res, self.spider)
+        assert response.status == 503
+
+
+    def test_settings_dict(self):
+        self.spider.crawlera_enabled = True
+        self.settings['CRAWLERA_DEFAULT_HEADERS'] = {
+            'X-Crawlera-Profile': 'desktop',
+        }
+        crawler = self._mock_crawler(self.spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        # we don't have a dict settings yet, have to mess with protected
+        # property
+        mw._settings.append(
+            ('default_headers', dict)
+        )
+        mw.open_spider(self.spider)
+        req = Request('http://www.scrapytest.org/other')
+        mw.process_request(req, self.spider)
+        assert mw.process_request(req, self.spider) is None
+        self.assertEqual(req.headers['X-Crawlera-Profile'], b'desktop')
