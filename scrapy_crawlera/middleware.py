@@ -63,6 +63,7 @@ class CrawleraMiddleware(object):
         for k, type_ in self._settings:
             setattr(self, k, self._get_setting_value(spider, k, type_))
 
+        self._fix_url_protocol()
         self._headers = self.crawler.settings.get('CRAWLERA_DEFAULT_HEADERS', {}).items()
         self.exp_backoff = exp_backoff(self.backoff_step, self.backoff_max)
 
@@ -118,6 +119,13 @@ class CrawleraMiddleware(object):
                 type_, 'HUBPROXY_' + k.upper(), o))
         return getattr(
             spider, 'crawlera_' + k, getattr(spider, 'hubproxy_' + k, s))
+
+    def _fix_url_protocol(self):
+        if self.url.startswith('https://'):
+            logging.warning('CRAWLERA_URL "%s" set with "https://" protocol.' % self.url)
+        elif not self.url.startswith('http://'):
+            logging.warning('Adding "http://" to CRAWLERA_URL %s' % self.url)
+            self.url = 'http://' + self.url
 
     def is_enabled(self, spider):
         """Hook to enable middleware by custom rules."""

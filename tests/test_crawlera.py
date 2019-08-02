@@ -155,6 +155,16 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.settings['CRAWLERA_URL'] = 'http://localhost:8010'
         self._assert_enabled(self.spider, self.settings, proxyurl='http://localhost:8010')
 
+    def test_proxyurl_no_protocol(self):
+        self.spider.crawlera_enabled = True
+        self.settings['CRAWLERA_URL'] = 'localhost:8010'
+        self._assert_enabled(self.spider, self.settings, proxyurl='http://localhost:8010')
+
+    def test_proxyurl_https(self):
+        self.spider.crawlera_enabled = True
+        self.settings['CRAWLERA_URL'] = 'https://localhost:8010'
+        self._assert_enabled(self.spider, self.settings, proxyurl='https://localhost:8010')
+
     def test_proxyurl_including_noconnect(self):
         self.spider.crawlera_enabled = True
         self.settings['CRAWLERA_URL'] = 'http://localhost:8010?noconnect'
