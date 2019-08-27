@@ -139,10 +139,8 @@ class CrawleraMiddleware(object):
                           'use CRAWLERA_ENABLED instead.',
                           category=ScrapyDeprecationWarning, stacklevel=1)
         return (
-            getattr(spider, 'crawlera_enabled', False) or
-            getattr(spider, 'use_hubproxy', False) or
-            self.crawler.settings.getbool("CRAWLERA_ENABLED") or
-            self.crawler.settings.getbool("HUBPROXY_ENABLED")
+            getattr(spider, 'crawlera_enabled', self.crawler.settings.getbool('CRAWLERA_ENABLED')) or
+            getattr(spider, 'use_hubproxy', self.crawler.settings.getbool("HUBPROXY_ENABLED"))
         )
 
     def get_proxyauth(self, spider):
