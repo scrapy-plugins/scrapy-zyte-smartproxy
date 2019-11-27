@@ -140,6 +140,23 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.settings['CRAWLERA_ENABLED'] = True
         self._assert_enabled(self.spider, self.settings)
 
+    def test_spider_crawlera_enabled_priority(self):
+        self.spider.crawlera_enabled = False
+        self.settings['CRAWLERA_ENABLED'] = True
+        self._assert_disabled(self.spider, self.settings)
+
+        self.spider.crawlera_enabled = True
+        self.settings['CRAWLERA_ENABLED'] = False
+        self._assert_enabled(self.spider, self.settings)
+
+        self.spider.crawlera_enabled = True
+        self.settings['CRAWLERA_ENABLED'] = True
+        self._assert_enabled(self.spider, self.settings)
+
+        self.spider.crawlera_enabled = False
+        self.settings['CRAWLERA_ENABLED'] = False
+        self._assert_disabled(self.spider, self.settings)
+
     def test_apikey(self):
         self.spider.crawlera_enabled = True
         self.settings['CRAWLERA_APIKEY'] = apikey = 'apikey'
