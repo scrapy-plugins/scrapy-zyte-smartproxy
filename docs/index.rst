@@ -89,6 +89,47 @@ requests with `DEFAULT_REQUEST_HEADERS <http://doc.scrapy.org/en/1.0/topics/sett
 
 This Middleware also adds some configurable Scrapy Settings, check :ref:`the complete list here <settings>`.
 
+
+Reusing sessions
+================
+
+To create a request in a callback and have that request reuse the same Crawlera
+session as the callback response, you have to write something like::
+
+    def callback(self, response):
+        session = response.headers.get('X-Crawlera-Session')
+        # …
+        headers = {}
+        if session:
+            headers = {'X-Crawlera-Session': session}
+        yield Request(url, callback=self.callback, headers=headers)
+
+scrapy-crawlera provides an optional spider middleware that, if enabled, allows
+using the `_reuse` value in the `X-Crawlera-Session` header to reuse the
+Crawlera session from the source response::
+
+    def callback(self, response):
+        headers = {'X-Crawlera-Session': '_reuse'}
+        yield Request(url, callback=self.callback, headers=headers)
+
+To enable the Crawlera session reuse spider middleware, add it to your
+``SPIDER_MIDDLEWARES`` setting::
+
+    SPIDER_MIDDLEWARES = {
+        'scrapy_crawlera.CrawleraSessionReuseMiddleware': 1000,
+    }
+
+By default, ``CrawleraSessionReuseMiddleware`` removes ``X-Crawlera-Session``
+from the request headers if the source response did not use a Crawlera session,
+or the source Crawlera session ID was bad. Use the
+``CRAWLERA_SESSION_REUSE_DEFAULT_SESSION`` setting to set a fallback Crawlera
+session value instead. For example, to create a new Crawlera session on
+requests that come from responses without a Crawlera session or with a bad
+Crawlera session ID::
+
+    CRAWLERA_SESSION_REUSE_DEFAULT_SESSION = 'create'
+
+
 All the rest
 ============
 
