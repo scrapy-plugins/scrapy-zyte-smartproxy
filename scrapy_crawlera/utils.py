@@ -11,6 +11,6 @@ def exp_backoff(step, max):
     max_attempts = math.log(max / step, 2)
     for attempt in count(0, 1):
         if attempt <= max_attempts:
-            yield random.uniform(0, step * 2 ** attempt)
+            yield random.uniform(0, step * 2 ** attempt)  # nosec
         else:
-            yield random.uniform(0, max)
+            yield random.uniform(0, max)  # nosec
