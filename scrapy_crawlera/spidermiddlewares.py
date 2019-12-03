@@ -18,24 +18,19 @@ class CrawleraSessionReuseMiddleware(object):
 
             request = request_or_item
             header = b'X-Crawlera-Session'
+            meta_key = 'crawlera_session_reuse'
 
-            if request.headers.get(header) != b'_reuse':
-                return request
-
-            error = response.headers.get(b'X-Crawlera-Error')
-            if error == b'user_session_limit':
-                del request.headers[header]
+            if request.meta.get(meta_key) is not True:
                 return request
 
             session = response.headers.get(header)
+            error = response.headers.get(b'X-Crawlera-Error')
             session_is_bad = error == b'bad_session_id'
 
             if session is not None and not session_is_bad:
                 request.headers[header] = session
             elif self._default_session:
                 request.headers[header] = self._default_session
-            else:
-                del request.headers[header]
             return request
 
         return (_set_session(request_or_item)

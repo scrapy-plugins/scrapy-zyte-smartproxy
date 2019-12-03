@@ -105,12 +105,12 @@ session as the callback response, you have to write something like::
         yield Request(url, callback=self.callback, headers=headers)
 
 scrapy-crawlera provides an optional spider middleware that, if enabled, allows
-using the `_reuse` value in the `X-Crawlera-Session` header to reuse the
+setting  ``crawlera_session_reuse`` to ``True`` in your request to reuse the
 Crawlera session from the source response::
 
     def callback(self, response):
-        headers = {'X-Crawlera-Session': '_reuse'}
-        yield Request(url, callback=self.callback, headers=headers)
+        meta = {'crawlera_session_reuse': True}
+        yield Request(url, callback=self.callback, meta=meta)
 
 To enable the Crawlera session reuse spider middleware, add it to your
 ``SPIDER_MIDDLEWARES`` setting::

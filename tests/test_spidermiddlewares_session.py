@@ -24,12 +24,12 @@ def process_output(response, result, settings=None):
 
 def get_request(reuse=False, session=None):
     headers = {}
-    if reuse is True:
-        assert session is None
-        headers['X-Crawlera-Session'] = '_reuse'
-    elif session is not None:
+    if session is not None:
         headers['X-Crawlera-Session'] = session
-    return Request('https://example.com', headers=headers)
+    meta = {}
+    if reuse is True:
+        meta['crawlera_session_reuse'] = True
+    return Request('https://example.com', headers=headers, meta=meta)
 
 
 def get_response(session=None, error=None):
@@ -73,7 +73,7 @@ def test_bad_session_id():
     response = get_response(session=SESSION, error='bad_session_id')
     input_request = get_request(reuse=True)
     processed_request = process_output(response, input_request)
-    expected_request = get_request()
+    expected_request = get_request(reuse=True)
     compare_requests(processed_request, expected_request)
 
 
@@ -82,7 +82,7 @@ def test_bad_session_id_default_session():
     input_request = get_request(reuse=True)
     settings = {'CRAWLERA_SESSION_REUSE_DEFAULT_SESSION': 'create'}
     processed_request = process_output(response, input_request, settings)
-    expected_request = get_request(session='create')
+    expected_request = get_request(reuse=True, session='create')
     compare_requests(processed_request, expected_request)
 
 
@@ -93,7 +93,7 @@ def test_user_session_limit():
     response = get_response(error='user_session_limit')
     input_request = get_request(reuse=True)
     processed_request = process_output(response, input_request)
-    expected_request = get_request()
+    expected_request = get_request(reuse=True)
     compare_requests(processed_request, expected_request)
 
 
@@ -162,7 +162,7 @@ def test_non_session_error(error):
     response = get_response(session=session, error=error)
     input_request = get_request(reuse=True)
     processed_request = process_output(response, input_request)
-    expected_request = get_request(session=SESSION)
+    expected_request = get_request(reuse=True, session=SESSION)
     compare_requests(processed_request, expected_request)
 
 
@@ -171,7 +171,7 @@ def test_session():
     response = get_response(session=session)
     input_request = get_request(reuse=True)
     processed_request = process_output(response, input_request)
-    expected_request = get_request(session=SESSION)
+    expected_request = get_request(reuse=True, session=SESSION)
     compare_requests(processed_request, expected_request)
 
 
@@ -180,7 +180,7 @@ def test_create_on_sessionless_reuse():
     input_request = get_request(reuse=True)
     settings = {'CRAWLERA_SESSION_REUSE_DEFAULT_SESSION': 'create'}
     processed_request = process_output(response, input_request, settings)
-    expected_request = get_request(session='create')
+    expected_request = get_request(reuse=True, session='create')
     compare_requests(processed_request, expected_request)
 
 
@@ -188,7 +188,7 @@ def test_dont_create_on_sessionless_reuse():
     response = get_response()
     input_request = get_request(reuse=True)
     processed_request = process_output(response, input_request)
-    expected_request = get_request()
+    expected_request = get_request(reuse=True)
     compare_requests(processed_request, expected_request)
 
 
