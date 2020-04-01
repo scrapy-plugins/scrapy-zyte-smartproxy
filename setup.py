@@ -6,7 +6,7 @@ with open("README.rst") as f:
 
 setup(
     name='scrapy-crawlera',
-    version='1.6.0',
+    version='1.7.0',
     license='BSD',
     description='Crawlera middleware for Scrapy',
     long_description=readme,
