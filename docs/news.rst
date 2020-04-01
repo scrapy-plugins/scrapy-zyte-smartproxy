@@ -3,6 +3,14 @@
 Changes
 =======
 
+v1.7.0 (2020-04-01)
+-------------------
+- Added more stats to better understanding the internal states.
+- Log warning when using `https://` protocol.
+- Add default `http://` protocol in case of none provided, and log warning about it.
+- Fix duplicated request when the response is not from crawlera, this was causing an
+  infinite loop of retries when `dont_filter=True`.
+
 v1.6.0 (2019-05-27)
 -------------------
 
