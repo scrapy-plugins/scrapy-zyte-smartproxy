@@ -1,4 +1,5 @@
 import pytest
+from random import choice
 from unittest import TestCase
 try:
     from unittest.mock import call, patch
@@ -36,7 +37,8 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.settings = {'CRAWLERA_APIKEY': 'apikey'}
 
     def _mock_crawlera_response(self, url, headers=None, **kwargs):
-        crawlera_headers = {"X-Crawlera-Version": "1.36.3-cd5e44"}
+        crawlera_version = choice(("1.36.3-cd5e44", "", None))
+        crawlera_headers = {"X-Crawlera-Version": crawlera_version}
         if headers:
             crawlera_headers.update(headers)
         return Response(url, headers=crawlera_headers, **kwargs)
