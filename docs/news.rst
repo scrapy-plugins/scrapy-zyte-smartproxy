@@ -3,6 +3,12 @@
 Changes
 =======
 
+v1.7.1 (2020-10-22)
+-------------------
+- Consider Crawlera response if contains `X-Crawlera-Version` header
+- Build the documentation in Travis CI and fail on documentation issues
+- Update matrix of tests
+
 v1.7.0 (2020-04-01)
 -------------------
 - Added more stats to better understanding the internal states.
