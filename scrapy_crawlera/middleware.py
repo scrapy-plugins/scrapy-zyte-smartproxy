@@ -283,7 +283,7 @@ class CrawleraMiddleware(object):
         return parsed.netloc
 
     def _is_crawlera_response(self, response):
-        return bool(response.headers.get("X-Crawlera-Version"))
+        return bool("X-Crawlera-Version" in response.headers)
 
     def _get_slot_key(self, request):
         return request.meta.get('download_slot')
