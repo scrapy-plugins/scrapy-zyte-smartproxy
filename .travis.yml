@@ -12,7 +12,7 @@ matrix:
     - python: 3.7
       env: TOXENV=py37,stack-scrapy-2.2-py3,stack-scrapy-2.3-py3,stack-scrapy-2.4-py3
     - python: 3.8
-      env: TOXENV=py38,docs,stack-scrapy-2.2-py3,stack-scrapy-2.3-py3,stack-scrapy-2.4-py3
+      env: TOXENV=py38,security,docs,stack-scrapy-2.2-py3,stack-scrapy-2.3-py3,stack-scrapy-2.4-py3
 
 install:
     - pip install -U tox codecov
