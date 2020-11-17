@@ -646,26 +646,26 @@ class CrawleraMiddlewareTestCase(TestCase):
         retry_times = req.meta["crawlera_auth_retry_times"]
         self.assertEqual(retry_times, 1)
 
-        auth_error_response.meta["crawlera_auth_retry_times"] = retry_times
+        auth_error_req.meta["crawlera_auth_retry_times"] = retry_times
         req = mw.process_response(auth_error_req, auth_error_response, self.spider)
         self.assertEqual(slot.delay, backoff_step * 2 ** 1)
         retry_times = req.meta["crawlera_auth_retry_times"]
         self.assertEqual(retry_times, 2)
 
-        auth_error_response.meta["crawlera_auth_retry_times"] = retry_times
+        auth_error_req.meta["crawlera_auth_retry_times"] = retry_times
         req = mw.process_response(auth_error_req, auth_error_response, self.spider)
         self.assertEqual(slot.delay, backoff_step * 2 ** 2)
         retry_times = req.meta["crawlera_auth_retry_times"]
         self.assertEqual(retry_times, 3)
 
-        auth_error_response.meta["crawlera_auth_retry_times"] = retry_times
+        auth_error_req.meta["crawlera_auth_retry_times"] = retry_times
         req = mw.process_response(auth_error_req, auth_error_response, self.spider)
         self.assertEqual(slot.delay, max_delay)
         retry_times = req.meta["crawlera_auth_retry_times"]
         self.assertEqual(retry_times, 4)
 
         # Should return a response when after max number of retries
-        auth_error_response.meta["crawlera_auth_retry_times"] = retry_times
+        auth_error_req.meta["crawlera_auth_retry_times"] = retry_times
         res = mw.process_response(auth_error_req, auth_error_response, self.spider)
         self.assertIsInstance(res, Response)
 

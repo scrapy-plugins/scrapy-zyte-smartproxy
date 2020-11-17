@@ -201,7 +201,7 @@ class CrawleraMiddleware(object):
         if self._is_auth_error(response):
             # When crawlera has issues it might not be able to authenticate users
             # we must retry
-            retries = response.meta.get('crawlera_auth_retry_times', 0)
+            retries = request.meta.get('crawlera_auth_retry_times', 0)
             if retries < self.max_auth_retry_times:
                 return self._retry_auth(response, request, spider)
             else:
@@ -257,7 +257,7 @@ class CrawleraMiddleware(object):
             "Retrying crawlera request for authentication issue",
             extra={'spider': self.spider},
         )
-        retries = response.meta.get('crawlera_auth_retry_times', 0) + 1
+        retries = request.meta.get('crawlera_auth_retry_times', 0) + 1
         retryreq = request.copy()
         retryreq.meta['crawlera_auth_retry_times'] = retries
         retryreq.dont_filter = True
