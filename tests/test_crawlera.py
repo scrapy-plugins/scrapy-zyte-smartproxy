@@ -20,17 +20,6 @@ import os
 from scrapy_crawlera.utils import exp_backoff
 
 
-Response_init_orig = Response.__init__
-
-
-def Response_init_new(self, *args, **kwargs):
-    assert not kwargs.get('request'), 'response objects at this stage shall not be pinned'
-    return Response_init_orig(self, *args, **kwargs)
-
-
-Response.__init__ = Response_init_new
-
-
 class MockedSlot(object):
 
     def __init__(self, delay=0.0):
@@ -46,6 +35,13 @@ class CrawleraMiddlewareTestCase(TestCase):
     def setUp(self):
         self.spider = Spider('foo')
         self.settings = {'CRAWLERA_APIKEY': 'apikey'}
+        Response_init_orig = Response.__init__
+
+        def Response_init_new(self, *args, **kwargs):
+            assert not kwargs.get('request'), 'response objects at this stage shall not be pinned'
+            return Response_init_orig(self, *args, **kwargs)
+
+        Response.__init__ = Response_init_new
 
     def _mock_crawlera_response(self, url, headers=None, **kwargs):
         crawlera_version = choice(("1.36.3-cd5e44", "", None))
