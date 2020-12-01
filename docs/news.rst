@@ -3,6 +3,10 @@
 Changes
 =======
 
+v1.7.2 (2020-12-01)
+-------------------
+- Use request.meta than response.meta in the middleware
+
 v1.7.1 (2020-10-22)
 -------------------
 - Consider Crawlera response if contains `X-Crawlera-Version` header
