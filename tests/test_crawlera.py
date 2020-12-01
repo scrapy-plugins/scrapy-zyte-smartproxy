@@ -35,6 +35,13 @@ class CrawleraMiddlewareTestCase(TestCase):
     def setUp(self):
         self.spider = Spider('foo')
         self.settings = {'CRAWLERA_APIKEY': 'apikey'}
+        Response_init_orig = Response.__init__
+
+        def Response_init_new(self, *args, **kwargs):
+            assert not kwargs.get('request'), 'response objects at this stage shall not be pinned'
+            return Response_init_orig(self, *args, **kwargs)
+
+        Response.__init__ = Response_init_new
 
     def _mock_crawlera_response(self, url, headers=None, **kwargs):
         crawlera_version = choice(("1.36.3-cd5e44", "", None))
@@ -70,9 +77,9 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(req.meta.get('proxy'), None)
         self.assertEqual(req.meta.get('download_timeout'), None)
         self.assertEqual(req.headers.get('Proxy-Authorization'), None)
-        res = Response(req.url, request=req)
+        res = Response(req.url)
         assert mw.process_response(req, res, spider) is res
-        res = Response(req.url, status=mw.ban_code, request=req)
+        res = Response(req.url, status=mw.ban_code)
         assert mw.process_response(req, res, spider) is res
 
     def _assert_enabled(self, spider,
@@ -89,7 +96,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(req.meta.get('proxy'), proxyurl)
         self.assertEqual(req.meta.get('download_timeout'), download_timeout)
         self.assertEqual(req.headers.get('Proxy-Authorization'), proxyauth)
-        res = self._mock_crawlera_response(req.url, request=req)
+        res = self._mock_crawlera_response(req.url)
         assert mw.process_response(req, res, spider) is res
 
         # disabled if 'dont_proxy=True' is set
@@ -99,7 +106,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(req.meta.get('proxy'), None)
         self.assertEqual(req.meta.get('download_timeout'), None)
         self.assertEqual(req.headers.get('Proxy-Authorization'), None)
-        res = self._mock_crawlera_response(req.url, request=req)
+        res = self._mock_crawlera_response(req.url)
         assert mw.process_response(req, res, spider) is res
         del req.meta['dont_proxy']
 
@@ -270,7 +277,6 @@ class CrawleraMiddlewareTestCase(TestCase):
             ban_url,
             status=self.bancode,
             headers=headers,
-            request=req
         )
         mw.process_response(req, res, self.spider)
         self.assertEqual(slot.delay, delay)
@@ -286,7 +292,6 @@ class CrawleraMiddlewareTestCase(TestCase):
             ban_url,
             status=self.bancode,
             headers=headers,
-            request=req
         )
         mw.process_response(req, res, self.spider)
         self.assertEqual(slot.delay, retry_after)
@@ -295,7 +300,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         # DNS cache should be cleared in case of errors
         dnscache['proxy.crawlera.com'] = '1.1.1.1'
 
-        res = self._mock_crawlera_response(url, request=req)
+        res = self._mock_crawlera_response(url)
         mw.process_response(req, res, self.spider)
         self.assertEqual(slot.delay, delay)
         self.assertEqual(self.spider.download_delay, delay)
@@ -308,7 +313,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertNotIn('proxy.crawlera.com', dnscache)
 
         dnscache['proxy.crawlera.com'] = '1.1.1.1'
-        res = self._mock_crawlera_response(ban_url, request=req)
+        res = self._mock_crawlera_response(ban_url)
         mw.process_response(req, res, self.spider)
         self.assertEqual(slot.delay, delay)
         self.assertEqual(self.spider.download_delay, delay)
@@ -320,7 +325,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertNotIn('proxy.crawlera.com', dnscache)
 
         dnscache['proxy.crawlera.com'] = '1.1.1.1'
-        res = self._mock_crawlera_response(ban_url, status=self.bancode, request=req)
+        res = self._mock_crawlera_response(ban_url, status=self.bancode)
         mw.process_response(req, res, self.spider)
         self.assertEqual(slot.delay, delay)
         self.assertEqual(self.spider.download_delay, delay)
@@ -562,7 +567,6 @@ class CrawleraMiddlewareTestCase(TestCase):
             ban_url,
             status=self.bancode,
             headers=headers,
-            request=noslaves_req
         )
 
         # delays grow exponentially
@@ -585,7 +589,6 @@ class CrawleraMiddlewareTestCase(TestCase):
             ban_url,
             status=self.bancode,
             headers=ban_headers,
-            request=ban_req
         )
         mw.process_response(ban_req, ban_res, self.spider)
         self.assertEqual(slot.delay, default_delay)
@@ -597,7 +600,6 @@ class CrawleraMiddlewareTestCase(TestCase):
         good_res = self._mock_crawlera_response(
             url,
             status=200,
-            request=good_req
         )
         mw.process_response(good_req, good_res, self.spider)
         self.assertEqual(slot.delay, default_delay)
@@ -631,7 +633,6 @@ class CrawleraMiddlewareTestCase(TestCase):
         auth_error_response = self._mock_crawlera_response(
             ban_url,
             status=self.auth_error_code,
-            request=auth_error_req,
             headers=auth_error_headers
         )
 
@@ -641,26 +642,26 @@ class CrawleraMiddlewareTestCase(TestCase):
         retry_times = req.meta["crawlera_auth_retry_times"]
         self.assertEqual(retry_times, 1)
 
-        auth_error_response.meta["crawlera_auth_retry_times"] = retry_times
+        auth_error_req.meta["crawlera_auth_retry_times"] = retry_times
         req = mw.process_response(auth_error_req, auth_error_response, self.spider)
         self.assertEqual(slot.delay, backoff_step * 2 ** 1)
         retry_times = req.meta["crawlera_auth_retry_times"]
         self.assertEqual(retry_times, 2)
 
-        auth_error_response.meta["crawlera_auth_retry_times"] = retry_times
+        auth_error_req.meta["crawlera_auth_retry_times"] = retry_times
         req = mw.process_response(auth_error_req, auth_error_response, self.spider)
         self.assertEqual(slot.delay, backoff_step * 2 ** 2)
         retry_times = req.meta["crawlera_auth_retry_times"]
         self.assertEqual(retry_times, 3)
 
-        auth_error_response.meta["crawlera_auth_retry_times"] = retry_times
+        auth_error_req.meta["crawlera_auth_retry_times"] = retry_times
         req = mw.process_response(auth_error_req, auth_error_response, self.spider)
         self.assertEqual(slot.delay, max_delay)
         retry_times = req.meta["crawlera_auth_retry_times"]
         self.assertEqual(retry_times, 4)
 
         # Should return a response when after max number of retries
-        auth_error_response.meta["crawlera_auth_retry_times"] = retry_times
+        auth_error_req.meta["crawlera_auth_retry_times"] = retry_times
         res = mw.process_response(auth_error_req, auth_error_response, self.spider)
         self.assertIsInstance(res, Response)
 
@@ -668,7 +669,6 @@ class CrawleraMiddlewareTestCase(TestCase):
         non_crawlera_407_response = self._mock_crawlera_response(
             ban_url,
             status=self.auth_error_code,
-            request=auth_error_req,
         )
         res = mw.process_response(auth_error_req, non_crawlera_407_response, self.spider)
         self.assertIsInstance(res, Response)
@@ -706,7 +706,7 @@ class CrawleraMiddlewareTestCase(TestCase):
 
         # A good code response should not enable it
         req = Request(url)
-        res = Response(url, status=200, request=req)
+        res = Response(url, status=200)
         mw.process_request(req, self.spider)
         out = mw.process_response(req, res, self.spider)
         self.assertIsInstance(out, Response)
@@ -715,7 +715,7 @@ class CrawleraMiddlewareTestCase(TestCase):
         self.assertEqual(mw.crawler.stats.get_stats(), {})
 
         # A bad code response should enable it
-        res = Response(url, status=403, request=req)
+        res = Response(url, status=403)
         mw.process_request(req, self.spider)
         out = mw.process_response(req, res, self.spider)
         self.assertIsInstance(out, Request)
@@ -727,7 +727,7 @@ class CrawleraMiddlewareTestCase(TestCase):
 
         # Another regular response with bad code should be done on crawlera
         # and not be retried
-        res = Response(url, status=403, request=req)
+        res = Response(url, status=403)
         mw.process_request(req, self.spider)
         out = mw.process_response(req, res, self.spider)
         self.assertIsInstance(out, Response)
@@ -737,7 +737,7 @@ class CrawleraMiddlewareTestCase(TestCase):
 
         # A crawlera response with bad code should not be retried as well
         mw.process_request(req, self.spider)
-        res = self._mock_crawlera_response(url, status=403, request=req)
+        res = self._mock_crawlera_response(url, status=403)
         out = mw.process_response(req, res, self.spider)
         self.assertIsInstance(out, Response)
         self.assertEqual(mw.enabled, False)
@@ -756,7 +756,7 @@ class CrawleraMiddlewareTestCase(TestCase):
 
         # A good code response should not enable it
         req = Request(url)
-        res = Response(url, status=200, request=req)
+        res = Response(url, status=200)
         mw.process_request(req, self.spider)
         out = mw.process_response(req, res, self.spider)
         self.assertIsInstance(out, Response)
@@ -872,7 +872,6 @@ class CrawleraMiddlewareTestCase(TestCase):
             ban_url,
             status=self.bancode,
             headers=headers,
-            request=noslaves_req
         )
         # checking that response was processed
         response = mw.process_response(noslaves_req, noslaves_res, self.spider)
