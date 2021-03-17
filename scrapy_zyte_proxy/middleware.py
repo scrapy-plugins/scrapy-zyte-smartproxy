@@ -105,7 +105,7 @@ class SmartProxyManagerMiddleware(object):
     def _get_setting_value(self, spider, k, type_):
         if hasattr(spider, 'hubproxy_' + k):
             warnings.warn('hubproxy_%s and crawlera_%s attribute is deprecated, '
-                          'use spm_%s instead.' % (k, k),
+                          'use spm_%s instead.' % (k, k, k),
                           category=ScrapyDeprecationWarning, stacklevel=1)
 
         if self.crawler.settings.get('HUBPROXY_%s' % k.upper()) is not None:
@@ -340,14 +340,15 @@ class SmartProxyManagerMiddleware(object):
             # Send a general warning once, and specific urls if LOG_LEVEL = DEBUG
             warnings.warn(
                 'The headers %s are conflicting on some of your requests. '
-                'Please check https://docs.zyte.com/smart-proxy-manager-get-started.html '
-                'for more information. You can set LOG_LEVEL=DEBUG to see the urls with problems'
+                'Please check https://docs.zyte.com/smart-proxy-manager-get-sta'
+                'rted.html for more information. You can set LOG_LEVEL=DEBUG to'
+                ' see the urls with problems'
                 % str(self.conflicting_headers)
             )
             logging.debug(
                 'The headers %s are conflicting on request %s. X-Crawlera-UA '
-                'will be ignored. Please check https://doc.scrapinghub.com/cr'
-                'awlera.html for more information'
+                'will be ignored. Please check https://docs.zyte.com/smart-prox'
+                'y-manager-get-started.html for more information'
                 % (str(self.conflicting_headers), request.url),
                 extra={'spider': self.spider},
             )

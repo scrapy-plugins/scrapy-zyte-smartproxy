@@ -682,7 +682,7 @@ class SmartProxyManagerMiddlewareTestCase(TestCase):
         mw.open_spider(spider)
         expected_calls = [
             call(
-                "Using smart proxy manager at %s (apikey: %s)" % (
+                "Using Zyte Smart Proxy Manager at %s (apikey: %s)" % (
                     self.mwcls.url, 'apikey'
                 ),
                 extra={'spider': spider},
@@ -822,7 +822,7 @@ class SmartProxyManagerMiddlewareTestCase(TestCase):
         with pytest.warns(ScrapyDeprecationWarning) as record:
             self._assert_enabled(self.spider, self.settings)
             assert len(record) == 1
-            assert 'HUBPROXY_ENABLED setting is deprecated' in \
+            assert 'HUBPROXY_ENABLED and CRAWLERA_ENABLED settings are deprecated' in \
                 str(record[0].message)
 
         del self.settings['HUBPROXY_ENABLED']
@@ -830,7 +830,7 @@ class SmartProxyManagerMiddlewareTestCase(TestCase):
         with pytest.warns(ScrapyDeprecationWarning) as record:
             self._assert_disabled(self.spider, self.settings)
             assert len(record) == 1
-            assert 'use_hubproxy attribute is deprecated' in \
+            assert 'use_hubproxy and crawlera_enabled attributes are deprecated' in \
                 str(record[0].message)
 
 
@@ -841,7 +841,7 @@ class SmartProxyManagerMiddlewareTestCase(TestCase):
         with pytest.warns(ScrapyDeprecationWarning) as record:
             mw.open_spider(self.spider)
             assert len(record) == 1
-            assert 'hubproxy_maxbans attribute is deprecated' in \
+            assert 'hubproxy_maxbans and crawlera_maxbans attribute is deprecated' in \
                 str(record[0].message)
         del self.spider.hubproxy_maxbans
 
