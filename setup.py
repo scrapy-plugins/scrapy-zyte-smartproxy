@@ -5,17 +5,17 @@ with open("README.rst") as f:
 
 
 setup(
-    name='scrapy-crawlera',
+    name='scrapy-zyte-proxy',
     version='1.7.2',
     license='BSD',
-    description='Crawlera middleware for Scrapy',
+    description='Zyte Smart Proxy Manager middleware for Scrapy',
     long_description=readme,
     maintainer='Raul Gallegos',
     maintainer_email='raul.ogh@gmail.com',
     author='Scrapinghub',
-    author_email='opensource@scrapinghub.com',
-    url='https://github.com/scrapy-plugins/scrapy-crawlera',
-    packages=['scrapy_crawlera'],
+    author_email='opensource@zyte.com',
+    url='https://github.com/scrapy-plugins/scrapy-zyte-proxy',
+    packages=['scrapy_zyte_proxy'],
     platforms=['Any'],
     classifiers=[
         'Development Status :: 5 - Production/Stable',

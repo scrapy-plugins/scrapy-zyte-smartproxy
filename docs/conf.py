@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# scrapy-crawlera documentation build configuration file, created by
+# scrapy-zyte-proxy documentation build configuration file, created by
 # sphinx-quickstart on Sat Jan 21 13:17:41 2017.
 #
 # This file is execfile()d with the current directory set to its
@@ -54,7 +54,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'scrapy-crawlera'
+project = u'scrapy-zyte-proxy'
 copyright = u'2011-2017, Scrapinghub'
 author = u'Scrapinghub'
 
@@ -64,9 +64,9 @@ author = u'Scrapinghub'
 #
 
 try:
-    import scrapy_crawlera
-    version = '.'.join(scrapy_crawlera.__version__.split('.')[:2])
-    release = scrapy_crawlera.__version__
+    import scrapy_zyte_proxy
+    version = '.'.join(scrapy_zyte_proxy.__version__.split('.')[:2])
+    release = scrapy_zyte_proxy.__version__
 except ImportError:
     version = ''
     release = ''
@@ -111,7 +111,7 @@ todo_include_todos = False
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'scrapy-crawleradoc'
+htmlhelp_basename = 'scrapy-zyte-proxydoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -138,7 +138,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'scrapy-crawlera.tex', u'scrapy-crawlera Documentation',
+    (master_doc, 'scrapy-zyte-proxy.tex', u'scrapy-zyte-proxy Documentation',
      u'Scrapinghub', 'manual'),
 ]
 
@@ -148,7 +148,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'scrapy-crawlera', u'scrapy-crawlera Documentation',
+    (master_doc, 'scrapy-zyte-proxy', u'scrapy-zyte-proxy Documentation',
      [author], 1)
 ]
 
@@ -159,8 +159,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'scrapy-crawlera', u'scrapy-crawlera Documentation',
-     author, 'scrapy-crawlera', 'One line description of project.',
+    (master_doc, 'scrapy-zyte-proxy', u'scrapy-zyte-proxy Documentation',
+     author, 'scrapy-zyte-proxy', 'One line description of project.',
      'Miscellaneous'),
 ]
 

@@ -1,20 +1,20 @@
-===============
-scrapy-crawlera
-===============
+=================
+scrapy-zyte-proxy
+=================
 
-.. image:: https://img.shields.io/pypi/v/scrapy-crawlera.svg
-   :target: https://pypi.python.org/pypi/scrapy-crawlera
+.. image:: https://img.shields.io/pypi/v/scrapy-zyte-proxy.svg
+   :target: https://pypi.python.org/pypi/scrapy-zyte-proxy
    :alt: PyPI Version
 
-.. image:: https://travis-ci.org/scrapy-plugins/scrapy-crawlera.svg?branch=master
-   :target: http://travis-ci.org/scrapy-plugins/scrapy-crawlera
+.. image:: https://travis-ci.org/scrapy-plugins/scrapy-zyte-proxy.svg?branch=master
+   :target: http://travis-ci.org/scrapy-plugins/scrapy-zyte-proxy
    :alt: Build Status
 
-.. image:: http://codecov.io/github/scrapy-plugins/scrapy-crawlera/coverage.svg?branch=master
-   :target: http://codecov.io/github/scrapy-plugins/scrapy-crawlera?branch=master
+.. image:: http://codecov.io/github/scrapy-plugins/scrapy-zyte-proxy/coverage.svg?branch=master
+   :target: http://codecov.io/github/scrapy-plugins/scrapy-zyte-proxy?branch=master
    :alt: Code Coverage
 
-scrapy-crawlera provides easy use of `Crawlera <http://scrapinghub.com/crawlera>`_ with Scrapy.
+scrapy-zyte-proxy provides easy use of `Zyte Smart Proxy Manager <https://docs.zyte.com/smart-proxy-manager.html>`_ with Scrapy.
 
 Requirements
 ============
@@ -25,12 +25,12 @@ Requirements
 Installation
 ============
 
-You can install scrapy-crawlera using pip::
+You can install scrapy-zyte-proxy using pip::
 
-    pip install scrapy-crawlera
+    pip install scrapy-zyte-proxy
 
 
 Documentation
 =============
 
-Documentation is available online at https://scrapy-crawlera.readthedocs.io/ and in the ``docs`` directory.
+Documentation is available online at https://scrapy-zyte-proxy.readthedocs.io/ and in the ``docs`` directory.
