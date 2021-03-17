@@ -12,7 +12,7 @@ setup(
     long_description=readme,
     maintainer='Raul Gallegos',
     maintainer_email='raul.ogh@gmail.com',
-    author='Scrapinghub',
+    author='Zyte',
     author_email='opensource@zyte.com',
     url='https://github.com/scrapy-plugins/scrapy-zyte-proxy',
     packages=['scrapy_zyte_proxy'],

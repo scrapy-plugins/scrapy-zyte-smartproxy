@@ -14,10 +14,10 @@ from scrapy.resolver import dnscache
 from scrapy.exceptions import ScrapyDeprecationWarning
 from twisted.internet.error import ConnectionRefusedError, ConnectionDone
 
-from scrapy_crawlera import SmartProxyManagerMiddleware
+from scrapy_zyte_proxy import SmartProxyManagerMiddleware
 import os
 
-from scrapy_crawlera.utils import exp_backoff
+from scrapy_zyte_proxy.utils import exp_backoff
 
 
 class MockedSlot(object):
@@ -462,8 +462,8 @@ class SmartProxyManagerMiddlewareTestCase(TestCase):
         self.assertEqual(req.headers['X-Crawlera-Cookies'], b'disable')
         self.assertNotIn('X-Crawlera-Profile', req.headers)
 
-    @patch('scrapy_crawlera.middleware.warnings')
-    @patch('scrapy_crawlera.middleware.logging')
+    @patch('scrapy_zyte_proxy.middleware.warnings')
+    @patch('scrapy_zyte_proxy.middleware.logging')
     def test_spm_default_headers_conflicting_headers(self, mock_logger, mock_warnings):
         spider = self.spider
         self.spider.spm_enabled = True
@@ -673,7 +673,7 @@ class SmartProxyManagerMiddlewareTestCase(TestCase):
         res = mw.process_response(auth_error_req, non_spm_407_response, self.spider)
         self.assertIsInstance(res, Response)
 
-    @patch('scrapy_crawlera.middleware.logging')
+    @patch('scrapy_zyte_proxy.middleware.logging')
     def test_open_spider_logging(self, mock_logger):
         spider = self.spider
         self.spider.spm_enabled = True
@@ -766,7 +766,7 @@ class SmartProxyManagerMiddlewareTestCase(TestCase):
         self.assertEqual(mw.crawler.stats.get_stats(), {})
         self.assertEqual(out.status, 200)
 
-    @patch('scrapy_crawlera.middleware.logging')
+    @patch('scrapy_zyte_proxy.middleware.logging')
     def test_apikey_warning_spm_disabled(self, mock_logger):
         self.spider.spm_enabled = False
         settings = {}
@@ -776,7 +776,7 @@ class SmartProxyManagerMiddlewareTestCase(TestCase):
         self.assertFalse(mw.enabled)
         mock_logger.warning.assert_not_called()
 
-    @patch('scrapy_crawlera.middleware.logging')
+    @patch('scrapy_zyte_proxy.middleware.logging')
     def test_no_apikey_warning_spm_enabled(self, mock_logger):
         self.spider.spm_enabled = True
         settings = {}
@@ -789,7 +789,7 @@ class SmartProxyManagerMiddlewareTestCase(TestCase):
             extra={'spider': self.spider}
         )
 
-    @patch('scrapy_crawlera.middleware.logging')
+    @patch('scrapy_zyte_proxy.middleware.logging')
     def test_no_apikey_warning_force_enable(self, mock_logger):
         self.spider.spm_enabled = False
         settings = {'ZYTE_SPM_FORCE_ENABLE_ON_HTTP_CODES': [403]}
@@ -802,7 +802,7 @@ class SmartProxyManagerMiddlewareTestCase(TestCase):
             extra={'spider': self.spider}
         )
 
-    @patch('scrapy_crawlera.middleware.logging')
+    @patch('scrapy_zyte_proxy.middleware.logging')
     def test_apikey_warning_force_enable(self, mock_logger):
         self.spider.spm_enabled = False
         settings = {

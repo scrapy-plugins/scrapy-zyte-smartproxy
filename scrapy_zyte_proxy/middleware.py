@@ -10,7 +10,7 @@ from scrapy.resolver import dnscache
 from scrapy.exceptions import ScrapyDeprecationWarning
 from twisted.internet.error import ConnectionRefusedError, ConnectionDone
 
-from scrapy_crawlera.utils import exp_backoff
+from scrapy_zyte_proxy.utils import exp_backoff
 
 
 class SmartProxyManagerMiddleware(object):
