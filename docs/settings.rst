@@ -5,14 +5,14 @@ Settings
 This Middleware adds some settings to configure how to work with Zyte Smart Proxy Manager.
 
 ZYTE_PROXY_APIKEY
----------------
+-----------------
 
 Default: ``None``
 
 Unique Zyte Smart Proxy Manager API Key provided for authentication.
 
 ZYTE_PROXY_URL
-------------
+--------------
 
 Default: ``'https://proxy.zyte.com:8014'``
 
@@ -20,21 +20,21 @@ Zyte Smart Proxy Manager instance url, it varies depending on adquiring a privat
 you with a private instance url, you don't need to specify it.
 
 ZYTE_PROXY_MAXBANS
-----------------
+------------------
 
 Default: ``400``
 
 Number of consecutive bans from Zyte Smart Proxy Manager necessary to stop the spider.
 
 ZYTE_PROXY_DOWNLOAD_TIMEOUT
--------------------------
+---------------------------
 
 Default: ``190``
 
 Timeout for processing Zyte Smart Proxy Manager requests. It overrides Scrapy's ``DOWNLOAD_TIMEOUT``.
 
 ZYTE_PROXY_PRESERVE_DELAY
------------------------
+-------------------------
 
 Default: ``False``
 
@@ -42,7 +42,7 @@ If ``False`` Sets Scrapy's ``DOWNLOAD_DELAY`` to ``0``, making the spider to cra
 respect the provided ``DOWNLOAD_DELAY`` from Scrapy.
 
 ZYTE_PROXY_DEFAULT_HEADERS
-------------------------
+--------------------------
 
 Default: ``{}``
 
@@ -58,14 +58,14 @@ Default: ``15``
 Step size used for calculating exponential backoff according to the formula: ``random.uniform(0, min(max, step * 2 ** attempt))``.
 
 ZYTE_PROXY_BACKOFF_MAX
------------------------
+----------------------
 
 Default: ``180``
 
 Max value for exponential backoff as showed in the formula above.
 
 ZYTE_PROXY_FORCE_ENABLE_ON_HTTP_CODES
-------------------------------------
+-------------------------------------
 
 Default: ``[]``
 
