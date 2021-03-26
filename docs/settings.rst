@@ -4,36 +4,36 @@ Settings
 
 This Middleware adds some settings to configure how to work with Zyte Smart Proxy Manager.
 
-ZYTE_SPM_APIKEY
+ZYTE_PROXY_APIKEY
 ---------------
 
 Default: ``None``
 
 Unique Zyte Smart Proxy Manager API Key provided for authentication.
 
-ZYTE_SPM_URL
+ZYTE_PROXY_URL
 ------------
 
-Default: ``'http://proxy.zyte.com:8011'``
+Default: ``'https://proxy.zyte.com:8014'``
 
 Zyte Smart Proxy Manager instance url, it varies depending on adquiring a private or dedicated instance. If Smart Proxy Manager didn't provide
 you with a private instance url, you don't need to specify it.
 
-ZYTE_SPM_MAXBANS
+ZYTE_PROXY_MAXBANS
 ----------------
 
 Default: ``400``
 
 Number of consecutive bans from Zyte Smart Proxy Manager necessary to stop the spider.
 
-ZYTE_SPM_DOWNLOAD_TIMEOUT
+ZYTE_PROXY_DOWNLOAD_TIMEOUT
 -------------------------
 
 Default: ``190``
 
 Timeout for processing Zyte Smart Proxy Manager requests. It overrides Scrapy's ``DOWNLOAD_TIMEOUT``.
 
-ZYTE_SPM_PRESERVE_DELAY
+ZYTE_PROXY_PRESERVE_DELAY
 -----------------------
 
 Default: ``False``
@@ -41,7 +41,7 @@ Default: ``False``
 If ``False`` Sets Scrapy's ``DOWNLOAD_DELAY`` to ``0``, making the spider to crawl faster. If set to ``True``, it will
 respect the provided ``DOWNLOAD_DELAY`` from Scrapy.
 
-ZYTE_SPM_DEFAULT_HEADERS
+ZYTE_PROXY_DEFAULT_HEADERS
 ------------------------
 
 Default: ``{}``
@@ -50,21 +50,21 @@ Default headers added only to zyte smart proxy manager requests. Headers defined
 
 * This is the default behavior, ``DefaultHeadersMiddleware`` default priority is ``400`` and we recommend ``SmartProxyManagerMiddleware`` priority to be ``610``
 
-ZYTE_SPM_BACKOFF_STEP
+ZYTE_PROXY_BACKOFF_STEP
 -----------------------
 
 Default: ``15``
 
 Step size used for calculating exponential backoff according to the formula: ``random.uniform(0, min(max, step * 2 ** attempt))``.
 
-ZYTE_SPM_BACKOFF_MAX
+ZYTE_PROXY_BACKOFF_MAX
 -----------------------
 
 Default: ``180``
 
 Max value for exponential backoff as showed in the formula above.
 
-ZYTE_SPM_FORCE_ENABLE_ON_HTTP_CODES
+ZYTE_PROXY_FORCE_ENABLE_ON_HTTP_CODES
 ------------------------------------
 
 Default: ``[]``

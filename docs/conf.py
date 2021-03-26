@@ -55,8 +55,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'scrapy-zyte-proxy'
-copyright = u'2011-2017, Scrapinghub'
-author = u'Scrapinghub'
+copyright = u'2021, Zyte Group Ltd'
+author = u'Zyte'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -139,7 +139,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'scrapy-zyte-proxy.tex', u'scrapy-zyte-proxy Documentation',
-     u'Scrapinghub', 'manual'),
+     u'Zyte', 'manual'),
 ]
 
 

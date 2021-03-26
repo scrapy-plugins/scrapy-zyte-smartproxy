@@ -23,8 +23,8 @@ Configuration
 
   * Through ``settings.py``::
 
-      ZYTE_SPM_ENABLED = True
-      ZYTE_SPM_APIKEY = 'apikey'
+      ZYTE_PROXY_ENABLED = True
+      ZYTE_PROXY_APIKEY = 'apikey'
 
   * Through spider attributes::
 
@@ -33,11 +33,11 @@ Configuration
           smp_apikey = 'apikey'
 
 
-* (optional) If you are not using the default Zyte Smart Proxy Manager proxy (``http://proxy.zyte.com:8011``),
+* (optional) If you are not using the default Zyte Smart Proxy Manager proxy (``https://proxy.zyte.com:8014``),
   for example if you have a dedicated or private instance,
-  make sure to also set ``ZYTE_SPM_URL`` in ``settings.py``, e.g.::
+  make sure to also set ``ZYTE_PROXY_URL`` in ``settings.py``, e.g.::
 
-    ZYTE_SPM_URL = 'http://myinstance.crawlera.com:8011'
+    ZYTE_PROXY_URL = 'http://myinstance.crawlera.com:8011'
 
 How to use it
 =============

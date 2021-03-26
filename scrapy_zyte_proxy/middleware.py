@@ -15,7 +15,7 @@ from scrapy_zyte_proxy.utils import exp_backoff
 
 class SmartProxyManagerMiddleware(object):
 
-    url = 'http://proxy.zyte.com:8011'
+    url = 'https://proxy.zyte.com:8014'
     maxbans = 400
     ban_code = 503
     download_timeout = 190
@@ -64,7 +64,7 @@ class SmartProxyManagerMiddleware(object):
             setattr(self, k, self._get_setting_value(spider, k, type_))
 
         self._fix_url_protocol()
-        self._headers = self.crawler.settings.get('ZYTE_SPM_DEFAULT_HEADERS', {}).items()
+        self._headers = self.crawler.settings.get('ZYTE_PROXY_DEFAULT_HEADERS', {}).items()
         self.exp_backoff = exp_backoff(self.backoff_step, self.backoff_max)
 
         if not self.enabled and not self.force_enable_on_http_codes:
@@ -86,7 +86,7 @@ class SmartProxyManagerMiddleware(object):
             spider.download_delay = 0
             logging.info(
                 "SmartProxyManagerMiddleware: disabling download delays on Scrapy side to optimize delays introduced by Zyte Smart Proxy Manager. "
-                "To avoid this behaviour you can use the ZYTE_SPM_PRESERVE_DELAY setting but keep in mind that this may slow down the crawl significantly",
+                "To avoid this behaviour you can use the ZYTE_PROXY_PRESERVE_DELAY setting but keep in mind that this may slow down the crawl significantly",
                 extra={'spider': spider},
             )
 
@@ -105,41 +105,41 @@ class SmartProxyManagerMiddleware(object):
     def _get_setting_value(self, spider, k, type_):
         if hasattr(spider, 'hubproxy_' + k):
             warnings.warn('hubproxy_%s and crawlera_%s attribute is deprecated, '
-                          'use spm_%s instead.' % (k, k, k),
+                          'use zyte_proxy_%s instead.' % (k, k, k),
                           category=ScrapyDeprecationWarning, stacklevel=1)
 
         if self.crawler.settings.get('HUBPROXY_%s' % k.upper()) is not None:
             warnings.warn('HUBPROXY_%s setting is deprecated, '
-                          'use ZYTE_SPM_%s instead.' % (k.upper(), k.upper()),
+                          'use ZYTE_PROXY_%s instead.' % (k.upper(), k.upper()),
                           category=ScrapyDeprecationWarning, stacklevel=1)
 
         o = getattr(self, k, None)
         s = self._settings_get(
-            type_, 'ZYTE_SPM_' + k.upper(), self._settings_get(
+            type_, 'ZYTE_PROXY_' + k.upper(), self._settings_get(
                 type_, 'HUBPROXY_' + k.upper(), o))
         return getattr(
-            spider, 'spm_' + k, getattr(spider, 'hubproxy_' + k, s))
+            spider, 'zyte_proxy_' + k, getattr(spider, 'hubproxy_' + k, s))
 
     def _fix_url_protocol(self):
         if self.url.startswith('https://'):
-            logging.warning('ZYTE_SPM_URL "%s" set with "https://" protocol.' % self.url)
+            logging.info('ZYTE_PROXY_URL "%s" set with "https://" protocol.' % self.url)
         elif not self.url.startswith('http://'):
-            logging.warning('Adding "http://" to ZYTE_SPM_URL %s' % self.url)
+            logging.warning('Adding "http://" to ZYTE_PROXY_URL %s' % self.url)
             self.url = 'http://' + self.url
 
     def is_enabled(self, spider):
         """Hook to enable middleware by custom rules."""
         if hasattr(spider, 'use_hubproxy'):
             warnings.warn('use_hubproxy and crawlera_enabled attributes are deprecated, '
-                          'use spm_enabled instead.',
+                          'use zyte_proxy_enabled instead.',
                           category=ScrapyDeprecationWarning, stacklevel=1)
 
         if self.crawler.settings.get('HUBPROXY_ENABLED') is not None:
             warnings.warn('HUBPROXY_ENABLED and CRAWLERA_ENABLED settings are deprecated, '
-                          'use ZYTE_SPM_ENABLED instead.',
+                          'use ZYTE_PROXY_ENABLED instead.',
                           category=ScrapyDeprecationWarning, stacklevel=1)
         return (
-            getattr(spider, 'spm_enabled', self.crawler.settings.getbool('ZYTE_SPM_ENABLED')) or
+            getattr(spider, 'zyte_proxy_enabled', self.crawler.settings.getbool('ZYTE_PROXY_ENABLED')) or
             getattr(spider, 'use_hubproxy', self.crawler.settings.getbool("HUBPROXY_ENABLED"))
         )
 
@@ -149,16 +149,16 @@ class SmartProxyManagerMiddleware(object):
 
     def process_request(self, request, spider):
         if self._is_enabled_for_request(request):
-            self._set_spm_default_headers(request)
+            self._set_zyte_proxy_default_headers(request)
             request.meta['proxy'] = self.url
             request.meta['download_timeout'] = self.download_timeout
             request.headers['Proxy-Authorization'] = self._proxyauth
             if self.job_id:
                 request.headers['X-Crawlera-Jobid'] = self.job_id
-            self.crawler.stats.inc_value('spm/request')
-            self.crawler.stats.inc_value('spm/request/method/%s' % request.method)
+            self.crawler.stats.inc_value('zyte_proxy/request')
+            self.crawler.stats.inc_value('zyte_proxy/request/method/%s' % request.method)
         else:
-            self._clean_spm_headers(request)
+            self._clean_zyte_proxy_headers(request)
 
     def _is_banned(self, response):
         return (
@@ -182,7 +182,7 @@ class SmartProxyManagerMiddleware(object):
         if not self._is_enabled_for_request(request):
             return self._handle_not_enabled_response(request, response)
 
-        if not self._is_spm_response(response):
+        if not self._is_zyte_proxy_response(response):
             return response
 
         key = self._get_slot_key(request)
@@ -195,17 +195,17 @@ class SmartProxyManagerMiddleware(object):
                 reason = 'autherror'
             self._set_custom_delay(request, next(self.exp_backoff), reason=reason)
         else:
-            self.crawler.stats.inc_value('spm/delay/reset_backoff')
+            self.crawler.stats.inc_value('zyte_proxy/delay/reset_backoff')
             self.exp_backoff = exp_backoff(self.backoff_step, self.backoff_max)
 
         if self._is_auth_error(response):
             # When Zye Smart Proxy Manager has issues it might not be able to
             # authenticate users we must retry
-            retries = request.meta.get('spm_auth_retry_times', 0)
+            retries = request.meta.get('zyte_proxy_auth_retry_times', 0)
             if retries < self.max_auth_retry_times:
                 return self._retry_auth(response, request, spider)
             else:
-                self.crawler.stats.inc_value('spm/retries/auth/max_reached')
+                self.crawler.stats.inc_value('zyte_proxy/retries/auth/max_reached')
                 logging.warning(
                     "Max retries for authentication issues reached, please check auth"
                     " information settings",
@@ -220,17 +220,17 @@ class SmartProxyManagerMiddleware(object):
                 after = response.headers.get('retry-after')
                 if after:
                     self._set_custom_delay(request, float(after), reason='banned')
-            self.crawler.stats.inc_value('spm/response/banned')
+            self.crawler.stats.inc_value('zyte_proxy/response/banned')
         else:
             self._bans[key] = 0
         # If placed behind `RedirectMiddleware`, it would not count 3xx responses
-        self.crawler.stats.inc_value('spm/response')
-        self.crawler.stats.inc_value('spm/response/status/%s' % response.status)
-        spm_error = response.headers.get('X-Crawlera-Error')
-        if spm_error:
-            self.crawler.stats.inc_value('spm/response/error')
+        self.crawler.stats.inc_value('zyte_proxy/response')
+        self.crawler.stats.inc_value('zyte_proxy/response/status/%s' % response.status)
+        zyte_proxy_error = response.headers.get('X-Crawlera-Error')
+        if zyte_proxy_error:
+            self.crawler.stats.inc_value('zyte_proxy/response/error')
             self.crawler.stats.inc_value(
-                'spm/response/error/%s' % spm_error.decode('utf8'))
+                'zyte_proxy/response/error/%s' % zyte_proxy_error.decode('utf8'))
         return response
 
     def process_exception(self, request, exception, spider):
@@ -248,7 +248,7 @@ class SmartProxyManagerMiddleware(object):
 
             retryreq = request.copy()
             retryreq.dont_filter = True
-            self.crawler.stats.inc_value('spm/retries/should_have_been_enabled')
+            self.crawler.stats.inc_value('zyte_proxy/retries/should_have_been_enabled')
             return retryreq
         return response
 
@@ -257,11 +257,11 @@ class SmartProxyManagerMiddleware(object):
             "Retrying Zyte Smart Proxy Manager request for authentication issue",
             extra={'spider': self.spider},
         )
-        retries = request.meta.get('spm_auth_retry_times', 0) + 1
+        retries = request.meta.get('zyte_proxy_auth_retry_times', 0) + 1
         retryreq = request.copy()
-        retryreq.meta['spm_auth_retry_times'] = retries
+        retryreq.meta['zyte_proxy_auth_retry_times'] = retries
         retryreq.dont_filter = True
-        self.crawler.stats.inc_value('spm/retries/auth')
+        self.crawler.stats.inc_value('zyte_proxy/retries/auth')
         return retryreq
 
     def _clear_dns_cache(self):
@@ -282,7 +282,7 @@ class SmartProxyManagerMiddleware(object):
         parsed = urlparse(url)
         return parsed.netloc
 
-    def _is_spm_response(self, response):
+    def _is_zyte_proxy_response(self, response):
         return bool("X-Crawlera-Version" in response.headers)
 
     def _get_slot_key(self, request):
@@ -301,8 +301,8 @@ class SmartProxyManagerMiddleware(object):
             self._saved_delays[key] = slot.delay
         slot.delay = delay
         if reason is not None:
-            self.crawler.stats.inc_value('spm/delay/%s' % reason)
-            self.crawler.stats.inc_value('spm/delay/%s/total' % reason, delay)
+            self.crawler.stats.inc_value('zyte_proxy/delay/%s' % reason)
+            self.crawler.stats.inc_value('zyte_proxy/delay/%s/total' % reason, delay)
 
     def _restore_original_delay(self, request):
         """Restore original delay for slot if it was changed."""
@@ -312,23 +312,23 @@ class SmartProxyManagerMiddleware(object):
         if self._saved_delays[key] is not None:
             slot.delay, self._saved_delays[key] = self._saved_delays[key], None
 
-    def _clean_spm_headers(self, request):
+    def _clean_zyte_proxy_headers(self, request):
         """Remove X-Crawlera-* headers from the request."""
         targets = [
             header
             for header in request.headers
-            if self._is_spm_header(header)
+            if self._is_zyte_proxy_header(header)
         ]
         for header in targets:
             request.headers.pop(header, None)
 
-    def _is_spm_header(self, header_name):
+    def _is_zyte_proxy_header(self, header_name):
         if not header_name:
             return False
         header_name = header_name.decode('utf-8').lower()
         return header_name.startswith(self.header_prefix.lower())
 
-    def _set_spm_default_headers(self, request):
+    def _set_zyte_proxy_default_headers(self, request):
         for header, value in self._headers:
             if value is None:
                 continue
