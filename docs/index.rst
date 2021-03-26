@@ -16,7 +16,7 @@ Configuration
 
     DOWNLOADER_MIDDLEWARES = {
         ...
-        'scrapy_zyte_proxy.SmartProxyManagerMiddleware': 610
+        'scrapy_zyte_proxy.ZyteProxyMiddleware': 610
     }
 
 * Then there are two ways to enable it
@@ -29,7 +29,7 @@ Configuration
   * Through spider attributes::
 
       class MySpider:
-          smp_enabled = True
+          zyte_proxy_enabled = True
           smp_apikey = 'apikey'
 
 
@@ -52,8 +52,8 @@ How to use it
     All configurable Scrapy Settings added by the Middleware.
 
 
-With the middleware, the usage of Zyte Smart Proxy Manager is automatic, every request will go through Smart Proxy Manager without nothing to worry about.
-If you want to *disable* Smart Proxy Manager on a specific Request, you can do so by updating `meta` with `dont_proxy=True`::
+With the middleware, the usage of Zyte Smart Proxy Manager is automatic, every request will go through Zyte Smart Proxy Manager without nothing to worry about.
+If you want to *disable* Zyte Smart Proxy Manager on a specific Request, you can do so by updating `meta` with `dont_proxy=True`::
 
 
     scrapy.Request(
@@ -84,7 +84,7 @@ requests with `DEFAULT_REQUEST_HEADERS <http://doc.scrapy.org/en/1.0/topics/sett
 
 .. note:: Zyte Smart Proxy Manager headers are removed from requests when the middleware
     is activated but Zyte Smart Proxy Manager is disabled. For example, if you accidentally
-    disable Zyte Smart Proxy Manager via ``zyte_smp_enabled = False``
+    disable Zyte Smart Proxy Manager via ``zyte_zyte_proxy_enabled = False``
     but keep sending ``X-Crawlera-*`` headers in your requests, those will be removed from the
     request headers.
 

@@ -46,9 +46,9 @@ ZYTE_PROXY_DEFAULT_HEADERS
 
 Default: ``{}``
 
-Default headers added only to zyte smart proxy manager requests. Headers defined on ``DEFAULT_REQUEST_HEADERS`` will take precedence as long as the ``SmartProxyManagerMiddleware`` is placed after the ``DefaultHeadersMiddleware``. Headers set on the requests have precedence over the two settings.
+Default headers added only to zyte smart proxy manager requests. Headers defined on ``DEFAULT_REQUEST_HEADERS`` will take precedence as long as the ``ZyteProxyMiddleware`` is placed after the ``DefaultHeadersMiddleware``. Headers set on the requests have precedence over the two settings.
 
-* This is the default behavior, ``DefaultHeadersMiddleware`` default priority is ``400`` and we recommend ``SmartProxyManagerMiddleware`` priority to be ``610``
+* This is the default behavior, ``DefaultHeadersMiddleware`` default priority is ``400`` and we recommend ``ZyteProxyMiddleware`` priority to be ``610``
 
 ZYTE_PROXY_BACKOFF_STEP
 -----------------------

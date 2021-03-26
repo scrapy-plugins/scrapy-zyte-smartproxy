@@ -13,7 +13,7 @@ from twisted.internet.error import ConnectionRefusedError, ConnectionDone
 from scrapy_zyte_proxy.utils import exp_backoff
 
 
-class SmartProxyManagerMiddleware(object):
+class ZyteProxyMiddleware(object):
 
     url = 'https://proxy.zyte.com:8014'
     maxbans = 400
@@ -85,7 +85,7 @@ class SmartProxyManagerMiddleware(object):
             # Setting spider download delay to 0 to get maximum crawl rate
             spider.download_delay = 0
             logging.info(
-                "SmartProxyManagerMiddleware: disabling download delays on Scrapy side to optimize delays introduced by Zyte Smart Proxy Manager. "
+                "ZyteProxyMiddleware: disabling download delays on Scrapy side to optimize delays introduced by Zyte Smart Proxy Manager. "
                 "To avoid this behaviour you can use the ZYTE_PROXY_PRESERVE_DELAY setting but keep in mind that this may slow down the crawl significantly",
                 extra={'spider': spider},
             )

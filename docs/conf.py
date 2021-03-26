@@ -55,7 +55,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'scrapy-zyte-proxy'
-copyright = u'2021, Zyte Group Ltd'
+copyright = u'2011-2021, Zyte Group Ltd'
 author = u'Zyte'
 
 # The version info for the project you're documenting, acts as replacement for

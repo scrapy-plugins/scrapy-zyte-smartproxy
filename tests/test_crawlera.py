@@ -14,7 +14,7 @@ from scrapy.resolver import dnscache
 from scrapy.exceptions import ScrapyDeprecationWarning
 from twisted.internet.error import ConnectionRefusedError, ConnectionDone
 
-from scrapy_zyte_proxy import SmartProxyManagerMiddleware
+from scrapy_zyte_proxy import ZyteProxyMiddleware
 import os
 
 from scrapy_zyte_proxy.utils import exp_backoff
@@ -26,9 +26,9 @@ class MockedSlot(object):
         self.delay = delay
 
 
-class SmartProxyManagerMiddlewareTestCase(TestCase):
+class ZyteProxyMiddlewareTestCase(TestCase):
 
-    mwcls = SmartProxyManagerMiddleware
+    mwcls = ZyteProxyMiddleware
     bancode = 503
     auth_error_code = 407
 
@@ -689,7 +689,7 @@ class SmartProxyManagerMiddlewareTestCase(TestCase):
                 extra={'spider': spider},
             ),
             call(
-                "SmartProxyManagerMiddleware: disabling download delays on Scrapy side to optimize delays introduced by Zyte Smart Proxy Manager. "
+                "ZyteProxyMiddleware: disabling download delays on Scrapy side to optimize delays introduced by Zyte Smart Proxy Manager. "
                 "To avoid this behaviour you can use the ZYTE_PROXY_PRESERVE_DELAY setting but keep in mind that this may slow down the crawl significantly",
                 extra={'spider': spider},
             ),
