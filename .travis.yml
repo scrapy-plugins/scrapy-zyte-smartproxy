@@ -34,5 +34,5 @@ deploy:
     secure: rU/nBv26TZbZhO22zDeSWtQjmglSeG+ujWqfYUiLuAl4+JcNnQSFtqK14S4CZOLCjl8lfIJjZV073+X2zhy0AUVQrNlbVFRCwnAL9KsDG3s9ixGNhNdZB82R0+VdViI39M+Fhty8X1g0XhPmAoDz7Ol9G5Voyu5gCINQHFCaAxs=
   on:
     tags: true
-    repo: scrapy-plugins/scrapy-crawlera
+    repo: scrapy-plugins/scrapy-zyte-smartproxy
     condition: "$TOXENV =~ ^py27,"
