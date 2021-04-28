@@ -93,8 +93,8 @@ class ZyteSmartProxyMiddleware(object):
                 "ZyteSmartProxyMiddleware: disabling download delays in "
                 "Scrapy to optimize delays introduced by Zyte Smart Proxy "
                 "Manager. To avoid this behaviour you can use the "
-                "ZYTE_SMARTPROXY_PRESERVE_DELAY setting but keep in mind that "
-                "this may slow down the crawl significantly",
+                "ZYTE_SMARTPROXY_PRESERVE_DELAY setting, but keep in mind "
+                "that this may slow down the crawl significantly",
                 extra={'spider': spider},
             )
 
@@ -352,7 +352,7 @@ class ZyteSmartProxyMiddleware(object):
                 'Please check '
                 'https://docs.zyte.com/smart-proxy-manager.html#request-headers '
                 'for more information. You can set LOG_LEVEL=DEBUG to see the '
-                'urls with problems'
+                'urls with problems.'
                 % str(self.conflicting_headers)
             )
             logging.debug(
