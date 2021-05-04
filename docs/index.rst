@@ -36,7 +36,7 @@ Configuration
           zyte_smartproxy_apikey = 'apikey'
 
 
-* (optional) If you are not using the default Zyte Smart Proxy Manager proxy (``http://proxy.zyte.com:8010``),
+* (optional) If you are not using the default Zyte Smart Proxy Manager proxy (``http://proxy.zyte.com:8011``),
   for example if you have a dedicated or private instance,
   make sure to also set ``ZYTE_SMARTPROXY_URL`` in ``settings.py``, e.g.::
 

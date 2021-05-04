@@ -15,7 +15,7 @@ from scrapy_zyte_smartproxy.utils import exp_backoff
 
 class ZyteSmartProxyMiddleware(object):
 
-    url = 'http://proxy.zyte.com:8010'
+    url = 'http://proxy.zyte.com:8011'
     maxbans = 400
     ban_code = 503
     download_timeout = 190

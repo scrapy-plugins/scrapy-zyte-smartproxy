@@ -21,7 +21,7 @@ following backward-incompatible changes:
 -   ``scrapy_crawlera`` is now ``scrapy_zyte_smartproxy``.
 
 -   ``CrawleraMiddleware`` is now ``ZyteSmartProxyMiddleware``, and its default
-    ``url`` is now ``http://proxy.zyte.com:8010``.
+    ``url`` is now ``http://proxy.zyte.com:8011``.
 
 -   Stat prefixes have switched from ``crawlera/`` to ``zyte_smartproxy/``.
 

@@ -83,7 +83,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
 
     def _assert_enabled(self, spider,
                         settings=None,
-                        proxyurl='http://proxy.zyte.com:8010',
+                        proxyurl='http://proxy.zyte.com:8011',
                         proxyauth=basic_auth_header('apikey', ''),
                         maxbans=400,
                         download_timeout=190):
@@ -177,23 +177,23 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
 
     def test_proxyurl(self):
         self.spider.zyte_smartproxy_enabled = True
-        self.settings['ZYTE_SMARTPROXY_URL'] = 'http://localhost:8010'
-        self._assert_enabled(self.spider, self.settings, proxyurl='http://localhost:8010')
+        self.settings['ZYTE_SMARTPROXY_URL'] = 'http://localhost:8011'
+        self._assert_enabled(self.spider, self.settings, proxyurl='http://localhost:8011')
 
     def test_proxyurl_no_protocol(self):
         self.spider.zyte_smartproxy_enabled = True
-        self.settings['ZYTE_SMARTPROXY_URL'] = 'localhost:8010'
-        self._assert_enabled(self.spider, self.settings, proxyurl='http://localhost:8010')
+        self.settings['ZYTE_SMARTPROXY_URL'] = 'localhost:8011'
+        self._assert_enabled(self.spider, self.settings, proxyurl='http://localhost:8011')
 
     def test_proxyurl_https(self):
         self.spider.zyte_smartproxy_enabled = True
-        self.settings['ZYTE_SMARTPROXY_URL'] = 'https://localhost:8010'
-        self._assert_enabled(self.spider, self.settings, proxyurl='https://localhost:8010')
+        self.settings['ZYTE_SMARTPROXY_URL'] = 'https://localhost:8011'
+        self._assert_enabled(self.spider, self.settings, proxyurl='https://localhost:8011')
 
     def test_proxyurl_including_noconnect(self):
         self.spider.zyte_smartproxy_enabled = True
-        self.settings['ZYTE_SMARTPROXY_URL'] = 'http://localhost:8010?noconnect'
-        self._assert_enabled(self.spider, self.settings, proxyurl='http://localhost:8010?noconnect')
+        self.settings['ZYTE_SMARTPROXY_URL'] = 'http://localhost:8011?noconnect'
+        self._assert_enabled(self.spider, self.settings, proxyurl='http://localhost:8011?noconnect')
 
     def test_maxbans(self):
         self.spider.zyte_smartproxy_enabled = True

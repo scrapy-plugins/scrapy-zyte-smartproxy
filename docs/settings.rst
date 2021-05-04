@@ -15,7 +15,7 @@ Unique Zyte Smart Proxy Manager API key provided for authentication.
 ZYTE_SMARTPROXY_URL
 -------------------
 
-Default: ``'http://proxy.zyte.com:8010'``
+Default: ``'http://proxy.zyte.com:8011'``
 
 Zyte Smart Proxy Manager instance URL, it varies depending on adquiring a private or dedicated instance. If Zyte Smart Proxy Manager didn't provide
 you with a private instance URL, you don't need to specify it.
