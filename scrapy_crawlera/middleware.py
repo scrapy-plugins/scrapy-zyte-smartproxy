@@ -148,6 +148,7 @@ class CrawleraMiddleware(object):
         return basic_auth_header(self.apikey, '')
 
     def process_request(self, request, spider):
+        from scrapy_crawlera import __version__
         if self._is_enabled_for_request(request):
             self._set_crawlera_default_headers(request)
             request.meta['proxy'] = self.url
@@ -155,6 +156,7 @@ class CrawleraMiddleware(object):
             request.headers['Proxy-Authorization'] = self._proxyauth
             if self.job_id:
                 request.headers['X-Crawlera-Jobid'] = self.job_id
+            request.headers['X-Crawlera-Client'] = 'scrapy-crawlera/%s' % __version__
             self.crawler.stats.inc_value('crawlera/request')
             self.crawler.stats.inc_value('crawlera/request/method/%s' % request.method)
         else:
