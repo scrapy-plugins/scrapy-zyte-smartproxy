@@ -3,6 +3,35 @@
 Changes
 =======
 
+v2.0.0 (2021-05-NN)
+-------------------
+
+Following the upstream rebranding of Crawlera as Zyte Smart Proxy Manager,
+``scrapy-crawlera`` has been renamed as ``scrapy-zyte-smartproxy``, with the
+following backward-incompatible changes:
+
+-   The repository name and Python Package Index (PyPI) name are now
+    ``scrapy-zyte-smartproxy``.
+
+-   Setting prefixes have switched from ``CRAWLERA_`` to ``ZYTE_SMARTPROXY_``.
+
+-   Spider attribute prefixes and request meta key prefixes have switched from
+    ``crawlera_`` to ``zyte_smartproxy_``.
+
+-   ``scrapy_crawlera`` is now ``scrapy_zyte_smartproxy``.
+
+-   ``CrawleraMiddleware`` is now ``ZyteSmartProxyMiddleware``, and its default
+    ``url`` is now ``http://proxy.zyte.com:8011``.
+
+-   Stat prefixes have switched from ``crawlera/`` to ``zyte_smartproxy/``.
+
+-   The online documentation is moving to
+    https://scrapy-zyte-smartproxy.readthedocs.io/
+
+.. note:: Zyte Smart Proxy Manager headers continue to use the ``X-Crawlera-``
+          prefix.
+
+
 v1.7.2 (2020-12-01)
 -------------------
 - Use request.meta than response.meta in the middleware
