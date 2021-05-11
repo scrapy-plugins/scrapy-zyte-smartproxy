@@ -156,6 +156,7 @@ class ZyteSmartProxyMiddleware(object):
         return basic_auth_header(self.apikey, '')
 
     def process_request(self, request, spider):
+        from scrapy_zyte_smartproxy import __version__
         if self._is_enabled_for_request(request):
             self._set_zyte_smartproxy_default_headers(request)
             request.meta['proxy'] = self.url
@@ -163,6 +164,7 @@ class ZyteSmartProxyMiddleware(object):
             request.headers['Proxy-Authorization'] = self._proxyauth
             if self.job_id:
                 request.headers['X-Crawlera-Jobid'] = self.job_id
+            request.headers['X-Crawlera-Client'] = 'scrapy-zyte-smartproxy/%s' % __version__
             self.crawler.stats.inc_value('zyte_smartproxy/request')
             self.crawler.stats.inc_value('zyte_smartproxy/request/method/%s' % request.method)
         else:

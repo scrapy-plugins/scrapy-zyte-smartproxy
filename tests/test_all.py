@@ -15,7 +15,7 @@ from scrapy.resolver import dnscache
 from scrapy.exceptions import ScrapyDeprecationWarning
 from twisted.internet.error import ConnectionRefusedError, ConnectionDone
 
-from scrapy_zyte_smartproxy import ZyteSmartProxyMiddleware
+from scrapy_zyte_smartproxy import __version__, ZyteSmartProxyMiddleware
 from scrapy_zyte_smartproxy.utils import exp_backoff
 
 
@@ -897,3 +897,15 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         mw.process_request(req, self.spider)
         assert mw.process_request(req, self.spider) is None
         self.assertEqual(req.headers['X-Crawlera-Profile'], b'desktop')
+
+    def test_client_header(self):
+        self.spider.zyte_smartproxy_enabled = True
+        crawler = self._mock_crawler(self.spider, self.settings)
+        mw = self.mwcls.from_crawler(crawler)
+        mw.open_spider(self.spider)
+        req = Request('http://www.scrapytest.org')
+        self.assertEqual(mw.process_request(req, self.spider), None)
+        self.assertEqual(
+            req.headers.get('X-Crawlera-Client').decode('utf-8'),
+            'scrapy-zyte-smartproxy/%s' % __version__
+        )
