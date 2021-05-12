@@ -28,11 +28,11 @@ following backward-incompatible changes:
 -   The online documentation is moving to
     https://scrapy-zyte-smartproxy.readthedocs.io/
 
--   New ``X-Crawlera-Client`` header support
-
 .. note:: Zyte Smart Proxy Manager headers continue to use the ``X-Crawlera-``
           prefix.
 
+-   In addition to that, the ``X-Crawlera-Client`` header is now automatically
+    included in all requests.
 
 v1.7.2 (2020-12-01)
 -------------------
