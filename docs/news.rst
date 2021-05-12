@@ -3,7 +3,7 @@
 Changes
 =======
 
-v2.0.0 (2021-05-NN)
+v2.0.0 (2021-05-12)
 -------------------
 
 Following the upstream rebranding of Crawlera as Zyte Smart Proxy Manager,
