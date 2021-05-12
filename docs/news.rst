@@ -3,7 +3,7 @@
 Changes
 =======
 
-v2.0.0 (2021-05-NN)
+v2.0.0 (2021-05-12)
 -------------------
 
 Following the upstream rebranding of Crawlera as Zyte Smart Proxy Manager,
@@ -31,6 +31,8 @@ following backward-incompatible changes:
 .. note:: Zyte Smart Proxy Manager headers continue to use the ``X-Crawlera-``
           prefix.
 
+-   In addition to that, the ``X-Crawlera-Client`` header is now automatically
+    included in all requests.
 
 v1.7.2 (2020-12-01)
 -------------------
