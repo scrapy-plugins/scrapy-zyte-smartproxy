@@ -1,4 +1,4 @@
 from .middleware import ZyteSmartProxyMiddleware
 
 
-__version__ = '1.7.2'
+__version__ = '2.0.0'
