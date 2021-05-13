@@ -462,7 +462,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         self.assertNotIn('X-Crawlera-Profile', req.headers)
 
     @patch('scrapy_zyte_smartproxy.middleware.warnings')
-    @patch('scrapy_zyte_smartproxy.middleware.logging')
+    @patch('scrapy_zyte_smartproxy.middleware.logger')
     def test_zyte_smartproxy_default_headers_conflicting_headers(self, mock_logger, mock_warnings):
         spider = self.spider
         self.spider.zyte_smartproxy_enabled = True
@@ -671,7 +671,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         res = mw.process_response(auth_error_req, non_zyte_smartproxy_407_response, self.spider)
         self.assertIsInstance(res, Response)
 
-    @patch('scrapy_zyte_smartproxy.middleware.logging')
+    @patch('scrapy_zyte_smartproxy.middleware.logger')
     def test_open_spider_logging(self, mock_logger):
         spider = self.spider
         self.spider.zyte_smartproxy_enabled = True
@@ -767,7 +767,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         self.assertEqual(mw.crawler.stats.get_stats(), {})
         self.assertEqual(out.status, 200)
 
-    @patch('scrapy_zyte_smartproxy.middleware.logging')
+    @patch('scrapy_zyte_smartproxy.middleware.logger')
     def test_apikey_warning_zyte_smartproxy_disabled(self, mock_logger):
         self.spider.zyte_smartproxy_enabled = False
         settings = {}
@@ -777,7 +777,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         self.assertFalse(mw.enabled)
         mock_logger.warning.assert_not_called()
 
-    @patch('scrapy_zyte_smartproxy.middleware.logging')
+    @patch('scrapy_zyte_smartproxy.middleware.logger')
     def test_no_apikey_warning_zyte_smartproxy_enabled(self, mock_logger):
         self.spider.zyte_smartproxy_enabled = True
         settings = {}
@@ -790,7 +790,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
             extra={'spider': self.spider}
         )
 
-    @patch('scrapy_zyte_smartproxy.middleware.logging')
+    @patch('scrapy_zyte_smartproxy.middleware.logger')
     def test_no_apikey_warning_force_enable(self, mock_logger):
         self.spider.zyte_smartproxy_enabled = False
         settings = {'ZYTE_SMARTPROXY_FORCE_ENABLE_ON_HTTP_CODES': [403]}
@@ -803,7 +803,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
             extra={'spider': self.spider}
         )
 
-    @patch('scrapy_zyte_smartproxy.middleware.logging')
+    @patch('scrapy_zyte_smartproxy.middleware.logger')
     def test_apikey_warning_force_enable(self, mock_logger):
         self.spider.zyte_smartproxy_enabled = False
         settings = {

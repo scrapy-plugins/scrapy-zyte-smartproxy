@@ -13,6 +13,9 @@ from twisted.internet.error import ConnectionRefusedError, ConnectionDone
 from scrapy_zyte_smartproxy.utils import exp_backoff
 
 
+logger = logging.getLogger("zyte-smart-proxy-manager")
+
+
 class ZyteSmartProxyMiddleware(object):
 
     url = 'http://proxy.zyte.com:8011'
@@ -71,7 +74,7 @@ class ZyteSmartProxyMiddleware(object):
             return
 
         if not self.apikey:
-            logging.warning(
+            logger.warning(
                 "Zyte Smart Proxy Manager cannot be used without an API key",
                 extra={'spider': spider},
             )
@@ -79,7 +82,7 @@ class ZyteSmartProxyMiddleware(object):
 
         self._proxyauth = self.get_proxyauth(spider)
 
-        logging.info(
+        logger.info(
             "Using Zyte Smart Proxy Manager at %s (apikey: %s)" % (
                 self.url, self.apikey[:7]
             ),
@@ -89,7 +92,7 @@ class ZyteSmartProxyMiddleware(object):
         if not self.preserve_delay:
             # Setting spider download delay to 0 to get maximum crawl rate
             spider.download_delay = 0
-            logging.info(
+            logger.info(
                 "ZyteSmartProxyMiddleware: disabling download delays in "
                 "Scrapy to optimize delays introduced by Zyte Smart Proxy "
                 "Manager. To avoid this behaviour you can use the "
@@ -130,9 +133,9 @@ class ZyteSmartProxyMiddleware(object):
 
     def _fix_url_protocol(self):
         if self.url.startswith('https://'):
-            logging.warning('ZYTE_SMARTPROXY_URL "%s" set with "https://" protocol.' % self.url)
+            logger.warning('ZYTE_SMARTPROXY_URL "%s" set with "https://" protocol.' % self.url)
         elif not self.url.startswith('http://'):
-            logging.warning('Adding "http://" to ZYTE_SMARTPROXY_URL %s' % self.url)
+            logger.warning('Adding "http://" to ZYTE_SMARTPROXY_URL %s' % self.url)
             self.url = 'http://' + self.url
 
     def is_enabled(self, spider):
@@ -216,7 +219,7 @@ class ZyteSmartProxyMiddleware(object):
                 return self._retry_auth(response, request, spider)
             else:
                 self.crawler.stats.inc_value('zyte_smartproxy/retries/auth/max_reached')
-                logging.warning(
+                logger.warning(
                     "Max retries for authentication issues reached, please check auth"
                     " information settings",
                     extra={'spider': self.spider},
@@ -263,7 +266,7 @@ class ZyteSmartProxyMiddleware(object):
         return response
 
     def _retry_auth(self, response, request, spider):
-        logging.warning(
+        logger.warning(
             "Retrying a Zyte Smart Proxy Manager request due to an "
             "authentication issue",
             extra={'spider': self.spider},
@@ -357,7 +360,7 @@ class ZyteSmartProxyMiddleware(object):
                 'urls with problems.'
                 % str(self.conflicting_headers)
             )
-            logging.debug(
+            logger.debug(
                 'The headers %s are conflicting on request %s. X-Crawlera-UA '
                 'will be ignored. Please check '
                 'https://docs.zyte.com/smart-proxy-manager.html#request-headers '
