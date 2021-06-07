@@ -13,7 +13,7 @@ from twisted.internet.error import ConnectionRefusedError, ConnectionDone
 from scrapy_zyte_smartproxy.utils import exp_backoff
 
 
-logger = logging.getLogger("zyte-smart-proxy-manager")
+logger = logging.getLogger("scrapy-zyte-smartproxy")
 
 
 class ZyteSmartProxyMiddleware(object):
