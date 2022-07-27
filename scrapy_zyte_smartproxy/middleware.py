@@ -4,7 +4,7 @@ import warnings
 from base64 import b64decode
 from collections import defaultdict
 
-from six.moves.urllib.parse import urlparse
+from six.moves.urllib.parse import urlparse, urlunparse
 from w3lib.http import basic_auth_header
 from scrapy import signals
 from scrapy.resolver import dnscache
