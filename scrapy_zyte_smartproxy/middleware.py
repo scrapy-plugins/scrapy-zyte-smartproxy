@@ -1,9 +1,11 @@
 import os
 import logging
 import warnings
+from base64 import b64decode
 from collections import defaultdict
+from warnings import warn
 
-from six.moves.urllib.parse import urlparse
+from six.moves.urllib.parse import urlparse, urlunparse
 from w3lib.http import basic_auth_header
 from scrapy import signals
 from scrapy.resolver import dnscache
@@ -52,12 +54,27 @@ class ZyteSmartProxyMiddleware(object):
         self.spider = None
         self._bans = defaultdict(int)
         self._saved_delays = defaultdict(lambda: None)
+        self._auth_url = None
 
     @classmethod
     def from_crawler(cls, crawler):
         o = cls(crawler)
         crawler.signals.connect(o.open_spider, signals.spider_opened)
         return o
+
+    def _make_auth_url(self, spider):
+        parsed_url = urlparse(self.url)
+        auth = self.get_proxyauth(spider)
+        if not auth.startswith(b'Basic '):
+            raise ValueError(
+                'Zyte Smart Proxy Manager only support HTTP basic access '
+                'authentication, but %s.%s.get_proxyauth() returned %r'
+                % (self.__module__, self.__class__.__name__, auth)
+            )
+        user_and_colon = b64decode(auth[6:].strip()).decode('utf-8')
+        netloc = user_and_colon + '@' + parsed_url.netloc.split('@')[-1]
+        parsed_url = parsed_url._replace(netloc=netloc)
+        return urlunparse(parsed_url)
 
     def open_spider(self, spider):
         self.enabled = self.is_enabled(spider)
@@ -80,7 +97,7 @@ class ZyteSmartProxyMiddleware(object):
             )
             return
 
-        self._proxyauth = self.get_proxyauth(spider)
+        self._auth_url = self._make_auth_url(spider)
 
         logger.info(
             "Using Zyte Smart Proxy Manager at %s (apikey: %s)" % (
@@ -162,9 +179,8 @@ class ZyteSmartProxyMiddleware(object):
         from scrapy_zyte_smartproxy import __version__
         if self._is_enabled_for_request(request):
             self._set_zyte_smartproxy_default_headers(request)
-            request.meta['proxy'] = self.url
+            request.meta['proxy'] = self._auth_url
             request.meta['download_timeout'] = self.download_timeout
-            request.headers['Proxy-Authorization'] = self._proxyauth
             if self.job_id:
                 request.headers['X-Crawlera-Jobid'] = self.job_id
             request.headers['X-Crawlera-Client'] = 'scrapy-zyte-smartproxy/%s' % __version__
