@@ -1,3 +1,4 @@
+import binascii
 import os
 import pytest
 from random import choice
@@ -955,5 +956,5 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         self.spider.zyte_smartproxy_enabled = True
         crawler = self._mock_crawler(self.spider, self.settings)
         smartproxy = Subclass.from_crawler(crawler)
-        with pytest.raises(TypeError):
+        with pytest.raises((TypeError, binascii.Error):
             smartproxy.open_spider(self.spider)
