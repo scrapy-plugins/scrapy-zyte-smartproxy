@@ -3,7 +3,6 @@ import logging
 import warnings
 from base64 import b64decode
 from collections import defaultdict
-from warnings import warn
 
 from six.moves.urllib.parse import urlparse, urlunparse
 from w3lib.http import basic_auth_header
