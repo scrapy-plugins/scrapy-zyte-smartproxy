@@ -66,7 +66,7 @@ class ZyteSmartProxyMiddleware(object):
         auth = self.get_proxyauth(spider)
         if not auth.startswith(b'Basic '):
             raise ValueError(
-                'Zyte Smart Proxy Manager only support HTTP basic access '
+                'Zyte Smart Proxy Manager only supports HTTP basic access '
                 'authentication, but %s.%s.get_proxyauth() returned %r'
                 % (self.__module__, self.__class__.__name__, auth)
             )
