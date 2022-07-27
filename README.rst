@@ -21,7 +21,7 @@ Requirements
 ============
 
 * Python 2.7 or Python 3.4+
-* Scrapy
+* Scrapy 1.4+
 
 Installation
 ============
