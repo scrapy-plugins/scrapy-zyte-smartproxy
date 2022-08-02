@@ -1,7 +1,7 @@
 import os
 import logging
 import warnings
-from base64 import urlsafe_b64decode
+from base64 import b64decode, urlsafe_b64decode
 from collections import defaultdict
 
 from six.moves.urllib.parse import urlparse, urlunparse
@@ -70,7 +70,10 @@ class ZyteSmartProxyMiddleware(object):
                 'authentication, but %s.%s.get_proxyauth() returned %r'
                 % (self.__module__, self.__class__.__name__, auth)
             )
-        user_and_colon = urlsafe_b64decode(auth[6:].strip()).decode('utf-8')
+        try:
+            user_and_colon = urlsafe_b64decode(auth[6:].strip()).decode('utf-8')
+        except UnicodeDecodeError:
+            user_and_colon = b64decode(auth[6:].strip()).decode('utf-8')
         netloc = user_and_colon + '@' + parsed_url.netloc.split('@')[-1]
         parsed_url = parsed_url._replace(netloc=netloc)
         return urlunparse(parsed_url)

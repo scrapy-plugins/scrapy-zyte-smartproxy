@@ -958,3 +958,27 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         smartproxy = Subclass.from_crawler(crawler)
         with pytest.raises((TypeError, binascii.Error)):
             smartproxy.open_spider(self.spider)
+
+    def test_subclass_basic_header_nonurlsafe_base64(self):
+
+        class Subclass(self.mwcls):
+            def get_proxyauth(self, spider):
+                return b'Basic YWF+Og=='
+
+        self.spider.zyte_smartproxy_enabled = True
+        crawler = self._mock_crawler(self.spider, self.settings)
+        smartproxy = Subclass.from_crawler(crawler)
+        smartproxy.open_spider(self.spider)
+        self.assertEqual(smartproxy._auth_url, "http://aa~:@proxy.zyte.com:8011")
+
+    def test_subclass_basic_header_urlsafe_base64(self):
+
+        class Subclass(self.mwcls):
+            def get_proxyauth(self, spider):
+                return b'Basic YWF-Og=='
+
+        self.spider.zyte_smartproxy_enabled = True
+        crawler = self._mock_crawler(self.spider, self.settings)
+        smartproxy = Subclass.from_crawler(crawler)
+        smartproxy.open_spider(self.spider)
+        self.assertEqual(smartproxy._auth_url, "http://aa~:@proxy.zyte.com:8011")
