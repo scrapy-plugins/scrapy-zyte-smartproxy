@@ -1,3 +1,4 @@
+import binascii
 import os
 import pytest
 from random import choice
@@ -8,6 +9,7 @@ except ImportError:
     from mock import call, patch
 
 from w3lib.http import basic_auth_header
+from scrapy.downloadermiddlewares.httpproxy import HttpProxyMiddleware
 from scrapy.http import Request, Response
 from scrapy.spiders import Spider
 from scrapy.utils.test import get_crawler
@@ -84,17 +86,19 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
     def _assert_enabled(self, spider,
                         settings=None,
                         proxyurl='http://proxy.zyte.com:8011',
+                        proxyurlcreds='http://apikey:@proxy.zyte.com:8011',
                         proxyauth=basic_auth_header('apikey', ''),
                         maxbans=400,
                         download_timeout=190):
         crawler = self._mock_crawler(spider, settings)
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(spider)
+        assert mw.url == proxyurl
         req = Request('http://www.scrapytest.org')
         assert mw.process_request(req, spider) is None
-        self.assertEqual(req.meta.get('proxy'), proxyurl)
+        self.assertEqual(req.meta.get('proxy'), proxyurlcreds)
         self.assertEqual(req.meta.get('download_timeout'), download_timeout)
-        self.assertEqual(req.headers.get('Proxy-Authorization'), proxyauth)
+        self.assertNotIn(b'Proxy-Authorization', req.headers)
         res = self._mock_zyte_smartproxy_response(req.url)
         assert mw.process_response(req, res, spider) is res
 
@@ -169,31 +173,31 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         self.spider.zyte_smartproxy_enabled = True
         self.settings['ZYTE_SMARTPROXY_APIKEY'] = apikey = 'apikey'
         proxyauth = basic_auth_header(apikey, '')
-        self._assert_enabled(self.spider, self.settings, proxyauth=proxyauth)
+        self._assert_enabled(self.spider, self.settings, proxyauth=proxyauth, proxyurlcreds='http://apikey:@proxy.zyte.com:8011')
 
         self.spider.zyte_smartproxy_apikey = apikey = 'notfromsettings'
         proxyauth = basic_auth_header(apikey, '')
-        self._assert_enabled(self.spider, self.settings, proxyauth=proxyauth)
+        self._assert_enabled(self.spider, self.settings, proxyauth=proxyauth, proxyurlcreds='http://notfromsettings:@proxy.zyte.com:8011')
 
     def test_proxyurl(self):
         self.spider.zyte_smartproxy_enabled = True
         self.settings['ZYTE_SMARTPROXY_URL'] = 'http://localhost:8011'
-        self._assert_enabled(self.spider, self.settings, proxyurl='http://localhost:8011')
+        self._assert_enabled(self.spider, self.settings, proxyurl='http://localhost:8011', proxyurlcreds='http://apikey:@localhost:8011')
 
     def test_proxyurl_no_protocol(self):
         self.spider.zyte_smartproxy_enabled = True
         self.settings['ZYTE_SMARTPROXY_URL'] = 'localhost:8011'
-        self._assert_enabled(self.spider, self.settings, proxyurl='http://localhost:8011')
+        self._assert_enabled(self.spider, self.settings, proxyurl='http://localhost:8011', proxyurlcreds='http://apikey:@localhost:8011')
 
     def test_proxyurl_https(self):
         self.spider.zyte_smartproxy_enabled = True
         self.settings['ZYTE_SMARTPROXY_URL'] = 'https://localhost:8011'
-        self._assert_enabled(self.spider, self.settings, proxyurl='https://localhost:8011')
+        self._assert_enabled(self.spider, self.settings, proxyurl='https://localhost:8011', proxyurlcreds='https://apikey:@localhost:8011')
 
     def test_proxyurl_including_noconnect(self):
         self.spider.zyte_smartproxy_enabled = True
         self.settings['ZYTE_SMARTPROXY_URL'] = 'http://localhost:8011?noconnect'
-        self._assert_enabled(self.spider, self.settings, proxyurl='http://localhost:8011?noconnect')
+        self._assert_enabled(self.spider, self.settings, proxyurl='http://localhost:8011?noconnect', proxyurlcreds='http://apikey:@localhost:8011?noconnect')
 
     def test_maxbans(self):
         self.spider.zyte_smartproxy_enabled = True
@@ -218,7 +222,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         self._assert_enabled(self.spider, self.settings, download_timeout=120)
 
     def test_hooks(self):
-        proxyauth = b'Basic Foo'
+        proxyauth = basic_auth_header('foo', '')
 
         class _ECLS(self.mwcls):
             def is_enabled(self, spider):
@@ -241,7 +245,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         wascalled[:] = []  # reset
         enabled = True
         self.spider.zyte_smartproxy_enabled = False
-        self._assert_enabled(self.spider, self.settings, proxyauth=proxyauth)
+        self._assert_enabled(self.spider, self.settings, proxyauth=proxyauth, proxyurlcreds='http://foo:@proxy.zyte.com:8011')
         self.assertEqual(wascalled, ['is_enabled', 'get_proxyauth'])
 
     def test_delay_adjustment(self):
@@ -909,3 +913,72 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
             req.headers.get('X-Crawlera-Client').decode('utf-8'),
             'scrapy-zyte-smartproxy/%s' % __version__
         )
+
+    def test_scrapy_httpproxy_integration(self):
+        self.spider.zyte_smartproxy_enabled = True
+        crawler = self._mock_crawler(self.spider, self.settings)
+        smartproxy = self.mwcls.from_crawler(crawler)
+        smartproxy.open_spider(self.spider)
+        httpproxy = HttpProxyMiddleware.from_crawler(crawler)
+        request = Request('https://example.com')
+        auth_header = basic_auth_header('apikey', '')
+
+        # 1st pass
+        self.assertEqual(smartproxy.process_request(request, self.spider), None)
+        self.assertEqual(httpproxy.process_request(request, self.spider), None)
+        self.assertEqual(request.meta['proxy'], 'http://proxy.zyte.com:8011')
+        self.assertEqual(request.headers[b'Proxy-Authorization'], auth_header)
+
+        # 2nd pass (e.g. retry or redirect)
+        self.assertEqual(smartproxy.process_request(request, self.spider), None)
+        self.assertEqual(httpproxy.process_request(request, self.spider), None)
+        self.assertEqual(request.meta['proxy'], 'http://proxy.zyte.com:8011')
+        self.assertEqual(request.headers[b'Proxy-Authorization'], auth_header)
+
+    def test_subclass_non_basic_header(self):
+
+        class Subclass(self.mwcls):
+            def get_proxyauth(self, spider):
+                return b'Non-Basic foo'
+
+        self.spider.zyte_smartproxy_enabled = True
+        crawler = self._mock_crawler(self.spider, self.settings)
+        smartproxy = Subclass.from_crawler(crawler)
+        with pytest.raises(ValueError):
+            smartproxy.open_spider(self.spider)
+
+    def test_subclass_basic_header_non_base64(self):
+
+        class Subclass(self.mwcls):
+            def get_proxyauth(self, spider):
+                return b'Basic foo'
+
+        self.spider.zyte_smartproxy_enabled = True
+        crawler = self._mock_crawler(self.spider, self.settings)
+        smartproxy = Subclass.from_crawler(crawler)
+        with pytest.raises((TypeError, binascii.Error)):
+            smartproxy.open_spider(self.spider)
+
+    def test_subclass_basic_header_nonurlsafe_base64(self):
+
+        class Subclass(self.mwcls):
+            def get_proxyauth(self, spider):
+                return b'Basic YWF+Og=='
+
+        self.spider.zyte_smartproxy_enabled = True
+        crawler = self._mock_crawler(self.spider, self.settings)
+        smartproxy = Subclass.from_crawler(crawler)
+        smartproxy.open_spider(self.spider)
+        self.assertEqual(smartproxy._auth_url, "http://aa~:@proxy.zyte.com:8011")
+
+    def test_subclass_basic_header_urlsafe_base64(self):
+
+        class Subclass(self.mwcls):
+            def get_proxyauth(self, spider):
+                return b'Basic YWF-Og=='
+
+        self.spider.zyte_smartproxy_enabled = True
+        crawler = self._mock_crawler(self.spider, self.settings)
+        smartproxy = Subclass.from_crawler(crawler)
+        smartproxy.open_spider(self.spider)
+        self.assertEqual(smartproxy._auth_url, "http://aa~:@proxy.zyte.com:8011")

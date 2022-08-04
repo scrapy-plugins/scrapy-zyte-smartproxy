@@ -8,7 +8,7 @@ jobs:
         include:
         - python-version: 2.7
           env:
-            TOXENV: py27,stack-scrapy-1.0,stack-scrapy-1.1,stack-scrapy-1.2,stack-scrapy-1.3,stack-scrapy-1.4,stack-scrapy-1.5
+            TOXENV: py27,stack-scrapy-1.4,stack-scrapy-1.5
         - python-version: 3.5
           env:
             TOXENV: py35,stack-scrapy-1.8-py3,stack-scrapy-2.0-py3,stack-scrapy-2.1-py3,stack-scrapy-2.2-py3,stack-scrapy-2.3-py3
