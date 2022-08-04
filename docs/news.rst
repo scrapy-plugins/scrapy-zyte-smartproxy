@@ -3,6 +3,13 @@
 Changes
 =======
 
+v2.2.0 (to be released)
+-----------------------
+
+Added support for Scrapy 2.6.2 and later.
+
+Scrapy 1.4 became the minimum supported Scrapy version.
+
 v2.1.0 (2021-06-16)
 -------------------
 
