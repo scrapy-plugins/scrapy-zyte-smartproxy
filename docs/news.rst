@@ -3,8 +3,8 @@
 Changes
 =======
 
-v2.2.0 (to be released)
------------------------
+v2.2.0 (2022-08-05)
+-------------------
 
 Added support for Scrapy 2.6.2 and later.
 
