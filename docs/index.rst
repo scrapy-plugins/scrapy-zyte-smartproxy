@@ -2,104 +2,138 @@
 scrapy-zyte-smartproxy |version| documentation
 ==============================================
 
-scrapy-zyte-smartproxy is a `Scrapy downloader middleware`_ to interact with
-`Zyte Smart Proxy Manager`_ (formerly Crawlera) automatically.
+.. toctree::
+   :hidden:
+
+   headers
+   settings
+   news
+
+scrapy-zyte-smartproxy is a `Scrapy downloader middleware`_ to use one of
+Zyte’s proxy APIs: either the proxy API of `Zyte API`_ or `Zyte Smart Proxy
+Manager`_ (formerly Crawlera).
 
 .. _Scrapy downloader middleware: https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
+.. _Zyte API: https://docs.zyte.com/zyte-api/get-started.html
 .. _Zyte Smart Proxy Manager: https://www.zyte.com/smart-proxy-manager/
 
 Configuration
 =============
 
-.. toctree::
-   :caption: Configuration
+#.  Add the downloader middleware to your ``DOWNLOADER_MIDDLEWARES`` Scrapy
+    setting:
 
+    .. code-block:: python
+        :caption: settings.py
 
-* Add the Zyte Smart Proxy Manager middleware including it into the ``DOWNLOADER_MIDDLEWARES`` in your ``settings.py`` file::
-
-    DOWNLOADER_MIDDLEWARES = {
-        ...
-        'scrapy_zyte_smartproxy.ZyteSmartProxyMiddleware': 610
-    }
-
-* Then there are two ways to enable it
-
-  * Through ``settings.py``::
-
-      ZYTE_SMARTPROXY_ENABLED = True
-      ZYTE_SMARTPROXY_APIKEY = 'apikey'
-
-  * Through spider attributes::
-
-      class MySpider:
-          zyte_smartproxy_enabled = True
-          zyte_smartproxy_apikey = 'apikey'
-
-
-* (optional) If you are not using the default Zyte Smart Proxy Manager proxy (``http://proxy.zyte.com:8011``),
-  for example if you have a dedicated or private instance,
-  make sure to also set ``ZYTE_SMARTPROXY_URL`` in ``settings.py``, e.g.::
-
-    ZYTE_SMARTPROXY_URL = 'http://myinstance.zyte.com:8011'
-
-How to use it
-=============
-
-.. toctree::
-   :caption: How to use it
-   :hidden:
-
-   settings
-
-:doc:`settings`
-    All configurable Scrapy Settings added by the Middleware.
-
-
-With the middleware, the usage of Zyte Smart Proxy Manager is automatic, every request will go through Zyte Smart Proxy Manager without nothing to worry about.
-If you want to *disable* Zyte Smart Proxy Manager on a specific Request, you can do so by updating `meta` with `dont_proxy=True`::
-
-
-    scrapy.Request(
-        'http://example.com',
-        meta={
-            'dont_proxy': True,
+        DOWNLOADER_MIDDLEWARES = {
             ...
-        },
-    )
+            'scrapy_zyte_smartproxy.ZyteSmartProxyMiddleware': 610
+        }
+
+#.  Enable the middleware and configure your API key, either through Scrapy
+    settings:
+
+    .. code-block:: python
+        :caption: settings.py
+
+        ZYTE_SMARTPROXY_ENABLED = True
+        ZYTE_SMARTPROXY_APIKEY = 'apikey'
+
+    Or through spider attributes:
+
+    .. code-block:: python
+
+        class MySpider(scrapy.Spider):
+            zyte_smartproxy_enabled = True
+            zyte_smartproxy_apikey = 'apikey'
+
+.. _ZYTE_SMARTPROXY_URL:
+
+#.  Set the ``ZYTE_SMARTPROXY_URL`` Scrapy setting as needed:
+
+    -   To use the proxy API of Zyte API, set it to
+        ``http://api.zyte.com:8011``:
+
+        .. code-block:: python
+            :caption: settings.py
+
+                ZYTE_SMARTPROXY_URL = "http://api.zyte.com:8011"
+
+    -   To use the default Zyte Smart Proxy Manager endpoint, leave it unset.
+
+    -   To use a custom Zyte Smart Proxy Manager endpoint, in case you have a
+        dedicated or private instance, set it to your custom endpoint. For
+        example:
+
+        .. code-block:: python
+            :caption: settings.py
+
+                ZYTE_SMARTPROXY_URL = "http://myinstance.zyte.com:8011"
 
 
-Remember that you are now making requests to Zyte Smart Proxy Manager, and the Zyte Smart Proxy Manager service will be the one actually making the requests to the different sites.
+Usage
+=====
 
-If you need to specify special `Zyte Smart Proxy Manager headers <https://docs.zyte.com/smart-proxy-manager.html#request-headers>`_, just apply them as normal `Scrapy headers <https://doc.scrapy.org/en/latest/topics/request-response.html#scrapy.http.Request.headers>`_.
+Once the downloader middleware is properly configured, every request goes
+through the configured Zyte proxy API.
 
-Here we have an example of specifying a Zyte Smart Proxy Manager header into a Scrapy request::
+.. _override:
 
-    scrapy.Request(
-        'http://example.com',
-        headers={
-            'X-Crawlera-Max-Retries': 1,
-            ...
-        },
-    )
+Although the plugin configuration only allows defining a single proxy API
+endpoint and API key, it is possible to override them for specific requests, so
+that you can use different combinations for different requests within the same
+spider.
 
-Remember that you could also set which headers to use by default by all
-requests with `DEFAULT_REQUEST_HEADERS <http://doc.scrapy.org/en/1.0/topics/settings.html#default-request-headers>`_
+To **override** which combination of endpoint and API key is used for a given
+request, set ``proxy`` in the request metadata to a URL indicating both the
+target endpoint and the API key to use. For example:
 
-.. note:: Zyte Smart Proxy Manager headers are removed from requests when the middleware is activated but Zyte Smart Proxy Manager
-    is disabled. For example, if you accidentally disable Zyte Smart Proxy Manager via ``zyte_smartproxy_enabled = False``
-    but keep sending ``X-Crawlera-*`` headers in your requests, those will be removed from the
-    request headers.
+    .. code-block:: python
 
-This Middleware also adds some configurable Scrapy Settings, check :ref:`the complete list here <settings>`.
+        scrapy.Request(
+            "https://topscrape.com",
+            meta={
+                "proxy": "http://YOUR_API_KEY@api.zyte.com:8011",
+                ...
+            },
+        )
 
-All the rest
-============
+.. TODO: Check that a colon after the API key is not needed in this case.
 
-.. toctree::
-   :caption: All the rest
-   :hidden:
+To **disable** proxying altogether for a given request, set ``dont_proxy`` to
+``True`` on the request metadata:
 
-   news
+    .. code-block:: python
 
-:doc:`news`
-    See what has changed in recent scrapy-zyte-smartproxy versions.
+        scrapy.Request(
+            "https://topscrape.com",
+            meta={
+                "dont_proxy": True,
+                ...
+            },
+        )
+
+You can set `Zyte API proxy headers`_ or `Zyte Smart Proxy Manager headers`_ as
+regular `Scrapy headers`_, e.g. using the ``headers`` parameter of ``Request``
+or using the DEFAULT_REQUEST_HEADERS_ setting. For example:
+
+    .. code-block:: python
+
+        scrapy.Request(
+            "https://topscrape.com",
+            headers={
+                "Zyte-Session-ID": "foo",
+                ...
+            },
+        )
+
+.. _Zyte API proxy headers: https://docs.zyte.com
+.. _Zyte Smart Proxy Manager headers: https://docs.zyte.com/smart-proxy-manager.html#request-headers
+.. _Scrapy headers: https://doc.scrapy.org/en/latest/topics/request-response.html#scrapy.http.Request.headers
+.. _DEFAULT_REQUEST_HEADERS: https://doc.scrapy.org/en/latest/topics/settings.html#default-request-headers
+
+For information about proxy-specific header processing, see :doc:`headers`.
+
+See also :ref:`settings` for the complete list of settings that this downloader
+middleware supports.

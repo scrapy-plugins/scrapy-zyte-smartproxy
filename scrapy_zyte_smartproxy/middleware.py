@@ -26,7 +26,8 @@ class ZyteSmartProxyMiddleware(object):
     # Handle Zyte Smart Proxy Manager server failures
     connection_refused_delay = 90
     preserve_delay = False
-    header_prefix = 'X-Crawlera-'
+    header_prefix = 'X-Crawlera-'  # Deprecated
+    header_lowercase_prefixes = ('zyte-', 'x-crawlera-')
     conflicting_headers = ('X-Crawlera-Profile', 'X-Crawlera-UA')
     backoff_step = 15
     backoff_max = 180
@@ -35,6 +36,17 @@ class ZyteSmartProxyMiddleware(object):
     max_auth_retry_times = 10
     enabled_for_domain = {}
     apikey = ""
+    zyte_api_to_spm_translations = {
+        b"zyte-client": b"x-crawlera-client",
+        b"zyte-device": b"x-crawlera-profile",
+        b"zyte-error": b"x-crawlera-error",
+        b"zyte-geolocation": b"x-crawlera-region",
+        b"zyte-jobid": b"x-crawlera-jobid",
+        b"zyte-no-bancheck": b"x-crawlera-no-bancheck",
+        b"zyte-override-headers": b"x-crawlera-profile-pass",
+        b"zyte-session-id": b"x-crawlera-session",
+    }
+    spm_to_zyte_api_translations = {v: k for k, v in zyte_api_to_spm_translations.items()}
 
     _settings = [
         ('apikey', str),
@@ -54,6 +66,9 @@ class ZyteSmartProxyMiddleware(object):
         self._bans = defaultdict(int)
         self._saved_delays = defaultdict(lambda: None)
         self._auth_url = None
+        # Keys are proxy URLs, values are booleans (True means Zyte API, False
+        # means Zyte Smart Proxy Manager).
+        self._targets = {}
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -174,17 +189,48 @@ class ZyteSmartProxyMiddleware(object):
         """Hook to compute Proxy-Authorization header by custom rules."""
         return basic_auth_header(self.apikey, '')
 
+    def _targets_zyte_api(self, request):
+        auth_url = request.meta["proxy"]
+        targets_zyte_api = self._targets.get(auth_url, None)
+        if targets_zyte_api is None:
+            targets_zyte_api = urlparse(auth_url).hostname == "api.zyte.com"
+            self._targets[auth_url] = targets_zyte_api
+        return targets_zyte_api
+
+    def _translate_headers(self, request, targets_zyte_api):
+        translation_dict = (
+            self.spm_to_zyte_api_translations if targets_zyte_api
+            else self.zyte_api_to_spm_translations
+        )
+        for header, translation in translation_dict.items():
+            if header not in request.headers:
+                continue
+            request.headers[translation] = value = request.headers.pop(header)
+            logger.warning(
+                "Translating (and dropping) header %r (%r) as %r on request %r",
+                header,
+                value,
+                translation,
+                request,
+            )
+
     def process_request(self, request, spider):
-        from scrapy_zyte_smartproxy import __version__
         if self._is_enabled_for_request(request):
+            if 'proxy' not in request.meta:
+                request.meta['proxy'] = self._auth_url
+            targets_zyte_api = self._targets_zyte_api(request)
             self._set_zyte_smartproxy_default_headers(request)
-            request.meta['proxy'] = self._auth_url
             request.meta['download_timeout'] = self.download_timeout
             if self.job_id:
-                request.headers['X-Crawlera-Jobid'] = self.job_id
-            request.headers['X-Crawlera-Client'] = 'scrapy-zyte-smartproxy/%s' % __version__
+                job_header = 'Zyte-JobId' if targets_zyte_api else 'X-Crawlera-JobId'
+                request.headers[job_header] = self.job_id
+            client_header = 'Zyte-Client' if targets_zyte_api else 'X-Crawlera-Client'
+            from scrapy_zyte_smartproxy import __version__
+            request.headers[client_header] = 'scrapy-zyte-smartproxy/%s' % __version__
             self.crawler.stats.inc_value('zyte_smartproxy/request')
             self.crawler.stats.inc_value('zyte_smartproxy/request/method/%s' % request.method)
+            self._translate_headers(request, targets_zyte_api=targets_zyte_api)
+            self._clean_zyte_smartproxy_headers(request, targets_zyte_api=targets_zyte_api)
         else:
             self._clean_zyte_smartproxy_headers(request)
 
@@ -341,21 +387,37 @@ class ZyteSmartProxyMiddleware(object):
         if self._saved_delays[key] is not None:
             slot.delay, self._saved_delays[key] = self._saved_delays[key], None
 
-    def _clean_zyte_smartproxy_headers(self, request):
+    def _clean_zyte_smartproxy_headers(self, request, targets_zyte_api=None):
         """Remove X-Crawlera-* headers from the request."""
+        if targets_zyte_api is None:
+            prefixes = self.header_lowercase_prefixes
+        elif targets_zyte_api:
+            prefixes = ('x-crawlera-',)
+        else:
+            prefixes = ('zyte-',)
         targets = [
             header
             for header in request.headers
-            if self._is_zyte_smartproxy_header(header)
+            if self._is_zyte_smartproxy_header(header, prefixes)
         ]
         for header in targets:
-            request.headers.pop(header, None)
+            value = request.headers.pop(header, None)
+            if targets_zyte_api is not None:
+                logger.warning(
+                    "Dropping header %r (%r) from request %r",
+                    header,
+                    value,
+                    request,
+                )
 
-    def _is_zyte_smartproxy_header(self, header_name):
+    def _is_zyte_smartproxy_header(self, header_name, prefixes):
         if not header_name:
             return False
         header_name = header_name.decode('utf-8').lower()
-        return header_name.startswith(self.header_prefix.lower())
+        return any(
+            header_name.startswith(prefix)
+            for prefix in prefixes
+        )
 
     def _set_zyte_smartproxy_default_headers(self, request):
         for header, value in self._headers:
