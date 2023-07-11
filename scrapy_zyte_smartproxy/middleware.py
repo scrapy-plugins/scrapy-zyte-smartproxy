@@ -39,7 +39,6 @@ class ZyteSmartProxyMiddleware(object):
     zyte_api_to_spm_translations = {
         b"zyte-client": b"x-crawlera-client",
         b"zyte-device": b"x-crawlera-profile",
-        b"zyte-error": b"x-crawlera-error",
         b"zyte-geolocation": b"x-crawlera-region",
         b"zyte-jobid": b"x-crawlera-jobid",
         b"zyte-no-bancheck": b"x-crawlera-no-bancheck",
@@ -252,7 +251,20 @@ class ZyteSmartProxyMiddleware(object):
             response.headers.get('X-Crawlera-Error') == b'bad_proxy_auth'
         )
 
+    def _process_error(self, response):
+        if "Zyte-Error" in response.headers:
+            value = response.headers.get('Zyte-Error')
+            response.headers["X-Crawlera-Error"] = value
+            return value
+        if "X-Crawlera-Error" in response.headers:
+            value = response.headers.get('X-Crawlera-Error')
+            response.headers["Zyte-Error"] = value
+            return value
+        return None
+
     def process_response(self, request, response, spider):
+        zyte_smartproxy_error = self._process_error(response)
+
         if not self._is_enabled_for_request(request):
             return self._handle_not_enabled_response(request, response)
 
@@ -300,7 +312,6 @@ class ZyteSmartProxyMiddleware(object):
         # If placed behind `RedirectMiddleware`, it would not count 3xx responses
         self.crawler.stats.inc_value('zyte_smartproxy/response')
         self.crawler.stats.inc_value('zyte_smartproxy/response/status/%s' % response.status)
-        zyte_smartproxy_error = response.headers.get('X-Crawlera-Error')
         if zyte_smartproxy_error:
             self.crawler.stats.inc_value('zyte_smartproxy/response/error')
             self.crawler.stats.inc_value(
@@ -403,11 +414,26 @@ class ZyteSmartProxyMiddleware(object):
         for header in targets:
             value = request.headers.pop(header, None)
             if targets_zyte_api is not None:
+                actual_target, header_target = (
+                    ("Zyte API", "Zyte Smart Proxy Manager")
+                    if targets_zyte_api
+                    else ("Zyte Smart Proxy Manager", "Zyte API")
+                )
                 logger.warning(
-                    "Dropping header %r (%r) from request %r",
+                    (
+                        "Dropping header %r (%r) from request %r, as this "
+                        "request is proxied with %s and not with %s, and "
+                        "automatic translation is not supported for this "
+                        "header. See "
+                        "https://docs.zyte.com/zyte-api/migration/zyte/smartproxy.html#parameter-mapping"
+                        " to learn the right way to translate this header "
+                        "manually."
+                    ),
                     header,
                     value,
                     request,
+                    actual_target,
+                    header_target,
                 )
 
     def _is_zyte_smartproxy_header(self, header_name, prefixes):
