@@ -15,9 +15,9 @@ downloader middleware will try to translate your header into the right header
 for the target service and, regardless of whether or not translation was done,
 the original header will be dropped.
 
-Also, response headers that can be translated will be translated, so code
-expecting a response header from one service can work even if a different
-service was used.
+Also, response headers that can be translated will be always translated,
+without dropping the original header, so code expecting a response header from
+one service can work even if a different service was used.
 
 Translation is supported for the following headers:
 
