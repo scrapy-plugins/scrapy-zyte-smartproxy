@@ -43,7 +43,6 @@ class ZyteSmartProxyMiddleware(object):
         b"zyte-jobid": b"x-crawlera-jobid",
         b"zyte-no-bancheck": b"x-crawlera-no-bancheck",
         b"zyte-override-headers": b"x-crawlera-profile-pass",
-        b"zyte-session-id": b"x-crawlera-session",
     }
     spm_to_zyte_api_translations = {v: k for k, v in zyte_api_to_spm_translations.items()}
 

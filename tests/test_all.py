@@ -441,7 +441,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
             '': None,
             'Zyte-Bar': "bar",
             'Zyte-BrowserHtml': True,
-            'Zyte-Session-ID': 'foo',
+            'Zyte-Geolocation': 'foo',
         }
         req = Request('http://www.scrapytest.org', headers=headers, **kwargs)
         out = mw.process_request(req, spider)
@@ -455,7 +455,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         self.assertNotIn(b'X-Crawlera-Profile', req.headers)
         self.assertNotIn(b'Zyte-Bar', req.headers)
         self.assertNotIn(b'Zyte-BrowserHtml', req.headers)
-        self.assertNotIn(b'Zyte-Session-ID', req.headers)
+        self.assertNotIn(b'Zyte-Geolocation', req.headers)
         self.assertIn(b'User-Agent', req.headers)
 
     def test_clean_headers_when_enabled_spm(self):
@@ -465,8 +465,8 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         self.assertEqual(req.headers[b'X-Crawlera-Profile'], b'desktop')
         self.assertNotIn(b'Zyte-Bar', req.headers)
         self.assertNotIn(b'Zyte-BrowserHtml', req.headers)
-        self.assertNotIn(b'Zyte-Session-ID', req.headers)
-        self.assertEqual(req.headers[b'X-Crawlera-Session'], b'foo')
+        self.assertNotIn(b'Zyte-Geolocation', req.headers)
+        self.assertEqual(req.headers[b'X-Crawlera-Region'], b'foo')
         self.assertIn(b'User-Agent', req.headers)
 
     def test_clean_headers_when_enabled_zyte_api(self):
@@ -478,7 +478,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         self.assertEqual(req.headers[b'Zyte-Bar'], b'bar')
         self.assertEqual(req.headers[b'Zyte-BrowserHtml'], b'True')
         self.assertEqual(req.headers[b'Zyte-Device'], b'desktop')
-        self.assertEqual(req.headers[b'Zyte-Session-ID'], b'foo')
+        self.assertEqual(req.headers[b'Zyte-Geolocation'], b'foo')
         self.assertIn(b'User-Agent', req.headers)
 
     def test_zyte_smartproxy_default_headers(self):
@@ -1068,7 +1068,6 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
             b"Zyte-JobId": b"X-Crawlera-JobId",
             b"Zyte-No-Bancheck": b"X-Crawlera-No-Bancheck",
             b"Zyte-Override-Headers": b"X-Crawlera-Profile-Pass",
-            b"Zyte-Session-ID": b"X-Crawlera-Session",
         }
         for header, translation in zyte_api_to_spm_translations.items():
             request = Request(
