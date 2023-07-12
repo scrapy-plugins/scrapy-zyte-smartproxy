@@ -7,7 +7,7 @@ you access to additional features. You can find more information about those
 headers in the documentation of each service, `Zyte API’s <zyte-api-headers>`_
 and `Zyte Smart Proxy Manager’s <spm-headers>`_.
 
-.. _zyte-api-headers: https://example.com
+.. _zyte-api-headers: https://docs.zyte.com/zyte-api/usage/proxy-api.html
 .. _spm-headers: https://docs.zyte.com/smart-proxy-manager.html#request-headers
 
 If you try to use a header for one service while using the other service, this
