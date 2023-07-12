@@ -31,7 +31,6 @@ Zyte API                  Zyte Smart Proxy Manager
 ``Zyte-JobId``            ``X-Crawlera-JobId``
 ``Zyte-No-Bancheck``      ``X-Crawlera-No-Bancheck``
 ``Zyte-Override-Headers`` ``X-Crawlera-Profile-Pass``
-``Zyte-Session-ID``       ``X-Crawlera-Session``
 ========================= ===========================
 
 Also, if a request is not being proxied and includes a header for any of these
