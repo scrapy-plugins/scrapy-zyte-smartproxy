@@ -128,7 +128,7 @@ or using the DEFAULT_REQUEST_HEADERS_ setting. For example:
             },
         )
 
-.. _Zyte API proxy headers: https://docs.zyte.com
+.. _Zyte API proxy headers: https://docs.zyte.com/zyte-api/usage/proxy-api.html
 .. _Zyte Smart Proxy Manager headers: https://docs.zyte.com/smart-proxy-manager.html#request-headers
 .. _Scrapy headers: https://doc.scrapy.org/en/latest/topics/request-response.html#scrapy.http.Request.headers
 .. _DEFAULT_REQUEST_HEADERS: https://doc.scrapy.org/en/latest/topics/settings.html#default-request-headers
