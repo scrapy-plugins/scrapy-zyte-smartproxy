@@ -971,7 +971,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         mw.open_spider(self.spider)
         req1 = Request('http://www.scrapytest.org')
         self.assertEqual(mw.process_request(req1, self.spider), None)
-        client = b'scrapy-zyte-smartproxy/%s' % __version__.encode()
+        client = 'scrapy-zyte-smartproxy/{}'.format(__version__).encode()
         self.assertEqual(req1.headers.get('X-Crawlera-Client'), client)
         self.assertEqual(req1.headers.get('Zyte-Client'), None)
 
