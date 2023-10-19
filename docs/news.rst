@@ -3,6 +3,15 @@
 Changes
 =======
 
+v2.3.0 (to be released)
+-----------------------
+
+Added support for the upcoming proxy API of `Zyte API <zyte-api>`_.
+
+..  _zyte-api: https://docs.zyte.com/zyte-api/get-started.html
+
+Added a BSD-3-Clause license file.
+
 v2.2.0 (2022-08-05)
 -------------------
 
