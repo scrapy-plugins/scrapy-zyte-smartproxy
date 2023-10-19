@@ -1180,5 +1180,5 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
             headers={"Zyte-Foo": "bar", "X-Crawlera-Foo": "bar"},
         )
         self.assertEqual(mw.process_request(request, self.spider), None)
-        mock_logger.warning.assert_not_called()  # No warnings for “drop all” scenarios
+        mock_logger.warning.assert_not_called()  # No warnings for "drop all" scenarios
 
