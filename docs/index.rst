@@ -123,7 +123,7 @@ or using the DEFAULT_REQUEST_HEADERS_ setting. For example:
         scrapy.Request(
             "https://topscrape.com",
             headers={
-                "Zyte-Session-ID": "foo",
+                "Zyte-Geolocation": "FR",
                 ...
             },
         )
