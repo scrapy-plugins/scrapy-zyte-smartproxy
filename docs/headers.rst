@@ -29,7 +29,6 @@ Zyte API                  Zyte Smart Proxy Manager
 ``Zyte-Error``            ``X-Crawlera-Error``
 ``Zyte-Geolocation``      ``X-Crawlera-Region``
 ``Zyte-JobId``            ``X-Crawlera-JobId``
-``Zyte-No-Bancheck``      ``X-Crawlera-No-Bancheck``
 ``Zyte-Override-Headers`` ``X-Crawlera-Profile-Pass``
 ========================= ===========================
 
