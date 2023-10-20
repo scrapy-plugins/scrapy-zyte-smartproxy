@@ -971,7 +971,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         mw.open_spider(self.spider)
         req1 = Request('http://www.scrapytest.org')
         self.assertEqual(mw.process_request(req1, self.spider), None)
-        client = b'scrapy-zyte-smartproxy/%s' % __version__.encode()
+        client = 'scrapy-zyte-smartproxy/{}'.format(__version__).encode()
         self.assertEqual(req1.headers.get('X-Crawlera-Client'), client)
         self.assertEqual(req1.headers.get('Zyte-Client'), None)
 
@@ -1180,5 +1180,5 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
             headers={"Zyte-Foo": "bar", "X-Crawlera-Foo": "bar"},
         )
         self.assertEqual(mw.process_request(request, self.spider), None)
-        mock_logger.warning.assert_not_called()  # No warnings for “drop all” scenarios
+        mock_logger.warning.assert_not_called()  # No warnings for "drop all" scenarios
 
