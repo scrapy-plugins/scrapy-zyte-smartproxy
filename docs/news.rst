@@ -3,8 +3,8 @@
 Changes
 =======
 
-v2.3.0 (to be released)
------------------------
+v2.3.0 (2023-10-20)
+-------------------
 
 Added support for the upcoming proxy API of `Zyte API <zyte-api>`_.
 
