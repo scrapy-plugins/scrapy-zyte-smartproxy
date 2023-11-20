@@ -10,10 +10,11 @@ scrapy-zyte-smartproxy |version| documentation
    news
 
 scrapy-zyte-smartproxy is a `Scrapy downloader middleware`_ to use one of
-Zyte’s proxy APIs: either the proxy API of `Zyte API`_ or `Zyte Smart Proxy
-Manager`_ (formerly Crawlera).
+Zyte’s proxy services: either the `proxy mode`_ of `Zyte API`_ or `Zyte Smart
+Proxy Manager`_ (formerly Crawlera).
 
 .. _Scrapy downloader middleware: https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
+.. _proxy mode: https://docs.zyte.com/zyte-api/usage/proxy-mode.html
 .. _Zyte API: https://docs.zyte.com/zyte-api/get-started.html
 .. _Zyte Smart Proxy Manager: https://www.zyte.com/smart-proxy-manager/
 
@@ -52,7 +53,7 @@ Configuration
 
 #.  Set the ``ZYTE_SMARTPROXY_URL`` Scrapy setting as needed:
 
-    -   To use the proxy API of Zyte API, set it to
+    -   To use the `proxy mode`_ of `Zyte API`_, set it to
         ``http://api.zyte.com:8011``:
 
         .. code-block:: python
@@ -76,14 +77,13 @@ Usage
 =====
 
 Once the downloader middleware is properly configured, every request goes
-through the configured Zyte proxy API.
+through the configured Zyte proxy service.
 
 .. _override:
 
-Although the plugin configuration only allows defining a single proxy API
-endpoint and API key, it is possible to override them for specific requests, so
-that you can use different combinations for different requests within the same
-spider.
+Although the plugin configuration only allows defining a single proxy endpoint
+and API key, it is possible to override them for specific requests, so that you
+can use different combinations for different requests within the same spider.
 
 To **override** which combination of endpoint and API key is used for a given
 request, set ``proxy`` in the request metadata to a URL indicating both the
@@ -128,7 +128,7 @@ or using the DEFAULT_REQUEST_HEADERS_ setting. For example:
             },
         )
 
-.. _Zyte API proxy headers: https://docs.zyte.com/zyte-api/usage/proxy-api.html
+.. _Zyte API proxy headers: https://docs.zyte.com/zyte-api/usage/proxy-mode.html
 .. _Zyte Smart Proxy Manager headers: https://docs.zyte.com/smart-proxy-manager.html#request-headers
 .. _Scrapy headers: https://doc.scrapy.org/en/latest/topics/request-response.html#scrapy.http.Request.headers
 .. _DEFAULT_REQUEST_HEADERS: https://doc.scrapy.org/en/latest/topics/settings.html#default-request-headers
