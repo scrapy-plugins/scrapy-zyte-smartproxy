@@ -37,11 +37,9 @@ class ZyteSmartProxyMiddleware(object):
     enabled_for_domain = {}
     apikey = ""
     zyte_api_to_spm_translations = {
-        b"zyte-client": b"x-crawlera-client",
         b"zyte-device": b"x-crawlera-profile",
         b"zyte-geolocation": b"x-crawlera-region",
         b"zyte-jobid": b"x-crawlera-jobid",
-        b"zyte-no-bancheck": b"x-crawlera-no-bancheck",
         b"zyte-override-headers": b"x-crawlera-profile-pass",
     }
     spm_to_zyte_api_translations = {v: k for k, v in zyte_api_to_spm_translations.items()}
@@ -222,9 +220,9 @@ class ZyteSmartProxyMiddleware(object):
             if self.job_id:
                 job_header = 'Zyte-JobId' if targets_zyte_api else 'X-Crawlera-JobId'
                 request.headers[job_header] = self.job_id
-            client_header = 'Zyte-Client' if targets_zyte_api else 'X-Crawlera-Client'
-            from scrapy_zyte_smartproxy import __version__
-            request.headers[client_header] = 'scrapy-zyte-smartproxy/%s' % __version__
+            if not targets_zyte_api:
+                from scrapy_zyte_smartproxy import __version__
+                request.headers['X-Crawlera-Client'] = 'scrapy-zyte-smartproxy/%s' % __version__
             self.crawler.stats.inc_value('zyte_smartproxy/request')
             self.crawler.stats.inc_value('zyte_smartproxy/request/method/%s' % request.method)
             self._translate_headers(request, targets_zyte_api=targets_zyte_api)

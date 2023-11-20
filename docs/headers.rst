@@ -24,7 +24,6 @@ Translation is supported for the following headers:
 ========================= ===========================
 Zyte API                  Zyte Smart Proxy Manager
 ========================= ===========================
-``Zyte-Client``           ``X-Crawlera-Client``
 ``Zyte-Device``           ``X-Crawlera-Profile``
 ``Zyte-Error``            ``X-Crawlera-Error``
 ``Zyte-Geolocation``      ``X-Crawlera-Region``
