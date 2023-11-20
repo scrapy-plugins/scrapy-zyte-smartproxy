@@ -983,7 +983,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         )
         self.assertEqual(mw.process_request(req2, self.spider), None)
         self.assertEqual(req2.headers.get('X-Crawlera-Client'), None)
-        self.assertEqual(req2.headers.get('Zyte-Client'), client)
+        self.assertEqual(req2.headers.get('Zyte-Client'), None)
 
     def test_scrapy_httpproxy_integration(self):
         self.spider.zyte_smartproxy_enabled = True
@@ -1062,11 +1062,9 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         value = b"foo"
 
         zyte_api_to_spm_translations = {
-            b"Zyte-Client": b"X-Crawlera-Client",
             b"Zyte-Device": b"X-Crawlera-Profile",
             b"Zyte-Geolocation": b"X-Crawlera-Region",
             b"Zyte-JobId": b"X-Crawlera-JobId",
-            b"Zyte-No-Bancheck": b"X-Crawlera-No-Bancheck",
             b"Zyte-Override-Headers": b"X-Crawlera-Profile-Pass",
         }
         for header, translation in zyte_api_to_spm_translations.items():

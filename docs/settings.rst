@@ -3,14 +3,14 @@ Settings
 ========
 
 This Scrapy downloader middleware adds some settings to configure how to work
-with your Zyte proxy API.
+with your Zyte proxy service.
 
 ZYTE_SMARTPROXY_APIKEY
 ----------------------
 
 Default: ``None``
 
-Default API key for your Zyte proxy API service.
+Default API key for your Zyte proxy service.
 
 Note that Zyte API and Zyte Smart Proxy Manager have different API keys.
 
@@ -22,7 +22,7 @@ ZYTE_SMARTPROXY_URL
 
 Default: ``'http://proxy.zyte.com:8011'``
 
-Default endpoint for your Zyte proxy API service.
+Default endpoint for your Zyte proxy service.
 
 For guidelines on setting a value, see the :ref:`initial configuration
 instructions <ZYTE_SMARTPROXY_URL>`.
@@ -79,9 +79,9 @@ ZYTE_SMARTPROXY_FORCE_ENABLE_ON_HTTP_CODES
 
 Default: ``[]``
 
-List of HTTP response status codes that warrant enabling your Zyte proxy API
+List of HTTP response status codes that warrant enabling your Zyte proxy
 service for the corresponding domain.
 
 When a response with one of these HTTP status codes is received after an
-unproxied request, the request is retried with your Zyte proxy API service, and
-any new request to the same domain is also proxied.
+unproxied request, the request is retried with your Zyte proxy service, and any
+new request to the same domain is also proxied.

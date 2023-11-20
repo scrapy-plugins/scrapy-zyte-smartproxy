@@ -1,13 +1,13 @@
 Headers
 =======
 
-The Zyte proxy API services that you can use with this downloader middleware
-each support a different set of HTTP request and response headers that give
-you access to additional features. You can find more information about those
+The Zyte proxy services that you can use with this downloader middleware each
+support a different set of HTTP request and response headers that give you
+access to additional features. You can find more information about those
 headers in the documentation of each service, `Zyte API’s <zyte-api-headers>`_
 and `Zyte Smart Proxy Manager’s <spm-headers>`_.
 
-.. _zyte-api-headers: https://docs.zyte.com/zyte-api/usage/proxy-api.html
+.. _zyte-api-headers: https://docs.zyte.com/zyte-api/usage/proxy-mode.html
 .. _spm-headers: https://docs.zyte.com/smart-proxy-manager.html#request-headers
 
 If you try to use a header for one service while using the other service, this
@@ -24,7 +24,6 @@ Translation is supported for the following headers:
 ========================= ===========================
 Zyte API                  Zyte Smart Proxy Manager
 ========================= ===========================
-``Zyte-Client``           ``X-Crawlera-Client``
 ``Zyte-Device``           ``X-Crawlera-Profile``
 ``Zyte-Error``            ``X-Crawlera-Error``
 ``Zyte-Geolocation``      ``X-Crawlera-Region``
