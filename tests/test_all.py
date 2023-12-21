@@ -983,7 +983,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         )
         self.assertEqual(mw.process_request(req2, self.spider), None)
         self.assertEqual(req2.headers.get('X-Crawlera-Client'), None)
-        self.assertEqual(req2.headers.get('Zyte-Client'), None)
+        self.assertEqual(req2.headers.get('Zyte-Client'), client)
 
     def test_scrapy_httpproxy_integration(self):
         self.spider.zyte_smartproxy_enabled = True
