@@ -1213,23 +1213,6 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         ]
         self.assertEqual(logger.warning.call_args_list, expected_calls)
 
-    def test_custom_proxy(self):
-        """A manually-set Proxy-Authorization header is not overridden even if
-        the proxy URL set matches the expected one without the API key."""
-        self.spider.zyte_smartproxy_enabled = True
-        crawler = self._mock_crawler(self.spider, self.settings)
-        smartproxy = self.mwcls.from_crawler(crawler)
-        smartproxy.open_spider(self.spider)
-        httpproxy = HttpProxyMiddleware.from_crawler(crawler)
-
-        headers = {b'Proxy-Authorization': b'foo'}
-        meta = {'proxy': 'http://proxy.zyte.com:8011'}
-        request = Request('https://example.com', headers=headers, meta=meta)
-        self.assertEqual(smartproxy.process_request(request, self.spider), None)
-        self.assertEqual(httpproxy.process_request(request, self.spider), None)
-        self.assertEqual(request.meta['proxy'], 'http://proxy.zyte.com:8011')
-        self.assertEqual(request.headers[b'Proxy-Authorization'], b'foo')
-
     def test_manual_proxy_same(self):
         """Defining the 'proxy' request meta key with the right URL has the
         same effect as not defining it."""
@@ -1291,3 +1274,20 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         self.assertEqual(httpproxy.process_request(request, self.spider), None)
         self.assertEqual(request.meta['proxy'], 'http://proxy.example.com:8011')
         self.assertNotIn(b'Proxy-Authorization', request.headers)
+
+    def test_manual_proxy_different_auth(self):
+        """Setting a custom 'proxy' request meta with a matching proxy URL
+        but a different key prevents the middleware from making changes."""
+        self.spider.zyte_smartproxy_enabled = True
+        crawler = self._mock_crawler(self.spider, self.settings)
+        smartproxy = self.mwcls.from_crawler(crawler)
+        smartproxy.open_spider(self.spider)
+        httpproxy = HttpProxyMiddleware.from_crawler(crawler)
+        auth_header = basic_auth_header("altkey", "")
+
+        meta = {'proxy': 'http://altkey:@proxy.example.com:8011'}
+        request = Request('https://example.com', meta=meta)
+        self.assertEqual(smartproxy.process_request(request, self.spider), None)
+        self.assertEqual(httpproxy.process_request(request, self.spider), None)
+        self.assertEqual(request.meta['proxy'], 'http://proxy.example.com:8011')
+        self.assertEqual(request.headers[b'Proxy-Authorization'], auth_header)
