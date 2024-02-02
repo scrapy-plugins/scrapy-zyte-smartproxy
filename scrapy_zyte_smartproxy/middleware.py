@@ -3,6 +3,10 @@ import logging
 import warnings
 from base64 import urlsafe_b64decode
 from collections import defaultdict
+try:
+    from urllib.request import _parse_proxy
+except ImportError:
+    from urllib2 import _parse_proxy
 
 from six.moves.urllib.parse import urlparse, urlunparse
 from w3lib.http import basic_auth_header
@@ -15,6 +19,11 @@ from scrapy_zyte_smartproxy.utils import exp_backoff
 
 
 logger = logging.getLogger(__name__)
+
+
+def _remove_auth(auth_proxy_url):
+    proxy_type, user, password, hostport = _parse_proxy(auth_proxy_url)
+    return urlunparse((proxy_type, hostport, "", "", "", ""))
 
 
 class ZyteSmartProxyMiddleware(object):
@@ -108,6 +117,7 @@ class ZyteSmartProxyMiddleware(object):
             return
 
         self._auth_url = self._make_auth_url(spider)
+        self._authless_url = _remove_auth(self._auth_url)
 
         logger.info(
             "Using Zyte Smart Proxy Manager at %s (apikey: %s)" % (
@@ -265,7 +275,7 @@ class ZyteSmartProxyMiddleware(object):
         if not self._is_enabled_for_request(request):
             return self._handle_not_enabled_response(request, response)
 
-        if not self._is_zyte_smartproxy_or_zapi_response(response):
+        if request.meta.get("proxy") != self._authless_url:
             return response
 
         key = self._get_slot_key(request)
@@ -364,13 +374,6 @@ class ZyteSmartProxyMiddleware(object):
     def _get_url_domain(self, url):
         parsed = urlparse(url)
         return parsed.netloc
-
-    def _is_zyte_smartproxy_or_zapi_response(self, response):
-        return (
-            "X-Crawlera-Version" in response.headers
-            or "Zyte-Request-Id" in response.headers
-            or "zyte-error-type" in response.headers
-        )
 
     def _get_slot_key(self, request):
         return request.meta.get('download_slot')
