@@ -3,6 +3,7 @@ import logging
 import warnings
 from base64 import urlsafe_b64decode
 from collections import defaultdict
+from urllib.request import _parse_proxy
 
 from six.moves.urllib.parse import urlparse, urlunparse
 from w3lib.http import basic_auth_header
@@ -15,6 +16,11 @@ from scrapy_zyte_smartproxy.utils import exp_backoff
 
 
 logger = logging.getLogger(__name__)
+
+
+def _remove_auth(auth_proxy_url):
+    proxy_type, user, password, hostport = _parse_proxy(auth_proxy_url)
+    return urlunparse((proxy_type, hostport, "", "", "", ""))
 
 
 class ZyteSmartProxyMiddleware(object):
@@ -108,6 +114,7 @@ class ZyteSmartProxyMiddleware(object):
             return
 
         self._auth_url = self._make_auth_url(spider)
+        self._authless_url = _remove_auth(self._auth_url)
 
         logger.info(
             "Using Zyte Smart Proxy Manager at %s (apikey: %s)" % (
@@ -213,6 +220,17 @@ class ZyteSmartProxyMiddleware(object):
     def process_request(self, request, spider):
         if self._is_enabled_for_request(request):
             if 'proxy' not in request.meta:
+                request.meta['proxy'] = self._auth_url
+            elif request.meta['proxy'] == self._authless_url and b"Proxy-Authorization" not in request.headers:
+                logger.warning(
+                    f"You seem to have copied into the meta of request "
+                    f"{request} the value of the 'proxy' key from a response "
+                    f"or from a different request. Copying request meta keys "
+                    f"set by middlewares from one request to another is a bad "
+                    f"practice that can cause issues. Using the same meta "
+                    f"dict instance for 2 or more requests is another bad "
+                    f"practice that can trigger this warning."
+                )
                 request.meta['proxy'] = self._auth_url
             targets_zyte_api = self._targets_zyte_api(request)
             self._set_zyte_smartproxy_default_headers(request)
