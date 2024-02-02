@@ -221,15 +221,17 @@ class ZyteSmartProxyMiddleware(object):
         if self._is_enabled_for_request(request):
             if 'proxy' not in request.meta:
                 request.meta['proxy'] = self._auth_url
-            elif request.meta['proxy'] == self._authless_url and b"Proxy-Authorization" not in request.headers:
+            elif (
+                request.meta['proxy'] == self._authless_url
+                and b"Proxy-Authorization" not in request.headers
+            ):
                 logger.warning(
-                    f"You seem to have copied into the meta of request "
-                    f"{request} the value of the 'proxy' key from a response "
-                    f"or from a different request. Copying request meta keys "
-                    f"set by middlewares from one request to another is a bad "
-                    f"practice that can cause issues. Using the same meta "
-                    f"dict instance for 2 or more requests is another bad "
-                    f"practice that can trigger this warning."
+                    f"The value of the 'proxy' meta key of request {request} "
+                    f"has no API key. You seem to have copied the value of "
+                    f"the 'proxy' request meta key from a response or from a "
+                    f"different request. Copying request meta keys set by "
+                    f"middlewares from one request to another is a bad "
+                    f"practice that can cause issues."
                 )
                 request.meta['proxy'] = self._auth_url
             targets_zyte_api = self._targets_zyte_api(request)
