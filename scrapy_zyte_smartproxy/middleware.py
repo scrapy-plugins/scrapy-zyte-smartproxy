@@ -3,9 +3,12 @@ import logging
 import warnings
 from base64 import urlsafe_b64decode
 from collections import defaultdict
+try:
+    from urllib.request import _parse_proxy
+except ImportError:
+    from urllib2 import _parse_proxy
 
 from six.moves.urllib.parse import urlparse, urlunparse
-from six.moves.urllib.request import _parse_proxy
 from w3lib.http import basic_auth_header
 from scrapy import signals
 from scrapy.resolver import dnscache
