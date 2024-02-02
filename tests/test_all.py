@@ -46,10 +46,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
 
     def _mock_zyte_smartproxy_response(self, url, headers=None, **kwargs):
         zyte_smartproxy_version = choice(("1.36.3-cd5e44", "", None))
-        zyte_smartproxy_headers = {"X-Crawlera-Version": zyte_smartproxy_version}
-        if headers:
-            zyte_smartproxy_headers.update(headers)
-        return Response(url, headers=zyte_smartproxy_headers, **kwargs)
+        return Response(url, headers=headers, **kwargs)
 
     def _mock_crawler(self, spider, settings=None):
 
