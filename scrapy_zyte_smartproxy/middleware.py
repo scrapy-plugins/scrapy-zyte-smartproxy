@@ -220,9 +220,9 @@ class ZyteSmartProxyMiddleware(object):
             if self.job_id:
                 job_header = 'Zyte-JobId' if targets_zyte_api else 'X-Crawlera-JobId'
                 request.headers[job_header] = self.job_id
-            if not targets_zyte_api:
-                from scrapy_zyte_smartproxy import __version__
-                request.headers['X-Crawlera-Client'] = 'scrapy-zyte-smartproxy/%s' % __version__
+            user_agent_header = "Zyte-Client" if targets_zyte_api else "X-Crawlera-Client"
+            from scrapy_zyte_smartproxy import __version__
+            request.headers[user_agent_header] = 'scrapy-zyte-smartproxy/%s' % __version__
             self.crawler.stats.inc_value('zyte_smartproxy/request')
             self.crawler.stats.inc_value('zyte_smartproxy/request/method/%s' % request.method)
             self._translate_headers(request, targets_zyte_api=targets_zyte_api)
