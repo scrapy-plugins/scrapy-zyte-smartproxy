@@ -226,12 +226,12 @@ class ZyteSmartProxyMiddleware(object):
                 and b"Proxy-Authorization" not in request.headers
             ):
                 logger.warning(
-                    f"The value of the 'proxy' meta key of request {request} "
-                    f"has no API key. You seem to have copied the value of "
-                    f"the 'proxy' request meta key from a response or from a "
-                    f"different request. Copying request meta keys set by "
-                    f"middlewares from one request to another is a bad "
-                    f"practice that can cause issues."
+                    "The value of the 'proxy' meta key of request {request} "
+                    "has no API key. You seem to have copied the value of "
+                    "the 'proxy' request meta key from a response or from a "
+                    "different request. Copying request meta keys set by "
+                    "middlewares from one request to another is a bad "
+                    "practice that can cause issues.".format(request=request)
                 )
                 request.meta['proxy'] = self._auth_url
             targets_zyte_api = self._targets_zyte_api(request)
