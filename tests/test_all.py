@@ -1266,12 +1266,12 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         self.assertEqual(request.headers[b'Proxy-Authorization'], auth_header)
         expected_calls = [
             call(
-                f"The value of the 'proxy' meta key of request {request} "
-                f"has no API key. You seem to have copied the value of "
-                f"the 'proxy' request meta key from a response or from a "
-                f"different request. Copying request meta keys set by "
-                f"middlewares from one request to another is a bad "
-                f"practice that can cause issues."
+                "The value of the 'proxy' meta key of request {request} "
+                "has no API key. You seem to have copied the value of "
+                "the 'proxy' request meta key from a response or from a "
+                "different request. Copying request meta keys set by "
+                "middlewares from one request to another is a bad "
+                "practice that can cause issues.".format(request=request)
             ),
         ]
         self.assertEqual(logger.warning.call_args_list, expected_calls)
