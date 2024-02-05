@@ -265,6 +265,9 @@ class ZyteSmartProxyMiddleware(object):
         if not self._is_enabled_for_request(request):
             return self._handle_not_enabled_response(request, response)
 
+        if not self._is_zyte_smartproxy_or_zapi_response(response):
+            return response
+
         key = self._get_slot_key(request)
         self._restore_original_delay(request)
 
@@ -361,6 +364,13 @@ class ZyteSmartProxyMiddleware(object):
     def _get_url_domain(self, url):
         parsed = urlparse(url)
         return parsed.netloc
+
+    def _is_zyte_smartproxy_or_zapi_response(self, response):
+        return (
+            "X-Crawlera-Version" in response.headers
+            or "Zyte-Request-Id" in response.headers
+            or "zyte-error-type" in response.headers
+        )
 
     def _get_slot_key(self, request):
         return request.meta.get('download_slot')

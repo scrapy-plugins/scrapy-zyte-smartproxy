@@ -21,6 +21,15 @@ from scrapy_zyte_smartproxy import __version__, ZyteSmartProxyMiddleware
 from scrapy_zyte_smartproxy.utils import exp_backoff
 
 
+RESPONSE_IDENTIFYING_HEADERS = (
+    ("X-Crawlera-Version", None),
+    ("X-Crawlera-Version", ""),
+    ("X-Crawlera-Version", "1.36.3-cd5e44"),
+    ("Zyte-Request-Id", "123456789"),
+    ("zyte-error-type", "foo"),
+)
+
+
 class MockedSlot(object):
 
     def __init__(self, delay=0.0):
@@ -45,7 +54,9 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         Response.__init__ = Response_init_new
 
     def _mock_zyte_smartproxy_response(self, url, headers=None, **kwargs):
-        zyte_smartproxy_version = choice(("1.36.3-cd5e44", "", None))
+        headers = headers or {}
+        k, v = choice(RESPONSE_IDENTIFYING_HEADERS)
+        headers[k] = v
         return Response(url, headers=headers, **kwargs)
 
     def _mock_crawler(self, spider, settings=None):
