@@ -3,6 +3,10 @@ import logging
 import warnings
 from base64 import urlsafe_b64decode
 from collections import defaultdict
+try:
+    from urllib.request import _parse_proxy
+except ImportError:
+    from urllib2 import _parse_proxy
 
 from six.moves.urllib.parse import urlparse, urlunparse
 from w3lib.http import basic_auth_header
@@ -15,6 +19,11 @@ from scrapy_zyte_smartproxy.utils import exp_backoff
 
 
 logger = logging.getLogger(__name__)
+
+
+def _remove_auth(auth_proxy_url):
+    proxy_type, user, password, hostport = _parse_proxy(auth_proxy_url)
+    return urlunparse((proxy_type, hostport, "", "", "", ""))
 
 
 class ZyteSmartProxyMiddleware(object):
@@ -108,6 +117,7 @@ class ZyteSmartProxyMiddleware(object):
             return
 
         self._auth_url = self._make_auth_url(spider)
+        self._authless_url = _remove_auth(self._auth_url)
 
         logger.info(
             "Using Zyte Smart Proxy Manager at %s (apikey: %s)" % (
@@ -214,15 +224,28 @@ class ZyteSmartProxyMiddleware(object):
         if self._is_enabled_for_request(request):
             if 'proxy' not in request.meta:
                 request.meta['proxy'] = self._auth_url
+            elif (
+                request.meta['proxy'] == self._authless_url
+                and b"Proxy-Authorization" not in request.headers
+            ):
+                logger.warning(
+                    "The value of the 'proxy' meta key of request {request} "
+                    "has no API key. You seem to have copied the value of "
+                    "the 'proxy' request meta key from a response or from a "
+                    "different request. Copying request meta keys set by "
+                    "middlewares from one request to another is a bad "
+                    "practice that can cause issues.".format(request=request)
+                )
+                request.meta['proxy'] = self._auth_url
             targets_zyte_api = self._targets_zyte_api(request)
             self._set_zyte_smartproxy_default_headers(request)
             request.meta['download_timeout'] = self.download_timeout
             if self.job_id:
                 job_header = 'Zyte-JobId' if targets_zyte_api else 'X-Crawlera-JobId'
                 request.headers[job_header] = self.job_id
-            if not targets_zyte_api:
-                from scrapy_zyte_smartproxy import __version__
-                request.headers['X-Crawlera-Client'] = 'scrapy-zyte-smartproxy/%s' % __version__
+            user_agent_header = "Zyte-Client" if targets_zyte_api else "X-Crawlera-Client"
+            from scrapy_zyte_smartproxy import __version__
+            request.headers[user_agent_header] = 'scrapy-zyte-smartproxy/%s' % __version__
             self.crawler.stats.inc_value('zyte_smartproxy/request')
             self.crawler.stats.inc_value('zyte_smartproxy/request/method/%s' % request.method)
             self._translate_headers(request, targets_zyte_api=targets_zyte_api)
