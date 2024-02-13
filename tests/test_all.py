@@ -72,7 +72,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         crawler = self._mock_crawler(spider, settings)
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(spider)
-        req = Request('http://www.scrapytest.org')
+        req = Request('http://example.com')
         out = mw.process_request(req, spider)
         self.assertEqual(out, None)
         self.assertEqual(req.meta.get('proxy'), None)
@@ -94,7 +94,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(spider)
         assert mw.url == proxyurl
-        req = Request('http://www.scrapytest.org')
+        req = Request('http://example.com')
         assert mw.process_request(req, spider) is None
         self.assertEqual(req.meta.get('proxy'), proxyurlcreds)
         self.assertEqual(req.meta.get('download_timeout'), download_timeout)
@@ -103,7 +103,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         assert mw.process_response(req, res, spider) is res
 
         # disabled if 'dont_proxy=True' is set
-        req = Request('http://www.scrapytest.org')
+        req = Request('http://example.com')
         req.meta['dont_proxy'] = True
         assert mw.process_request(req, spider) is None
         self.assertEqual(req.meta.get('proxy'), None)
@@ -115,10 +115,10 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
 
         if maxbans > 0:
             # assert ban count is reseted after a succesful response
-            res = self._mock_zyte_smartproxy_response('http://ban.me', status=self.bancode)
+            res = self._mock_zyte_smartproxy_response('http://banned.example', status=self.bancode)
             assert mw.process_response(req, res, spider) is res
             self.assertEqual(crawler.engine.fake_spider_closed_result, None)
-            res = self._mock_zyte_smartproxy_response('http://unban.me')
+            res = self._mock_zyte_smartproxy_response('http://unbanned.example')
             assert mw.process_response(req, res, spider) is res
             self.assertEqual(crawler.engine.fake_spider_closed_result, None)
             self.assertEqual(mw._bans[None], 0)
@@ -127,7 +127,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         for x in range(maxbans + 1):
             self.assertEqual(crawler.engine.fake_spider_closed_result, None)
             res = self._mock_zyte_smartproxy_response(
-                'http://ban.me/%d' % x,
+                'http://banned.example/%d' % x,
                 status=self.bancode,
                 headers={'X-Crawlera-Error': 'banned'},
             )
@@ -251,9 +251,9 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
 
     def test_delay_adjustment(self):
         delay = 0.5
-        slot_key = 'www.scrapytest.org'
-        url = 'http://www.scrapytest.org'
-        ban_url = 'http://ban.me'
+        slot_key = 'example.com'
+        url = 'http://example.com'
+        ban_url = 'http://banned.example'
 
         self.spider.zyte_smartproxy_enabled = True
 
@@ -355,7 +355,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         crawler = self._mock_crawler(self.spider, self.settings)
         mw1 = self.mwcls.from_crawler(crawler)
         mw1.open_spider(self.spider)
-        req1 = Request('http://www.scrapytest.org')
+        req1 = Request('http://example.com')
         self.assertEqual(mw1.process_request(req1, self.spider), None)
         self.assertEqual(req1.headers.get('X-Crawlera-Jobid'), None)
         self.assertEqual(req1.headers.get('Zyte-JobId'), None)
@@ -365,7 +365,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         self.spider.zyte_smartproxy_enabled = True
         mw2 = self.mwcls.from_crawler(crawler)
         mw2.open_spider(self.spider)
-        req2 = Request('http://www.scrapytest.org')
+        req2 = Request('http://example.com')
         self.assertEqual(mw2.process_request(req2, self.spider), None)
         self.assertEqual(req2.headers.get('X-Crawlera-Jobid'), b'2816')
         self.assertEqual(req2.headers.get('Zyte-JobId'), None)
@@ -374,7 +374,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         mw3 = self.mwcls.from_crawler(crawler)
         mw3.open_spider(self.spider)
         req3 = Request(
-            'http://www.scrapytest.org',
+            'http://example.com',
             meta={
                 "proxy": "http://apikey@api.zyte.com:8011",
             },
@@ -390,7 +390,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(spider)
 
-        req = Request('http://www.scrapytest.org')
+        req = Request('http://example.com')
         assert mw.process_request(req, spider) is None
         self.assertEqual(crawler.stats.get_value('zyte_smartproxy/request'), 1)
         self.assertEqual(crawler.stats.get_value('zyte_smartproxy/request/method/GET'), 1)
@@ -400,7 +400,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         self.assertEqual(crawler.stats.get_value('zyte_smartproxy/response'), 1)
         self.assertEqual(crawler.stats.get_value('zyte_smartproxy/response/status/200'), 1)
 
-        req = Request('http://www.scrapytest.org/other', method='POST')
+        req = Request('http://example.com/other', method='POST')
         assert mw.process_request(req, spider) is None
         self.assertEqual(crawler.stats.get_value('zyte_smartproxy/request'), 2)
         self.assertEqual(crawler.stats.get_value('zyte_smartproxy/request/method/POST'), 1)
@@ -443,7 +443,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
             'Zyte-BrowserHtml': True,
             'Zyte-Geolocation': 'foo',
         }
-        req = Request('http://www.scrapytest.org', headers=headers, **kwargs)
+        req = Request('http://example.com', headers=headers, **kwargs)
         out = mw.process_request(req, spider)
         return req
 
@@ -491,14 +491,14 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         crawler = self._mock_crawler(spider, self.settings)
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(spider)
-        req = Request('http://www.scrapytest.org/other')
+        req = Request('http://example.com/other')
         assert mw.process_request(req, spider) is None
         self.assertEqual(req.headers['X-Crawlera-Profile'], b'desktop')
         self.assertNotIn('Zyte-Device', req.headers)
 
         # Header translation
         req = Request(
-            'http://www.scrapytest.org/other',
+            'http://example.com/other',
             meta={"proxy": "http://apikey@api.zyte.com:8011"},
         )
         assert mw.process_request(req, spider) is None
@@ -513,7 +513,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         crawler = self._mock_crawler(spider, self.settings)
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(spider)
-        req = Request('http://www.scrapytest.org/other')
+        req = Request('http://example.com/other')
         assert mw.process_request(req, spider) is None
         self.assertEqual(req.headers['X-Crawlera-Cookies'], b'disable')
         self.assertNotIn('X-Crawlera-Profile', req.headers)
@@ -531,7 +531,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(spider)
 
-        req = Request('http://www.scrapytest.org/other',
+        req = Request('http://example.com/other',
                       headers={'X-Crawlera-UA': 'desktop'})
         assert mw.process_request(req, spider) is None
         self.assertEqual(req.headers['X-Crawlera-UA'], b'desktop')
@@ -546,7 +546,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         mock_warnings.warn.assert_called_with(some_requests_warning)
         other_request_warning = (
             "The headers ('X-Crawlera-Profile', 'X-Crawlera-UA') are "
-            "conflicting on request http://www.scrapytest.org/other. "
+            "conflicting on request http://example.com/other. "
             "X-Crawlera-UA will be ignored. Please check "
             "https://docs.zyte.com/smart-proxy-manager.html#request-headers "
             "for more information"
@@ -557,7 +557,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         )
 
         # test it ignores case
-        req = Request('http://www.scrapytest.org/other',
+        req = Request('http://example.com/other',
                       headers={'x-crawlera-ua': 'desktop'})
         assert mw.process_request(req, spider) is None
         self.assertEqual(req.headers['X-Crawlera-UA'], b'desktop')
@@ -574,7 +574,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         crawler = self._mock_crawler(spider, self.settings)
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(spider)
-        req = Request('http://www.scrapytest.org/other')
+        req = Request('http://example.com/other')
         req.meta['dont_proxy'] = False
         assert mw.process_request(req, spider) is None
         self.assertIsNotNone(req.meta.get('proxy'))
@@ -606,9 +606,9 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         # mock random.uniform to just return the max delay
         random_uniform_patch.side_effect = lambda x, y: y
 
-        slot_key = 'www.scrapytest.org'
-        url = 'http://www.scrapytest.org'
-        ban_url = 'http://ban.me'
+        slot_key = 'example.com'
+        url = 'http://example.com'
+        ban_url = 'http://banned.example'
         max_delay = 70
         backoff_step = 15
         default_delay = 0
@@ -672,8 +672,8 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         # mock random.uniform to just return the max delay
         random_uniform_patch.side_effect = lambda x, y: y
 
-        slot_key = 'www.scrapytest.org'
-        url = 'http://www.scrapytest.org'
+        slot_key = 'example.com'
+        url = 'http://example.com'
         ban_url = 'http://auth.error'
         max_delay = 70
         backoff_step = 15
@@ -923,17 +923,17 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
 
 
     def test_no_slot(self):
-        url = 'http://www.scrapytest.org'
-        ban_url = 'http://ban.me'
+        url = 'http://example.com'
+        ban_url = 'http://banned.example'
 
         self.spider.zyte_smartproxy_enabled = True
         crawler = self._mock_crawler(self.spider, self.settings)
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(self.spider)
 
-        # there are no slot named 'www.scrapytest.org'
+        # there are no slot named 'example.com'
         noslaves_req = Request(url,
-                               meta={'download_slot': 'www.scrapytest.org'})
+                               meta={'download_slot': 'example.com'})
 
         headers = {'X-Crawlera-Error': 'noslaves'}
         noslaves_res = self._mock_zyte_smartproxy_response(
@@ -959,7 +959,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
             ('default_headers', dict)
         )
         mw.open_spider(self.spider)
-        req = Request('http://www.scrapytest.org/other')
+        req = Request('http://example.com/other')
         mw.process_request(req, self.spider)
         assert mw.process_request(req, self.spider) is None
         self.assertEqual(req.headers['X-Crawlera-Profile'], b'desktop')
@@ -969,14 +969,14 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         crawler = self._mock_crawler(self.spider, self.settings)
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(self.spider)
-        req1 = Request('http://www.scrapytest.org')
+        req1 = Request('http://example.com')
         self.assertEqual(mw.process_request(req1, self.spider), None)
         client = 'scrapy-zyte-smartproxy/{}'.format(__version__).encode()
         self.assertEqual(req1.headers.get('X-Crawlera-Client'), client)
         self.assertEqual(req1.headers.get('Zyte-Client'), None)
 
         req2 = Request(
-            'http://www.scrapytest.org',
+            'http://example.com',
             meta={
                 "proxy": "http://apikey@api.zyte.com:8011",
             },
@@ -1180,3 +1180,114 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         self.assertEqual(mw.process_request(request, self.spider), None)
         mock_logger.warning.assert_not_called()  # No warnings for "drop all" scenarios
 
+    def test_meta_copy(self):
+        """Warn when users copy the proxy key from one response to the next."""
+        self.spider.zyte_smartproxy_enabled = True
+        crawler = self._mock_crawler(self.spider, self.settings)
+        smartproxy = self.mwcls.from_crawler(crawler)
+        smartproxy.open_spider(self.spider)
+        httpproxy = HttpProxyMiddleware.from_crawler(crawler)
+        auth_header = basic_auth_header('apikey', '')
+
+        request1 = Request('https://example.com/a')
+        self.assertEqual(smartproxy.process_request(request1, self.spider), None)
+        self.assertEqual(httpproxy.process_request(request1, self.spider), None)
+        self.assertEqual(request1.meta['proxy'], 'http://proxy.zyte.com:8011')
+        self.assertEqual(request1.headers[b'Proxy-Authorization'], auth_header)
+
+        request2 = Request('https://example.com/b', meta=dict(request1.meta))
+        with patch('scrapy_zyte_smartproxy.middleware.logger') as logger:
+            self.assertEqual(smartproxy.process_request(request2, self.spider), None)
+        self.assertEqual(httpproxy.process_request(request2, self.spider), None)
+        self.assertEqual(request2.meta['proxy'], 'http://proxy.zyte.com:8011')
+        self.assertEqual(request2.headers[b'Proxy-Authorization'], auth_header)
+        expected_calls = [
+            call(
+                "The value of the 'proxy' meta key of request {request2} "
+                "has no API key. You seem to have copied the value of "
+                "the 'proxy' request meta key from a response or from a "
+                "different request. Copying request meta keys set by "
+                "middlewares from one request to another is a bad "
+                "practice that can cause issues.".format(request2=request2)
+            ),
+        ]
+        self.assertEqual(logger.warning.call_args_list, expected_calls)
+
+    def test_manual_proxy_same(self):
+        """Defining the 'proxy' request meta key with the right URL has the
+        same effect as not defining it."""
+        self.spider.zyte_smartproxy_enabled = True
+        crawler = self._mock_crawler(self.spider, self.settings)
+        smartproxy = self.mwcls.from_crawler(crawler)
+        smartproxy.open_spider(self.spider)
+        httpproxy = HttpProxyMiddleware.from_crawler(crawler)
+        auth_header = basic_auth_header('apikey', '')
+
+        meta = {'proxy': 'http://apikey:@proxy.zyte.com:8011'}
+        request = Request('https://example.com', meta=meta)
+        self.assertEqual(smartproxy.process_request(request, self.spider), None)
+        self.assertEqual(httpproxy.process_request(request, self.spider), None)
+        self.assertEqual(request.meta['proxy'], 'http://proxy.zyte.com:8011')
+        self.assertEqual(request.headers[b'Proxy-Authorization'], auth_header)
+
+    def test_manual_proxy_without_api_key(self):
+        """Defining the 'proxy' request meta key with the right URL but missing
+        the API key triggers a warning, and causes the API key to be added."""
+        self.spider.zyte_smartproxy_enabled = True
+        crawler = self._mock_crawler(self.spider, self.settings)
+        smartproxy = self.mwcls.from_crawler(crawler)
+        smartproxy.open_spider(self.spider)
+        httpproxy = HttpProxyMiddleware.from_crawler(crawler)
+        auth_header = basic_auth_header('apikey', '')
+
+        meta = {'proxy': 'http://proxy.zyte.com:8011'}
+        request = Request('https://example.com', meta=meta)
+        with patch('scrapy_zyte_smartproxy.middleware.logger') as logger:
+            self.assertEqual(smartproxy.process_request(request, self.spider), None)
+        self.assertEqual(httpproxy.process_request(request, self.spider), None)
+        self.assertEqual(request.meta['proxy'], 'http://proxy.zyte.com:8011')
+        self.assertEqual(request.headers[b'Proxy-Authorization'], auth_header)
+        expected_calls = [
+            call(
+                "The value of the 'proxy' meta key of request {request} "
+                "has no API key. You seem to have copied the value of "
+                "the 'proxy' request meta key from a response or from a "
+                "different request. Copying request meta keys set by "
+                "middlewares from one request to another is a bad "
+                "practice that can cause issues.".format(request=request)
+            ),
+        ]
+        self.assertEqual(logger.warning.call_args_list, expected_calls)
+
+    def test_manual_proxy_different(self):
+        """Setting a custom 'proxy' request meta with an unrelated proxy URL
+        prevents the middleware from making changes."""
+        self.spider.zyte_smartproxy_enabled = True
+        crawler = self._mock_crawler(self.spider, self.settings)
+        smartproxy = self.mwcls.from_crawler(crawler)
+        smartproxy.open_spider(self.spider)
+        httpproxy = HttpProxyMiddleware.from_crawler(crawler)
+
+        meta = {'proxy': 'http://proxy.example.com:8011'}
+        request = Request('https://example.com', meta=meta)
+        self.assertEqual(smartproxy.process_request(request, self.spider), None)
+        self.assertEqual(httpproxy.process_request(request, self.spider), None)
+        self.assertEqual(request.meta['proxy'], 'http://proxy.example.com:8011')
+        self.assertNotIn(b'Proxy-Authorization', request.headers)
+
+    def test_manual_proxy_different_auth(self):
+        """Setting a custom 'proxy' request meta with a matching proxy URL
+        but a different key prevents the middleware from making changes."""
+        self.spider.zyte_smartproxy_enabled = True
+        crawler = self._mock_crawler(self.spider, self.settings)
+        smartproxy = self.mwcls.from_crawler(crawler)
+        smartproxy.open_spider(self.spider)
+        httpproxy = HttpProxyMiddleware.from_crawler(crawler)
+        auth_header = basic_auth_header("altkey", "")
+
+        meta = {'proxy': 'http://altkey:@proxy.example.com:8011'}
+        request = Request('https://example.com', meta=meta)
+        self.assertEqual(smartproxy.process_request(request, self.spider), None)
+        self.assertEqual(httpproxy.process_request(request, self.spider), None)
+        self.assertEqual(request.meta['proxy'], 'http://proxy.example.com:8011')
+        self.assertEqual(request.headers[b'Proxy-Authorization'], auth_header)
