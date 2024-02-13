@@ -3,6 +3,15 @@
 Changes
 =======
 
+v2.3.2 (unreleased)
+-------------------
+
+Detect scenarios where the ``proxy`` ``Request.meta`` key has probably been
+accidentally copied from an earlier response, warn about it, and fix the value.
+
+The ``Zyte-Client`` header is again sent when using `Zyte API`_ `proxy mode`_,
+now that Zyte API supports it.
+
 v2.3.1 (2023-11-20)
 -------------------
 
