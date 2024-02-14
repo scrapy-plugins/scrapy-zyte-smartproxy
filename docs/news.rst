@@ -3,7 +3,7 @@
 Changes
 =======
 
-v2.3.2 (unreleased)
+v2.3.2 (2024-02-14)
 -------------------
 
 Detect scenarios where the ``proxy`` ``Request.meta`` key has probably been
