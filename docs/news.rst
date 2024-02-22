@@ -3,6 +3,14 @@
 Changes
 =======
 
+v2.3.3 (unreleased)
+-------------------
+
+Fix response handling for `Zyte API`_ `proxy mode`_. Before, a single
+connection issue during a request would add a 90 second delay between requests
+until the end of the crawl, instead of removing the delay after the first
+successful response.
+
 v2.3.2 (2024-02-14)
 -------------------
 
