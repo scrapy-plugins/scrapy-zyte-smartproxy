@@ -3,7 +3,7 @@
 Changes
 =======
 
-v2.3.3 (unreleased)
+v2.3.3 (2024-02-22)
 -------------------
 
 Fix response handling for `Zyte API`_ `proxy mode`_. Before, a single
