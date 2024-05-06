@@ -196,7 +196,7 @@ class ZyteSmartProxyMiddleware(object):
         return basic_auth_header(self.apikey, '')
 
     def _targets_zyte_api(self, request):
-        auth_url = request.meta["proxy"]
+        auth_url = request.meta.get("proxy", self._auth_url)
         targets_zyte_api = self._targets.get(auth_url, None)
         if targets_zyte_api is None:
             targets_zyte_api = urlparse(auth_url).hostname == "api.zyte.com"
@@ -219,6 +219,10 @@ class ZyteSmartProxyMiddleware(object):
                 translation,
                 request,
             )
+
+    def _inc_stat(self, stat, value=1, /, *, targets_zyte_api):
+        prefix = "zyte_api_proxy" if targets_zyte_api else "zyte_smartproxy"
+        self.crawler.stats.inc_value(f"{prefix}/{stat}", value)
 
     def process_request(self, request, spider):
         if self._is_enabled_for_request(request):
@@ -246,8 +250,8 @@ class ZyteSmartProxyMiddleware(object):
             user_agent_header = "Zyte-Client" if targets_zyte_api else "X-Crawlera-Client"
             from scrapy_zyte_smartproxy import __version__
             request.headers[user_agent_header] = 'scrapy-zyte-smartproxy/%s' % __version__
-            self.crawler.stats.inc_value('zyte_smartproxy/request')
-            self.crawler.stats.inc_value('zyte_smartproxy/request/method/%s' % request.method)
+            self._inc_stat("request", targets_zyte_api=targets_zyte_api)
+            self._inc_stat(f"request/method/{request.method}", targets_zyte_api=targets_zyte_api)
             self._translate_headers(request, targets_zyte_api=targets_zyte_api)
             self._clean_zyte_smartproxy_headers(request, targets_zyte_api=targets_zyte_api)
         else:
@@ -285,8 +289,10 @@ class ZyteSmartProxyMiddleware(object):
     def process_response(self, request, response, spider):
         zyte_smartproxy_error = self._process_error(response)
 
+        targets_zyte_api = self._targets_zyte_api(request)
+
         if not self._is_enabled_for_request(request):
-            return self._handle_not_enabled_response(request, response)
+            return self._handle_not_enabled_response(request, response, targets_zyte_api=targets_zyte_api)
 
         if not self._is_zyte_smartproxy_or_zapi_response(response):
             return response
@@ -299,9 +305,9 @@ class ZyteSmartProxyMiddleware(object):
                 reason = 'noslaves'
             else:
                 reason = 'autherror'
-            self._set_custom_delay(request, next(self.exp_backoff), reason=reason)
+            self._set_custom_delay(request, next(self.exp_backoff), reason=reason, targets_zyte_api=targets_zyte_api)
         else:
-            self.crawler.stats.inc_value('zyte_smartproxy/delay/reset_backoff')
+            self._inc_stat("delay/reset_backoff", targets_zyte_api=targets_zyte_api)
             self.exp_backoff = exp_backoff(self.backoff_step, self.backoff_max)
 
         if self._is_auth_error(response):
@@ -309,9 +315,9 @@ class ZyteSmartProxyMiddleware(object):
             # authenticate users we must retry
             retries = request.meta.get('zyte_smartproxy_auth_retry_times', 0)
             if retries < self.max_auth_retry_times:
-                return self._retry_auth(response, request, spider)
+                return self._retry_auth(response, request, spider, targets_zyte_api=targets_zyte_api)
             else:
-                self.crawler.stats.inc_value('zyte_smartproxy/retries/auth/max_reached')
+                self._inc_stat("retries/auth/max_reached", targets_zyte_api=targets_zyte_api)
                 logger.warning(
                     "Max retries for authentication issues reached, please check auth"
                     " information settings",
@@ -325,17 +331,17 @@ class ZyteSmartProxyMiddleware(object):
             else:
                 after = response.headers.get('retry-after')
                 if after:
-                    self._set_custom_delay(request, float(after), reason='banned')
-            self.crawler.stats.inc_value('zyte_smartproxy/response/banned')
+                    self._set_custom_delay(request, float(after), reason='banned', targets_zyte_api=targets_zyte_api)
+            self._inc_stat("response/banned", targets_zyte_api=targets_zyte_api)
         else:
             self._bans[key] = 0
         # If placed behind `RedirectMiddleware`, it would not count 3xx responses
-        self.crawler.stats.inc_value('zyte_smartproxy/response')
-        self.crawler.stats.inc_value('zyte_smartproxy/response/status/%s' % response.status)
+        self._inc_stat("response", targets_zyte_api=targets_zyte_api)
+        self._inc_stat(f"response/status/{response.status}", targets_zyte_api=targets_zyte_api)
         if zyte_smartproxy_error:
-            self.crawler.stats.inc_value('zyte_smartproxy/response/error')
-            self.crawler.stats.inc_value(
-                'zyte_smartproxy/response/error/%s' % zyte_smartproxy_error.decode('utf8'))
+            self._inc_stat("response/error", targets_zyte_api=targets_zyte_api)
+            error_msg = zyte_smartproxy_error.decode('utf8')
+            self._inc_stat(f"response/error/{error_msg}", targets_zyte_api=targets_zyte_api)
         return response
 
     def process_exception(self, request, exception, spider):
@@ -344,20 +350,21 @@ class ZyteSmartProxyMiddleware(object):
         if isinstance(exception, (ConnectionRefusedError, ConnectionDone)):
             # Handle Zyte Smart Proxy Manager downtime
             self._clear_dns_cache()
-            self._set_custom_delay(request, self.connection_refused_delay, reason='conn_refused')
+            targets_zyte_api = self._targets_zyte_api(request)
+            self._set_custom_delay(request, self.connection_refused_delay, reason='conn_refused', targets_zyte_api=targets_zyte_api)
 
-    def _handle_not_enabled_response(self, request, response):
+    def _handle_not_enabled_response(self, request, response, *, targets_zyte_api):
         if self._should_enable_for_response(response):
             domain = self._get_url_domain(request.url)
             self.enabled_for_domain[domain] = True
 
             retryreq = request.copy()
             retryreq.dont_filter = True
-            self.crawler.stats.inc_value('zyte_smartproxy/retries/should_have_been_enabled')
+            self._inc_stat("retries/should_have_been_enabled", targets_zyte_api=targets_zyte_api)
             return retryreq
         return response
 
-    def _retry_auth(self, response, request, spider):
+    def _retry_auth(self, response, request, spider, targets_zyte_api):
         logger.warning(
             "Retrying a Zyte Smart Proxy Manager request due to an "
             "authentication issue",
@@ -367,7 +374,7 @@ class ZyteSmartProxyMiddleware(object):
         retryreq = request.copy()
         retryreq.meta['zyte_smartproxy_auth_retry_times'] = retries
         retryreq.dont_filter = True
-        self.crawler.stats.inc_value('zyte_smartproxy/retries/auth')
+        self._inc_stat("retries/auth", targets_zyte_api=targets_zyte_api)
         return retryreq
 
     def _clear_dns_cache(self):
@@ -402,7 +409,7 @@ class ZyteSmartProxyMiddleware(object):
         key = self._get_slot_key(request)
         return key, self.crawler.engine.downloader.slots.get(key)
 
-    def _set_custom_delay(self, request, delay, reason=None):
+    def _set_custom_delay(self, request, delay, reason=None, *, targets_zyte_api):
         """Set custom delay for slot and save original one."""
         key, slot = self._get_slot(request)
         if not slot:
@@ -411,8 +418,8 @@ class ZyteSmartProxyMiddleware(object):
             self._saved_delays[key] = slot.delay
         slot.delay = delay
         if reason is not None:
-            self.crawler.stats.inc_value('zyte_smartproxy/delay/%s' % reason)
-            self.crawler.stats.inc_value('zyte_smartproxy/delay/%s/total' % reason, delay)
+            self._inc_stat(f"delay/{reason}", targets_zyte_api=targets_zyte_api)
+            self._inc_stat(f"delay/{reason}/total", delay, targets_zyte_api=targets_zyte_api)
 
     def _restore_original_delay(self, request):
         """Restore original delay for slot if it was changed."""

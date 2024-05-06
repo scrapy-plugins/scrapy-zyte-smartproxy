@@ -6,6 +6,7 @@ scrapy-zyte-smartproxy |version| documentation
    :hidden:
 
    headers
+   stats
    settings
    news
 
@@ -60,6 +61,9 @@ Configuration
             :caption: settings.py
 
                 ZYTE_SMARTPROXY_URL = "http://api.zyte.com:8011"
+
+        .. tip:: This URL is logged, so that you can tell which value was used
+            from crawl logs.
 
     -   To use the default Zyte Smart Proxy Manager endpoint, leave it unset.
 
