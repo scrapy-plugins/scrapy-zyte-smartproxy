@@ -86,7 +86,7 @@ class ZyteSmartProxyMiddleware(object):
         auth = self.get_proxyauth(spider)
         if not auth.startswith(b'Basic '):
             raise ValueError(
-                'Zyte Smart Proxy Manager only supports HTTP basic access '
+                'Zyte proxy services only support HTTP basic access '
                 'authentication, but %s.%s.get_proxyauth() returned %r'
                 % (self.__module__, self.__class__.__name__, auth)
             )
@@ -111,7 +111,7 @@ class ZyteSmartProxyMiddleware(object):
 
         if not self.apikey:
             logger.warning(
-                "Zyte Smart Proxy Manager cannot be used without an API key",
+                "Zyte proxy services cannot be used without an API key",
                 extra={'spider': spider},
             )
             return
@@ -120,7 +120,7 @@ class ZyteSmartProxyMiddleware(object):
         self._authless_url = _remove_auth(self._auth_url)
 
         logger.info(
-            "Using Zyte Smart Proxy Manager at %s (apikey: %s)" % (
+            "Using Zyte proxy service %s with an API key ending in %s" % (
                 self.url, self.apikey[:7]
             ),
             extra={'spider': spider},
@@ -131,8 +131,8 @@ class ZyteSmartProxyMiddleware(object):
             spider.download_delay = 0
             logger.info(
                 "ZyteSmartProxyMiddleware: disabling download delays in "
-                "Scrapy to optimize delays introduced by Zyte Smart Proxy "
-                "Manager. To avoid this behaviour you can use the "
+                "Scrapy to optimize delays introduced by Zyte proxy services. "
+                "To avoid this behaviour you can use the "
                 "ZYTE_SMARTPROXY_PRESERVE_DELAY setting, but keep in mind "
                 "that this may slow down the crawl significantly",
                 extra={'spider': spider},
@@ -366,8 +366,10 @@ class ZyteSmartProxyMiddleware(object):
 
     def _retry_auth(self, response, request, spider, targets_zyte_api):
         logger.warning(
-            "Retrying a Zyte Smart Proxy Manager request due to an "
-            "authentication issue",
+            (
+                "Retrying a request due to an authentication issue with "
+                "the configured Zyte proxy service"
+            ),
             extra={'spider': self.spider},
         )
         retries = request.meta.get('zyte_smartproxy_auth_retry_times', 0) + 1

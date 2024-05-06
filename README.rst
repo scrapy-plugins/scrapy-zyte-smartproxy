@@ -14,8 +14,14 @@ scrapy-zyte-smartproxy
    :target: http://codecov.io/github/scrapy-plugins/scrapy-zyte-smartproxy?branch=master
    :alt: Code Coverage
 
-scrapy-zyte-smartproxy provides easy use of `Zyte Smart Proxy Manager
-<https://www.zyte.com/smart-proxy-manager/>`_ (formerly Crawlera) with Scrapy.
+scrapy-zyte-smartproxy is a `Scrapy downloader middleware`_ to use one of
+Zyte’s proxy services: either the `proxy mode`_ of `Zyte API`_ or `Zyte Smart
+Proxy Manager`_ (formerly Crawlera).
+
+.. _Scrapy downloader middleware: https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
+.. _proxy mode: https://docs.zyte.com/zyte-api/usage/proxy-mode.html
+.. _Zyte API: https://docs.zyte.com/zyte-api/get-started.html
+.. _Zyte Smart Proxy Manager: https://www.zyte.com/smart-proxy-manager/
 
 Requirements
 ============

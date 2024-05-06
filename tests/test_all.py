@@ -837,15 +837,15 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         mw.open_spider(spider)
         expected_calls = [
             call(
-                "Using Zyte Smart Proxy Manager at %s (apikey: %s)" % (
+                "Using Zyte proxy service %s with an API key ending in %s" % (
                     self.mwcls.url, 'apikey'
                 ),
                 extra={'spider': spider},
             ),
             call(
                 "ZyteSmartProxyMiddleware: disabling download delays in "
-                "Scrapy to optimize delays introduced by Zyte Smart Proxy "
-                "Manager. To avoid this behaviour you can use the "
+                "Scrapy to optimize delays introduced by Zyte proxy services. "
+                "To avoid this behaviour you can use the "
                 "ZYTE_SMARTPROXY_PRESERVE_DELAY setting, but keep in mind "
                 "that this may slow down the crawl significantly",
                 extra={'spider': spider},
@@ -943,7 +943,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         mw.open_spider(self.spider)
         self.assertTrue(mw.enabled)
         mock_logger.warning.assert_called_with(
-            "Zyte Smart Proxy Manager cannot be used without an API key",
+            "Zyte proxy services cannot be used without an API key",
             extra={'spider': self.spider}
         )
 
@@ -956,7 +956,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         mw.open_spider(self.spider)
         self.assertFalse(mw.enabled)
         mock_logger.warning.assert_called_with(
-            "Zyte Smart Proxy Manager cannot be used without an API key",
+            "Zyte proxy services cannot be used without an API key",
             extra={'spider': self.spider}
         )
 
