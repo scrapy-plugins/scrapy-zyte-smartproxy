@@ -222,7 +222,7 @@ class ZyteSmartProxyMiddleware(object):
 
     def _inc_stat(self, stat, value=1, *, targets_zyte_api):
         prefix = "zyte_api_proxy" if targets_zyte_api else "zyte_smartproxy"
-        self.crawler.stats.inc_value(f"{prefix}/{stat}", value)
+        self.crawler.stats.inc_value("{}/{}".format(prefix, stat), value)
 
     def process_request(self, request, spider):
         if self._is_enabled_for_request(request):
@@ -251,7 +251,7 @@ class ZyteSmartProxyMiddleware(object):
             from scrapy_zyte_smartproxy import __version__
             request.headers[user_agent_header] = 'scrapy-zyte-smartproxy/%s' % __version__
             self._inc_stat("request", targets_zyte_api=targets_zyte_api)
-            self._inc_stat(f"request/method/{request.method}", targets_zyte_api=targets_zyte_api)
+            self._inc_stat("request/method/{}".format(request.method), targets_zyte_api=targets_zyte_api)
             self._translate_headers(request, targets_zyte_api=targets_zyte_api)
             self._clean_zyte_smartproxy_headers(request, targets_zyte_api=targets_zyte_api)
         else:
@@ -337,11 +337,11 @@ class ZyteSmartProxyMiddleware(object):
             self._bans[key] = 0
         # If placed behind `RedirectMiddleware`, it would not count 3xx responses
         self._inc_stat("response", targets_zyte_api=targets_zyte_api)
-        self._inc_stat(f"response/status/{response.status}", targets_zyte_api=targets_zyte_api)
+        self._inc_stat("response/status/{}".format(response.status), targets_zyte_api=targets_zyte_api)
         if zyte_smartproxy_error:
             self._inc_stat("response/error", targets_zyte_api=targets_zyte_api)
             error_msg = zyte_smartproxy_error.decode('utf8')
-            self._inc_stat(f"response/error/{error_msg}", targets_zyte_api=targets_zyte_api)
+            self._inc_stat("response/error/{}".format(error_msg), targets_zyte_api=targets_zyte_api)
         return response
 
     def process_exception(self, request, exception, spider):
@@ -420,8 +420,8 @@ class ZyteSmartProxyMiddleware(object):
             self._saved_delays[key] = slot.delay
         slot.delay = delay
         if reason is not None:
-            self._inc_stat(f"delay/{reason}", targets_zyte_api=targets_zyte_api)
-            self._inc_stat(f"delay/{reason}/total", delay, targets_zyte_api=targets_zyte_api)
+            self._inc_stat("delay/{}".format(reason), targets_zyte_api=targets_zyte_api)
+            self._inc_stat("delay/{}/total".format(reason), delay, targets_zyte_api=targets_zyte_api)
 
     def _restore_original_delay(self, request):
         """Restore original delay for slot if it was changed."""
