@@ -419,19 +419,19 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         req = Request('http://example.com')
         assert mw.process_request(req, spider) is None
         assert httpproxy.process_request(req, spider) is None
-        self.assertEqual(crawler.stats.get_value(f'{prefix}/request'), 1)
-        self.assertEqual(crawler.stats.get_value(f'{prefix}/request/method/GET'), 1)
+        self.assertEqual(crawler.stats.get_value('{}/request'.format(prefix)), 1)
+        self.assertEqual(crawler.stats.get_value('{}/request/method/GET'.format(prefix)), 1)
 
         res = self._mock_zyte_smartproxy_response(req.url)
         assert mw.process_response(req, res, spider) is res
-        self.assertEqual(crawler.stats.get_value(f'{prefix}/response'), 1)
-        self.assertEqual(crawler.stats.get_value(f'{prefix}/response/status/200'), 1)
+        self.assertEqual(crawler.stats.get_value('{}/response'.format(prefix)), 1)
+        self.assertEqual(crawler.stats.get_value('{}/response/status/200'.format(prefix)), 1)
 
         req = Request('http://example.com/other', method='POST')
         assert mw.process_request(req, spider) is None
         assert httpproxy.process_request(req, spider) is None
-        self.assertEqual(crawler.stats.get_value(f'{prefix}/request'), 2)
-        self.assertEqual(crawler.stats.get_value(f'{prefix}/request/method/POST'), 1)
+        self.assertEqual(crawler.stats.get_value('{}/request'.format(prefix)), 2)
+        self.assertEqual(crawler.stats.get_value('{}/request/method/POST'.format(prefix)), 1)
 
         res = self._mock_zyte_smartproxy_response(
             req.url,
@@ -439,10 +439,10 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
             headers={'Zyte-Error': 'somethingbad'}
         )
         assert mw.process_response(req, res, spider) is res
-        self.assertEqual(crawler.stats.get_value(f'{prefix}/response'), 2)
-        self.assertEqual(crawler.stats.get_value(f'{prefix}/response/status/{mw.ban_code}'), 1)
-        self.assertEqual(crawler.stats.get_value(f'{prefix}/response/error'), 1)
-        self.assertEqual(crawler.stats.get_value(f'{prefix}/response/error/somethingbad'), 1)
+        self.assertEqual(crawler.stats.get_value('{}/response'.format(prefix)), 2)
+        self.assertEqual(crawler.stats.get_value('{}/response/status/{}'.format(prefix, mw.ban_code)), 1)
+        self.assertEqual(crawler.stats.get_value('{}/response/error'.format(prefix)), 1)
+        self.assertEqual(crawler.stats.get_value('{}/response/error/somethingbad'.format(prefix)), 1)
         self.assertEqual(res.headers["X-Crawlera-Error"], b"somethingbad")
         self.assertEqual(res.headers["Zyte-Error"], b"somethingbad")
 
@@ -452,9 +452,9 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
             headers={'X-Crawlera-Error': 'banned', "Retry-After": "1"}
         )
         assert mw.process_response(req, res, spider) is res
-        self.assertEqual(crawler.stats.get_value(f'{prefix}/response'), 3)
-        self.assertEqual(crawler.stats.get_value(f'{prefix}/response/status/{mw.ban_code}'), 2)
-        self.assertEqual(crawler.stats.get_value(f'{prefix}/response/banned'), 1)
+        self.assertEqual(crawler.stats.get_value('{}/response'.format(prefix)), 3)
+        self.assertEqual(crawler.stats.get_value('{}/response/status/{}'.format(prefix, mw.ban_code)), 2)
+        self.assertEqual(crawler.stats.get_value('{}/response/banned'.format(prefix)), 1)
         self.assertEqual(res.headers["X-Crawlera-Error"], b"banned")
         self.assertEqual(res.headers["Zyte-Error"], b"banned")
 
@@ -468,8 +468,8 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         req.meta["download_slot"] = "example.com"
         assert mw.process_response(req, res, spider) is res
         del req.meta["download_slot"]
-        self.assertEqual(crawler.stats.get_value(f'{prefix}/delay/banned'), 1)
-        self.assertEqual(crawler.stats.get_value(f'{prefix}/delay/banned/total'), 1)
+        self.assertEqual(crawler.stats.get_value('{}/delay/banned'.format(prefix)), 1)
+        self.assertEqual(crawler.stats.get_value('{}/delay/banned/total'.format(prefix)), 1)
 
         res = self._mock_zyte_smartproxy_response(
             req.url,
@@ -477,7 +477,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
             headers={'X-Crawlera-Error': 'bad_proxy_auth'},
         )
         assert isinstance(mw.process_response(req, res, spider), Request)
-        self.assertEqual(crawler.stats.get_value(f'{prefix}/retries/auth'), 1)
+        self.assertEqual(crawler.stats.get_value('{}/retries/auth'.format(prefix)), 1)
 
         res = self._mock_zyte_smartproxy_response(
             req.url,
@@ -487,8 +487,8 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         req.meta["zyte_smartproxy_auth_retry_times"] = 11
         assert mw.process_response(req, res, spider) is res
         del req.meta["zyte_smartproxy_auth_retry_times"]
-        self.assertEqual(crawler.stats.get_value(f'{prefix}/retries/auth'), 1)
-        self.assertEqual(crawler.stats.get_value(f'{prefix}/retries/auth/max_reached'), 1)
+        self.assertEqual(crawler.stats.get_value('{}/retries/auth'.format(prefix)), 1)
+        self.assertEqual(crawler.stats.get_value('{}/retries/auth/max_reached'.format(prefix)), 1)
 
         res = self._mock_zyte_smartproxy_response(
             req.url,
@@ -497,7 +497,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         req.meta["dont_proxy"] = True
         assert isinstance(mw.process_response(req, res, spider), Request)
         del req.meta["dont_proxy"]
-        self.assertEqual(crawler.stats.get_value(f'{prefix}/retries/should_have_been_enabled'), 1)
+        self.assertEqual(crawler.stats.get_value('{}/retries/should_have_been_enabled'.format(prefix)), 1)
 
     def test_stats_spm(self):
         self._test_stats(self.settings, "zyte_smartproxy")
