@@ -26,7 +26,7 @@ Proxy Manager`_ (formerly Crawlera).
 Requirements
 ============
 
-* Python 3.8+
+* Python 2.7 or Python 3.4+
 * Scrapy 1.4+
 
 Installation

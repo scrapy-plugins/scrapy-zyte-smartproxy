@@ -6,9 +6,27 @@ jobs:
     strategy:
       matrix:
         include:
-        - python-version: "3.8"
+        - python-version: "2.7"
           env:
             TOXENV: min
+        - python-version: "2.7"
+          env:
+            TOXENV: py
+        - python-version: "3.4"
+          env:
+            TOXENV: py34
+        - python-version: "3.5"
+          env:
+            TOXENV: py
+        - python-version: "3.6"
+          env:
+            TOXENV: py
+        - python-version: "3.7"
+          env:
+            TOXENV: py
+        - python-version: "3.8"
+          env:
+            TOXENV: py
         - python-version: "3.9"
           env:
             TOXENV: py
