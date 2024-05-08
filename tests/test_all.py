@@ -1,6 +1,7 @@
 import binascii
 import os
 import pytest
+from copy import copy
 from random import choice
 from unittest import TestCase
 try:
@@ -408,10 +409,8 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
     def _test_stats(self, settings, prefix):
         self.spider.zyte_smartproxy_enabled = True
         spider = self.spider
-        settings = {
-            **settings,
-            "ZYTE_SMARTPROXY_FORCE_ENABLE_ON_HTTP_CODES": [555],
-        }
+        settings = copy(settings)
+        settings["ZYTE_SMARTPROXY_FORCE_ENABLE_ON_HTTP_CODES"] = [555]
         crawler = self._mock_crawler(spider, settings)
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(spider)
@@ -504,7 +503,8 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         self._test_stats(self.settings, "zyte_smartproxy")
 
     def test_stats_zapi(self):
-        settings = {**self.settings, "ZYTE_SMARTPROXY_URL": "http://api.zyte.com:8011"}
+        settings = copy(self.settings)
+        settings["ZYTE_SMARTPROXY_URL"] = "http://api.zyte.com:8011"
         self._test_stats(settings, "zyte_api_proxy")
 
     def _make_fake_request(self, spider, zyte_smartproxy_enabled, **kwargs):

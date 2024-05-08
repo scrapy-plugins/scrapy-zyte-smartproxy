@@ -220,7 +220,7 @@ class ZyteSmartProxyMiddleware(object):
                 request,
             )
 
-    def _inc_stat(self, stat, value=1, *, targets_zyte_api):
+    def _inc_stat(self, stat, targets_zyte_api, value=1):
         prefix = "zyte_api_proxy" if targets_zyte_api else "zyte_smartproxy"
         self.crawler.stats.inc_value("{}/{}".format(prefix, stat), value)
 
@@ -353,7 +353,7 @@ class ZyteSmartProxyMiddleware(object):
             targets_zyte_api = self._targets_zyte_api(request)
             self._set_custom_delay(request, self.connection_refused_delay, reason='conn_refused', targets_zyte_api=targets_zyte_api)
 
-    def _handle_not_enabled_response(self, request, response, *, targets_zyte_api):
+    def _handle_not_enabled_response(self, request, response, targets_zyte_api):
         if self._should_enable_for_response(response):
             domain = self._get_url_domain(request.url)
             self.enabled_for_domain[domain] = True
@@ -411,7 +411,7 @@ class ZyteSmartProxyMiddleware(object):
         key = self._get_slot_key(request)
         return key, self.crawler.engine.downloader.slots.get(key)
 
-    def _set_custom_delay(self, request, delay, reason=None, *, targets_zyte_api):
+    def _set_custom_delay(self, request, delay, targets_zyte_api, reason=None):
         """Set custom delay for slot and save original one."""
         key, slot = self._get_slot(request)
         if not slot:
@@ -421,7 +421,7 @@ class ZyteSmartProxyMiddleware(object):
         slot.delay = delay
         if reason is not None:
             self._inc_stat("delay/{}".format(reason), targets_zyte_api=targets_zyte_api)
-            self._inc_stat("delay/{}/total".format(reason), delay, targets_zyte_api=targets_zyte_api)
+            self._inc_stat("delay/{}/total".format(reason), value=delay, targets_zyte_api=targets_zyte_api)
 
     def _restore_original_delay(self, request):
         """Restore original delay for slot if it was changed."""
