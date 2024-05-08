@@ -220,7 +220,7 @@ class ZyteSmartProxyMiddleware(object):
                 request,
             )
 
-    def _inc_stat(self, stat, value=1, /, *, targets_zyte_api):
+    def _inc_stat(self, stat, value=1, *, targets_zyte_api):
         prefix = "zyte_api_proxy" if targets_zyte_api else "zyte_smartproxy"
         self.crawler.stats.inc_value(f"{prefix}/{stat}", value)
 
