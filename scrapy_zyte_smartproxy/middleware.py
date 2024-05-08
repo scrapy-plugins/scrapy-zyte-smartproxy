@@ -196,6 +196,8 @@ class ZyteSmartProxyMiddleware(object):
         return basic_auth_header(self.apikey, '')
 
     def _targets_zyte_api(self, request):
+        if self._auth_url is None:
+            return False
         auth_url = request.meta.get("proxy", self._auth_url)
         targets_zyte_api = self._targets.get(auth_url, None)
         if targets_zyte_api is None:
