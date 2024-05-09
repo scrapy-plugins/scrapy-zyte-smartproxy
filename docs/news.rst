@@ -3,6 +3,15 @@
 Changes
 =======
 
+v2.3.4 (2024-05-09)
+-------------------
+
+`Zyte API`_ `proxy mode`_ now has its own stat prefix.
+
+Some user-facing messages mentioning only Zyte Smart Proxy Manager have also
+been updated to reflect the fact that scrapy-zyte-smartproxy also supports Zyte
+API proxy mode.
+
 v2.3.3 (2024-02-22)
 -------------------
 
