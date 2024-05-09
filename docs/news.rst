@@ -3,7 +3,7 @@
 Changes
 =======
 
-v2.3.4 (2024-MM-DD)
+v2.3.4 (2024-05-09)
 -------------------
 
 `Zyte API`_ `proxy mode`_ now has its own stat prefix.
