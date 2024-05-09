@@ -6,7 +6,7 @@ with open("README.rst", "rb") as f:
 
 setup(
     name='scrapy-zyte-smartproxy',
-    version='2.3.3',
+    version='2.3.4',
     license='BSD',
     description='Scrapy middleware for Zyte Smart Proxy Manager',
     long_description=readme,
