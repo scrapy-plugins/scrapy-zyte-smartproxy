@@ -302,17 +302,26 @@ class ZyteSmartProxyMiddleware(object):
         key = self._get_slot_key(request)
         self._restore_original_delay(request)
 
-        if self._is_no_available_proxies(response) or self._is_auth_error(response):
-            if self._is_no_available_proxies(response):
+        no_proxies = self._is_no_available_proxies(response)
+        auth_error = self._is_auth_error(response)
+        throttled = (
+            response.status == 429 and
+            response.headers.get('X-Crawlera-Error') == b'too_many_conns'
+        )
+        if no_proxies or auth_error or throttled:
+            if no_proxies:
                 reason = 'noslaves'
-            else:
+            elif auth_error:
                 reason = 'autherror'
+            else:
+                assert throttled
+                reason = 'throttled'
             self._set_custom_delay(request, next(self.exp_backoff), reason=reason, targets_zyte_api=targets_zyte_api)
         else:
             self._inc_stat("delay/reset_backoff", targets_zyte_api=targets_zyte_api)
             self.exp_backoff = exp_backoff(self.backoff_step, self.backoff_max)
 
-        if self._is_auth_error(response):
+        if auth_error:
             # When Zyte Smart Proxy Manager has issues it might not be able to
             # authenticate users we must retry
             retries = request.meta.get('zyte_smartproxy_auth_retry_times', 0)
