@@ -277,6 +277,19 @@ class ZyteSmartProxyMiddleware(object):
             response.headers.get('X-Crawlera-Error') == b'bad_proxy_auth'
         )
 
+    def _throttle_error(self, response):
+        error = response.headers.get('Zyte-Error') or response.headers.get('X-Crawlera-Error')
+        if (
+            response.status in {429, 503}
+            and error
+            and error not in {
+                b"banned",
+                b"noslaves",
+            }
+        ):
+            return error.decode()
+        return None
+
     def _process_error(self, response):
         if "Zyte-Error" in response.headers:
             value = response.headers.get('Zyte-Error')
@@ -304,18 +317,15 @@ class ZyteSmartProxyMiddleware(object):
 
         no_proxies = self._is_no_available_proxies(response)
         auth_error = self._is_auth_error(response)
-        throttled = (
-            response.status == 429 and
-            response.headers.get('X-Crawlera-Error') == b'too_many_conns'
-        )
-        if no_proxies or auth_error or throttled:
+        throttle_error = self._throttle_error(response)
+        if no_proxies or auth_error or throttle_error:
             if no_proxies:
                 reason = 'noslaves'
             elif auth_error:
                 reason = 'autherror'
             else:
-                assert throttled
-                reason = 'throttled'
+                assert throttle_error
+                reason = throttle_error.lstrip("/")
             self._set_custom_delay(request, next(self.exp_backoff), reason=reason, targets_zyte_api=targets_zyte_api)
         else:
             self._inc_stat("delay/reset_backoff", targets_zyte_api=targets_zyte_api)
