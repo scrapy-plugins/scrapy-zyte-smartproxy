@@ -265,12 +265,6 @@ class ZyteSmartProxyMiddleware(object):
             response.headers.get('X-Crawlera-Error') == b'banned'
         )
 
-    def _is_no_available_proxies(self, response):
-        return (
-            response.status == self.ban_code and
-            response.headers.get('X-Crawlera-Error') == b'noslaves'
-        )
-
     def _is_auth_error(self, response):
         return (
             response.status == 407 and
@@ -315,13 +309,10 @@ class ZyteSmartProxyMiddleware(object):
         key = self._get_slot_key(request)
         self._restore_original_delay(request)
 
-        no_proxies = self._is_no_available_proxies(response)
-        auth_error = self._is_auth_error(response)
+        is_auth_error = self._is_auth_error(response)
         throttle_error = self._throttle_error(response)
-        if no_proxies or auth_error or throttle_error:
-            if no_proxies:
-                reason = 'noslaves'
-            elif auth_error:
+        if is_auth_error or throttle_error:
+           if is_auth_error:
                 reason = 'autherror'
             else:
                 assert throttle_error
@@ -331,7 +322,7 @@ class ZyteSmartProxyMiddleware(object):
             self._inc_stat("delay/reset_backoff", targets_zyte_api=targets_zyte_api)
             self.exp_backoff = exp_backoff(self.backoff_step, self.backoff_max)
 
-        if auth_error:
+        if is_auth_error:
             # When Zyte Smart Proxy Manager has issues it might not be able to
             # authenticate users we must retry
             retries = request.meta.get('zyte_smartproxy_auth_retry_times', 0)
