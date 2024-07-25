@@ -261,8 +261,11 @@ class ZyteSmartProxyMiddleware(object):
 
     def _is_banned(self, response):
         return (
-            response.status == self.ban_code and
-            response.headers.get('X-Crawlera-Error') == b'banned'
+            response.status == self.ban_code
+            and response.headers.get('X-Crawlera-Error') == b'banned'
+        ) or (
+            response.status == in {520, 521}
+            and response.headers.get('Zyte-Error')
         )
 
     def _is_auth_error(self, response):
