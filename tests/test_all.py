@@ -709,7 +709,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         noslaves_req = Request(url, meta={'download_slot': slot_key})
         assert mw.process_request(noslaves_req, self.spider) is None
         assert httpproxy.process_request(noslaves_req, self.spider) is None
-        headers = {b'X-Crawlera-Error': b'noslaves'}
+        headers = {'X-Crawlera-Error': 'noslaves'}
         noslaves_res = self._mock_zyte_smartproxy_response(
             ban_url,
             status=self.bancode,
