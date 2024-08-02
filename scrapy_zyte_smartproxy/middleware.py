@@ -264,7 +264,7 @@ class ZyteSmartProxyMiddleware(object):
             response.status == self.ban_code
             and response.headers.get('X-Crawlera-Error') == b'banned'
         ) or (
-            response.status == in {520, 521}
+            response.status in {520, 521}
             and response.headers.get('Zyte-Error')
         )
 
@@ -279,10 +279,7 @@ class ZyteSmartProxyMiddleware(object):
         if (
             response.status in {429, 503}
             and error
-            and error not in {
-                b"banned",
-                b"noslaves",
-            }
+            and error != b"banned"
         ):
             return error.decode()
         return None
@@ -315,7 +312,7 @@ class ZyteSmartProxyMiddleware(object):
         is_auth_error = self._is_auth_error(response)
         throttle_error = self._throttle_error(response)
         if is_auth_error or throttle_error:
-           if is_auth_error:
+            if is_auth_error:
                 reason = 'autherror'
             else:
                 assert throttle_error
