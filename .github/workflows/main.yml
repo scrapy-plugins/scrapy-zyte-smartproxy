@@ -15,9 +15,8 @@ jobs:
         - python-version: "3.4"
           env:
             TOXENV: py34
-        - python-version: "3.5"
-          env:
-            TOXENV: py
+        # 3.5 cannot be tested in CI
+        # https://github.com/MatteoH2O1999/setup-python/issues/49#issuecomment-2209940822
         - python-version: "3.6"
           env:
             TOXENV: py
