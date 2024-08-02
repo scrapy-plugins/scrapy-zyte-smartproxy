@@ -3,10 +3,11 @@ import logging
 import warnings
 from base64 import urlsafe_b64decode
 from collections import defaultdict
+from typing import Dict, List
 try:
-    from urllib.request import _parse_proxy
+    from urllib.request import _parse_proxy  # type: ignore
 except ImportError:
-    from urllib2 import _parse_proxy
+    from urllib2 import _parse_proxy  # type: ignore
 
 from six.moves.urllib.parse import urlparse, urlunparse
 from w3lib.http import basic_auth_header
@@ -41,9 +42,9 @@ class ZyteSmartProxyMiddleware(object):
     backoff_step = 15
     backoff_max = 180
     exp_backoff = None
-    force_enable_on_http_codes = []
+    force_enable_on_http_codes = []  # type: List[int]
     max_auth_retry_times = 10
-    enabled_for_domain = {}
+    enabled_for_domain = {}  # type: Dict[str, bool]
     apikey = ""
     zyte_api_to_spm_translations = {
         b"zyte-device": b"x-crawlera-profile",

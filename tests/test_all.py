@@ -5,9 +5,9 @@ from copy import copy
 from random import choice
 from unittest import TestCase
 try:
-    from unittest.mock import call, patch
+    from unittest.mock import call, patch  # type: ignore
 except ImportError:
-    from mock import call, patch
+    from mock import call, patch  # type: ignore
 
 from w3lib.http import basic_auth_header
 from scrapy.downloadermiddlewares.httpproxy import HttpProxyMiddleware

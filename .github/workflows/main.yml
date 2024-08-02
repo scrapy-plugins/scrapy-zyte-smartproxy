@@ -33,6 +33,9 @@ jobs:
         - python-version: "3.10"
           env:
             TOXENV: py
+        - python-version: "3.10"
+          env:
+            TOXENV: mypy
         - python-version: "3.11"
           env:
             TOXENV: py
@@ -41,7 +44,7 @@ jobs:
             TOXENV: py
         - python-version: "3.12"
           env:
-            TOXENV: security
+            TOXENV: pre-commit
         - python-version: "3.12"
           env:
             TOXENV: docs
