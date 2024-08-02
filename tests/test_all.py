@@ -5,9 +5,9 @@ from copy import copy
 from random import choice
 from unittest import TestCase
 try:
-    from unittest.mock import call, patch
+    from unittest.mock import call, patch  # type: ignore
 except ImportError:
-    from mock import call, patch
+    from mock import call, patch  # type: ignore
 
 from w3lib.http import basic_auth_header
 from scrapy.downloadermiddlewares.httpproxy import HttpProxyMiddleware
@@ -666,19 +666,24 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         mw = self.mwcls.from_crawler(crawler)
         mw.open_spider(self.spider)
         req = self._make_fake_request(self.spider, zyte_smartproxy_enabled=True)
+
         res = Response(req.url, status=200)
         res = mw.process_response(req, res, self.spider)
         self.assertFalse(mw._is_banned(res))
         res = Response(req.url, status=503, headers={'X-Crawlera-Error': 'noslaves'})
         res = mw.process_response(req, res, self.spider)
         self.assertFalse(mw._is_banned(res))
-        res = Response(req.url, status=503, headers={'Zyte-Error': 'noslaves'})
+        res = Response(req.url, status=503, headers={'Zyte-Error': '/limits/over-global-limit'})
         res = mw.process_response(req, res, self.spider)
         self.assertFalse(mw._is_banned(res))
+
         res = Response(req.url, status=503, headers={'X-Crawlera-Error': 'banned'})
         res = mw.process_response(req, res, self.spider)
         self.assertTrue(mw._is_banned(res))
-        res = Response(req.url, status=503, headers={'Zyte-Error': 'banned'})
+        res = Response(req.url, status=520, headers={'Zyte-Error': '/download/temporary-error'})
+        res = mw.process_response(req, res, self.spider)
+        self.assertTrue(mw._is_banned(res))
+        res = Response(req.url, status=521, headers={'Zyte-Error': '/download/internal-error'})
         res = mw.process_response(req, res, self.spider)
         self.assertTrue(mw._is_banned(res))
 
@@ -709,24 +714,38 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         noslaves_req = Request(url, meta={'download_slot': slot_key})
         assert mw.process_request(noslaves_req, self.spider) is None
         assert httpproxy.process_request(noslaves_req, self.spider) is None
-        headers = {'X-Crawlera-Error': 'noslaves'}
-        noslaves_res = self._mock_zyte_smartproxy_response(
-            ban_url,
-            status=self.bancode,
-            headers=headers,
-        )
 
-        # delays grow exponentially
-        mw.process_response(noslaves_req, noslaves_res, self.spider)
+        # delays grow exponentially with any throttling error
+        noslaves_response = self._mock_zyte_smartproxy_response(
+            ban_url,
+            status=503,
+            headers={'X-Crawlera-Error': 'noslaves'},
+        )
+        mw.process_response(noslaves_req, noslaves_response, self.spider)
         self.assertEqual(slot.delay, backoff_step)
 
-        mw.process_response(noslaves_req, noslaves_res, self.spider)
+        over_use_limit_response = self._mock_zyte_smartproxy_response(
+            ban_url,
+            status=429,
+            headers={'Zyte-Error': '/limits/over-user-limit'},
+        )
+        mw.process_response(noslaves_req, over_use_limit_response, self.spider)
         self.assertEqual(slot.delay, backoff_step * 2 ** 1)
 
-        mw.process_response(noslaves_req, noslaves_res, self.spider)
+        over_domain_limit_response = self._mock_zyte_smartproxy_response(
+            ban_url,
+            status=429,
+            headers={'Zyte-Error': '/limits/over-domain-limit'},
+        )
+        mw.process_response(noslaves_req, over_domain_limit_response, self.spider)
         self.assertEqual(slot.delay, backoff_step * 2 ** 2)
 
-        mw.process_response(noslaves_req, noslaves_res, self.spider)
+        over_global_limit_response = self._mock_zyte_smartproxy_response(
+            ban_url,
+            status=503,
+            headers={'Zyte-Error': '/limits/over-global-limit'},
+        )
+        mw.process_response(noslaves_req, over_global_limit_response, self.spider)
         self.assertEqual(slot.delay, max_delay)
 
         # other responses reset delay
@@ -742,7 +761,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         mw.process_response(ban_req, ban_res, self.spider)
         self.assertEqual(slot.delay, default_delay)
 
-        mw.process_response(noslaves_req, noslaves_res, self.spider)
+        mw.process_response(noslaves_req, noslaves_response, self.spider)
         self.assertEqual(slot.delay, backoff_step)
 
         good_req = Request(url, meta={'download_slot': slot_key})

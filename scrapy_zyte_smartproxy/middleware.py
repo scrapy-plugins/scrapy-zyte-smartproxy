@@ -3,10 +3,11 @@ import logging
 import warnings
 from base64 import urlsafe_b64decode
 from collections import defaultdict
+from typing import Dict, List
 try:
-    from urllib.request import _parse_proxy
+    from urllib.request import _parse_proxy  # type: ignore
 except ImportError:
-    from urllib2 import _parse_proxy
+    from urllib2 import _parse_proxy  # type: ignore
 
 from six.moves.urllib.parse import urlparse, urlunparse
 from w3lib.http import basic_auth_header
@@ -41,9 +42,9 @@ class ZyteSmartProxyMiddleware(object):
     backoff_step = 15
     backoff_max = 180
     exp_backoff = None
-    force_enable_on_http_codes = []
+    force_enable_on_http_codes = []  # type: List[int]
     max_auth_retry_times = 10
-    enabled_for_domain = {}
+    enabled_for_domain = {}  # type: Dict[str, bool]
     apikey = ""
     zyte_api_to_spm_translations = {
         b"zyte-device": b"x-crawlera-profile",
@@ -261,14 +262,11 @@ class ZyteSmartProxyMiddleware(object):
 
     def _is_banned(self, response):
         return (
-            response.status == self.ban_code and
-            response.headers.get('X-Crawlera-Error') == b'banned'
-        )
-
-    def _is_no_available_proxies(self, response):
-        return (
-            response.status == self.ban_code and
-            response.headers.get('X-Crawlera-Error') == b'noslaves'
+            response.status == self.ban_code
+            and response.headers.get('X-Crawlera-Error') == b'banned'
+        ) or (
+            response.status in {520, 521}
+            and response.headers.get('Zyte-Error')
         )
 
     def _is_auth_error(self, response):
@@ -276,6 +274,16 @@ class ZyteSmartProxyMiddleware(object):
             response.status == 407 and
             response.headers.get('X-Crawlera-Error') == b'bad_proxy_auth'
         )
+
+    def _throttle_error(self, response):
+        error = response.headers.get('Zyte-Error') or response.headers.get('X-Crawlera-Error')
+        if (
+            response.status in {429, 503}
+            and error
+            and error != b"banned"
+        ):
+            return error.decode()
+        return None
 
     def _process_error(self, response):
         if "Zyte-Error" in response.headers:
@@ -302,17 +310,20 @@ class ZyteSmartProxyMiddleware(object):
         key = self._get_slot_key(request)
         self._restore_original_delay(request)
 
-        if self._is_no_available_proxies(response) or self._is_auth_error(response):
-            if self._is_no_available_proxies(response):
-                reason = 'noslaves'
-            else:
+        is_auth_error = self._is_auth_error(response)
+        throttle_error = self._throttle_error(response)
+        if is_auth_error or throttle_error:
+            if is_auth_error:
                 reason = 'autherror'
+            else:
+                assert throttle_error
+                reason = throttle_error.lstrip("/")
             self._set_custom_delay(request, next(self.exp_backoff), reason=reason, targets_zyte_api=targets_zyte_api)
         else:
             self._inc_stat("delay/reset_backoff", targets_zyte_api=targets_zyte_api)
             self.exp_backoff = exp_backoff(self.backoff_step, self.backoff_max)
 
-        if self._is_auth_error(response):
+        if is_auth_error:
             # When Zyte Smart Proxy Manager has issues it might not be able to
             # authenticate users we must retry
             retries = request.meta.get('zyte_smartproxy_auth_retry_times', 0)
