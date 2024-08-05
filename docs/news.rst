@@ -3,7 +3,7 @@
 Changes
 =======
 
-v2.3.5 (2024-08-DD)
+v2.3.5 (2024-08-05)
 -------------------
 
 Ban and throttling responses from `Zyte API`_ `proxy mode`_ are now handled in
