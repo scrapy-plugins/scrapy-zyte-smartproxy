@@ -65,3 +65,9 @@ jobs:
         run: tox
       - name: Upload coverage.xml to codecov
         uses: codecov/codecov-action@v1
+
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: pre-commit/action@v3.0.0
