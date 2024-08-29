@@ -12,17 +12,18 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import sys
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 from os import path
-import sys
 
 sys.path.insert(0, path.dirname(path.dirname(__file__)))
 
 
-import sphinx_rtd_theme
+import sphinx_rtd_theme  # noqa: E402
 
 html_theme = "sphinx_rtd_theme"
 
@@ -38,25 +39,25 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autosectionlabel',
+    "sphinx.ext.autosectionlabel",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ".rst"
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # General information about the project.
-project = u'scrapy-zyte-smartproxy'
-copyright = u'2011-2021, Zyte Group Ltd'
-author = u'Zyte'
+project = "scrapy-zyte-smartproxy"
+copyright = "2011-2021, Zyte Group Ltd"
+author = "Zyte"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -65,19 +66,20 @@ author = u'Zyte'
 
 try:
     import scrapy_zyte_smartproxy
-    version = '.'.join(scrapy_zyte_smartproxy.__version__.split('.')[:2])
+
+    version = ".".join(scrapy_zyte_smartproxy.__version__.split(".")[:2])
     release = scrapy_zyte_smartproxy.__version__
 except ImportError:
-    version = ''
-    release = ''
+    version = ""
+    release = ""
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = "sphinx"
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
@@ -98,13 +100,13 @@ todo_include_todos = False
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-#html_static_path = ['_static']
+# html_static_path = ['_static']
 
 
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'scrapy-zyte-smartproxydoc'
+htmlhelp_basename = "scrapy-zyte-smartproxydoc"
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -113,15 +115,12 @@ latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
-
     # The font size ('10pt', '11pt' or '12pt').
     #
     # 'pointsize': '10pt',
-
     # Additional stuff for the LaTeX preamble.
     #
     # 'preamble': '',
-
     # Latex figure (float) alignment
     #
     # 'figure_align': 'htbp',
@@ -133,10 +132,10 @@ latex_elements = {
 latex_documents = [
     (
         master_doc,
-        'scrapy-zyte-smartproxy.tex',
-        u'scrapy-zyte-smartproxy Documentation',
-        u'Zyte',
-        'manual',
+        "scrapy-zyte-smartproxy.tex",
+        "scrapy-zyte-smartproxy Documentation",
+        "Zyte",
+        "manual",
     ),
 ]
 
@@ -146,8 +145,13 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'scrapy-zyte-smartproxy', u'scrapy-zyte-smartproxy Documentation',
-     [author], 1)
+    (
+        master_doc,
+        "scrapy-zyte-smartproxy",
+        "scrapy-zyte-smartproxy Documentation",
+        [author],
+        1,
+    )
 ]
 
 
@@ -157,10 +161,13 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'scrapy-zyte-smartproxy', u'scrapy-zyte-smartproxy Documentation',
-     author, 'scrapy-zyte-smartproxy', 'One line description of project.',
-     'Miscellaneous'),
+    (
+        master_doc,
+        "scrapy-zyte-smartproxy",
+        "scrapy-zyte-smartproxy Documentation",
+        author,
+        "scrapy-zyte-smartproxy",
+        "One line description of project.",
+        "Miscellaneous",
+    ),
 ]
-
-
-
