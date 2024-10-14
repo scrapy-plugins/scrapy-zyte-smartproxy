@@ -4,6 +4,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
         - python-version: "2.7"
@@ -51,7 +52,7 @@ jobs:
           env:
             TOXENV: docs
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
         uses: MatteoH2O1999/setup-python@v4
         with:
