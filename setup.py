@@ -10,6 +10,7 @@ setup(
     license='BSD',
     description='Scrapy middleware for Zyte Smart Proxy Manager',
     long_description=readme,
+    long_description_content_type="text/x-rst",
     maintainer='Raul Gallegos',
     maintainer_email='raul.ogh@gmail.com',
     author='Zyte',

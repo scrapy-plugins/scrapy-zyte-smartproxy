@@ -51,6 +51,9 @@ jobs:
         - python-version: "3.13"
           env:
             TOXENV: docs
+        - python-version: "3.13"
+          env:
+            TOXENV: twinecheck
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
