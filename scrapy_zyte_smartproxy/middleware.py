@@ -3,6 +3,7 @@ import os
 import warnings
 from base64 import urlsafe_b64decode
 from collections import defaultdict
+from typing import Dict, List  # noqa
 
 try:
     from urllib.request import _parse_proxy  # type: ignore

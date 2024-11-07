@@ -1281,7 +1281,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         )
         self.assertEqual(mw.process_request(request, self.spider), None)
         mock_logger.warning.assert_called_with(
-            "Translating (and dropping) header %r (%r) as %r on request %r",
+            "Translating header %r (%r) to %r on request %r",
             b"zyte-device",
             [b"desktop"],
             b"x-crawlera-profile",
@@ -1296,7 +1296,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         )
         self.assertEqual(mw.process_request(request, self.spider), None)
         mock_logger.warning.assert_called_with(
-            "Translating (and dropping) header %r (%r) as %r on request %r",
+            "Translating header %r (%r) to %r on request %r",
             b"x-crawlera-profile",
             [b"desktop"],
             b"zyte-device",
