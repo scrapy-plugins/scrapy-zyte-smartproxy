@@ -740,7 +740,9 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         res = mw.process_response(req, res, self.spider)
         self.assertFalse(mw._is_banned(res))
         res = Response(
-            req.url, status=503, headers={"Zyte-Error": "/limits/over-global-limit"}
+            req.url,
+            status=503,
+            headers={"Zyte-Error": "/limits/over-global-limit"},
         )
         res = mw.process_response(req, res, self.spider)
         self.assertFalse(mw._is_banned(res))
@@ -754,7 +756,9 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         res = mw.process_response(req, res, self.spider)
         self.assertTrue(mw._is_banned(res))
         res = Response(
-            req.url, status=521, headers={"Zyte-Error": "/download/internal-error"}
+            req.url,
+            status=521,
+            headers={"Zyte-Error": "/download/internal-error"},
         )
         res = mw.process_response(req, res, self.spider)
         self.assertTrue(mw._is_banned(res))
@@ -1311,7 +1315,8 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
                 "request is proxied with %s and not with %s, and "
                 "automatic translation is not supported for this "
                 "header. See "
-                "https://docs.zyte.com/zyte-api/migration/zyte/smartproxy.html#parameter-mapping"  # noqa
+                "https://docs.zyte.com/zyte-api/migration/zyte/smartproxy.html"
+                "#parameter-mapping"
                 " to learn the right way to translate this header "
                 "manually."
             ),
@@ -1335,7 +1340,8 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
                 "request is proxied with %s and not with %s, and "
                 "automatic translation is not supported for this "
                 "header. See "
-                "https://docs.zyte.com/zyte-api/migration/zyte/smartproxy.html#parameter-mapping"  # noqa
+                "https://docs.zyte.com/zyte-api/migration/zyte/smartproxy.html"
+                "#parameter-mapping"
                 " to learn the right way to translate this header "
                 "manually."
             ),
@@ -1355,7 +1361,8 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
             headers={"Zyte-Foo": "bar", "X-Crawlera-Foo": "bar"},
         )
         self.assertEqual(mw.process_request(request, self.spider), None)
-        mock_logger.warning.assert_not_called()  # No warnings for "drop all" scenarios
+        # No warnings for "drop all" scenarios
+        mock_logger.warning.assert_not_called()
 
     def test_header_based_handling(self):
         self.spider.zyte_smartproxy_enabled = True

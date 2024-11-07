@@ -239,7 +239,7 @@ class ZyteSmartProxyMiddleware(object):
                 continue
             request.headers[translation] = value = request.headers.pop(header)
             logger.warning(
-                "Translating (and dropping) header %r (%r) as %r on request %r",
+                "Translating header %r (%r) to %r on request %r",
                 header,
                 value,
                 translation,
@@ -371,8 +371,8 @@ class ZyteSmartProxyMiddleware(object):
                     "retries/auth/max_reached", targets_zyte_api=targets_zyte_api
                 )
                 logger.warning(
-                    "Max retries for authentication issues reached, please check auth"
-                    " information settings",
+                    "Max retries for authentication issues reached,"
+                    "please check auth information settings",
                     extra={"spider": self.spider},
                 )
 
@@ -392,7 +392,8 @@ class ZyteSmartProxyMiddleware(object):
             self._inc_stat("response/banned", targets_zyte_api=targets_zyte_api)
         else:
             self._bans[key] = 0
-        # If placed behind `RedirectMiddleware`, it would not count 3xx responses
+        # If placed behind `RedirectMiddleware`,
+        # it would not count 3xx responses
         self._inc_stat("response", targets_zyte_api=targets_zyte_api)
         self._inc_stat(
             "response/status/{}".format(response.status),
@@ -402,7 +403,8 @@ class ZyteSmartProxyMiddleware(object):
             self._inc_stat("response/error", targets_zyte_api=targets_zyte_api)
             error_msg = zyte_smartproxy_error.decode("utf8")
             self._inc_stat(
-                "response/error/{}".format(error_msg), targets_zyte_api=targets_zyte_api
+                "response/error/{}".format(error_msg),
+                targets_zyte_api=targets_zyte_api,
             )
         return response
 
@@ -428,7 +430,8 @@ class ZyteSmartProxyMiddleware(object):
             retryreq = request.copy()
             retryreq.dont_filter = True
             self._inc_stat(
-                "retries/should_have_been_enabled", targets_zyte_api=targets_zyte_api
+                "retries/should_have_been_enabled",
+                targets_zyte_api=targets_zyte_api,
             )
             return retryreq
         return response
@@ -531,7 +534,8 @@ class ZyteSmartProxyMiddleware(object):
                         "request is proxied with %s and not with %s, and "
                         "automatic translation is not supported for this "
                         "header. See "
-                        "https://docs.zyte.com/zyte-api/migration/zyte/smartproxy.html#parameter-mapping"  # noqa
+                        "https://docs.zyte.com/zyte-api/migration/zyte/"
+                        "smartproxy.html#parameter-mapping"
                         " to learn the right way to translate this header "
                         "manually."
                     ),
@@ -557,11 +561,13 @@ class ZyteSmartProxyMiddleware(object):
             header.decode("utf-8").lower() for header in request.headers
         ]
         if all(h.lower() in lower_case_headers for h in self.conflicting_headers):
-            # Send a general warning once, and specific urls if LOG_LEVEL = DEBUG
+            # Send a general warning once,
+            # and specific urls if LOG_LEVEL = DEBUG
             warnings.warn(
                 "The headers %s are conflicting on some of your requests. "
                 "Please check "
-                "https://docs.zyte.com/smart-proxy-manager.html#request-headers "
+                "https://docs.zyte.com/smart-proxy-manager.html"
+                "#request-headers "
                 "for more information. You can set LOG_LEVEL=DEBUG to see the "
                 "urls with problems." % str(self.conflicting_headers)
             )
