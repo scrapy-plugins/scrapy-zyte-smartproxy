@@ -37,8 +37,18 @@ class ZyteSmartProxyMiddleware(object):
     connection_refused_delay = 90
     preserve_delay = False
     header_prefix = "X-Crawlera-"  # Deprecated
-    header_lowercase_prefixes = ("zyte-", "x-crawlera-")
+    header_lowercase_prefixes = (b"zyte-", b"x-crawlera-")
     conflicting_headers = ("X-Crawlera-Profile", "X-Crawlera-UA")
+    # SPM headers that can be used with Zyte API proxy mode
+    # https://docs.zyte.com/zyte-api/migration/zyte/smartproxy.html#parameter-mapping
+    spm_bc_headers = [
+        b"x-crawlera-cookies",
+        b"x-crawlera-jobid",
+        b"x-crawlera-profile",
+        b"x-crawlera-profile-pass",
+        b"x-crawlera-region",
+        b"x-crawlera-session",
+    ]
     backoff_step = 15
     backoff_max = 180
     exp_backoff = None
@@ -51,9 +61,6 @@ class ZyteSmartProxyMiddleware(object):
         b"zyte-geolocation": b"x-crawlera-region",
         b"zyte-jobid": b"x-crawlera-jobid",
         b"zyte-override-headers": b"x-crawlera-profile-pass",
-    }
-    spm_to_zyte_api_translations = {
-        v: k for k, v in zyte_api_to_spm_translations.items()
     }
 
     _settings = [
@@ -93,7 +100,7 @@ class ZyteSmartProxyMiddleware(object):
                 "authentication, but %s.%s.get_proxyauth() returned %r"
                 % (self.__module__, self.__class__.__name__, auth)
             )
-        user_and_colon = urlsafe_b64decode(auth[6:].strip()).decode("utf-8")
+        user_and_colon = urlsafe_b64decode(auth[6:].strip()).decode()
         netloc = user_and_colon + "@" + parsed_url.netloc.split("@")[-1]
         parsed_url = parsed_url._replace(netloc=netloc)
         return urlunparse(parsed_url)
@@ -230,15 +237,14 @@ class ZyteSmartProxyMiddleware(object):
         return targets_zyte_api
 
     def _translate_headers(self, request, targets_zyte_api):
-        translation_dict = (
-            self.spm_to_zyte_api_translations
-            if targets_zyte_api
-            else self.zyte_api_to_spm_translations
-        )
-        for header, translation in translation_dict.items():
+        if targets_zyte_api:
+            return
+        for header, translation in self.zyte_api_to_spm_translations.items():
             if header not in request.headers:
                 continue
-            request.headers[translation] = value = request.headers.pop(header)
+            values = request.headers.pop(header)
+            value = b"".join(values)
+            request.headers[translation] = value
             logger.warning(
                 "Translating header %r (%r) to %r on request %r",
                 header,
@@ -513,16 +519,17 @@ class ZyteSmartProxyMiddleware(object):
         if targets_zyte_api is None:
             prefixes = self.header_lowercase_prefixes
         elif targets_zyte_api:
-            prefixes = ("x-crawlera-",)
+            prefixes = (b"x-crawlera-",)
         else:
-            prefixes = ("zyte-",)
+            prefixes = (b"zyte-",)
         targets = [
             header
             for header in request.headers
-            if self._is_zyte_smartproxy_header(header, prefixes)
+            if self._drop_header(header, prefixes)
         ]
         for header in targets:
-            value = request.headers.pop(header, None)
+            values = request.headers.pop(header, None)
+            value = b"".join(values)
             if targets_zyte_api is not None:
                 actual_target, header_target = (
                     ("Zyte API", "Zyte Smart Proxy Manager")
@@ -546,12 +553,34 @@ class ZyteSmartProxyMiddleware(object):
                     actual_target,
                     header_target,
                 )
+            else:
+                logger.warning(
+                    f"Dropping header {header!r} ({value!r}) from request "
+                    f"{request!r}, as this request is not handled by "
+                    f"scrapy-zyte-smartproxy. If you are sure that you need "
+                    f"to send this header in a request not handled by "
+                    f"scrapy-zyte-smartproxy, use the "
+                    f"ZYTE_SMARTPROXY_KEEP_HEADERS setting."
+                )
 
-    def _is_zyte_smartproxy_header(self, header_name, prefixes):
+    def _drop_header(self, header_name, prefixes):
         if not header_name:
             return False
-        header_name = header_name.decode("utf-8").lower()
-        return any(header_name.startswith(prefix) for prefix in prefixes)
+        header_name_lowercase = header_name.lower()
+        has_drop_prefix = any(header_name_lowercase.startswith(prefix) for prefix in prefixes)
+        if (
+            has_drop_prefix
+            # When dropping all prefixes, always drop matching headers, i.e.
+            # ignore self.spm_bc_headers.
+            and len(prefixes) <= 1
+            and header_name_lowercase in self.spm_bc_headers
+        ):
+            logger.warning(
+                f"Keeping deprecated header {header_name!r} due to the value "
+                f"of the ZYTE_SMARTPROXY_KEEP_HEADERS setting."
+            )
+            return False
+        return has_drop_prefix
 
     def _set_zyte_smartproxy_default_headers(self, request):
         for header, value in self._headers:
@@ -559,7 +588,7 @@ class ZyteSmartProxyMiddleware(object):
                 continue
             request.headers.setdefault(header, value)
         lower_case_headers = [
-            header.decode("utf-8").lower() for header in request.headers
+            header.decode().lower() for header in request.headers
         ]
         if all(h.lower() in lower_case_headers for h in self.conflicting_headers):
             # Send a general warning once,
