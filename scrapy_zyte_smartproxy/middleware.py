@@ -83,7 +83,9 @@ class ZyteSmartProxyMiddleware(object):
             b"x-crawlera-region",
             b"x-crawlera-session",
         ]
-        self._keep_headers = crawler.settings.getbool("ZYTE_SMARTPROXY_KEEP_HEADERS", False)
+        self._keep_headers = crawler.settings.getbool(
+            "ZYTE_SMARTPROXY_KEEP_HEADERS", False
+        )
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -524,9 +526,7 @@ class ZyteSmartProxyMiddleware(object):
         else:
             prefixes = (b"zyte-",)
         targets = [
-            header
-            for header in request.headers
-            if self._drop_header(header, prefixes)
+            header for header in request.headers if self._drop_header(header, prefixes)
         ]
         for header in targets:
             values = request.headers.pop(header, None)
@@ -568,7 +568,9 @@ class ZyteSmartProxyMiddleware(object):
         if not header_name:
             return False
         header_name_lowercase = header_name.lower()
-        has_drop_prefix = any(header_name_lowercase.startswith(prefix) for prefix in prefixes)
+        has_drop_prefix = any(
+            header_name_lowercase.startswith(prefix) for prefix in prefixes
+        )
         if (
             has_drop_prefix
             # When dropping all prefixes, always drop matching headers, i.e.
@@ -585,9 +587,7 @@ class ZyteSmartProxyMiddleware(object):
             if value is None:
                 continue
             request.headers.setdefault(header, value)
-        lower_case_headers = [
-            header.decode().lower() for header in request.headers
-        ]
+        lower_case_headers = [header.decode().lower() for header in request.headers]
         if all(h.lower() in lower_case_headers for h in self.conflicting_headers):
             # Send a general warning once,
             # and specific urls if LOG_LEVEL = DEBUG

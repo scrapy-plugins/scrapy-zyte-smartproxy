@@ -1326,7 +1326,12 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
                 {},
                 [f"Dropping header {header!r} ({value!r})"],
             )
-            for header in (b"X-Crawlera-Foo", b"X-Crawlera-Client", b"Zyte-Foo", b"Zyte-Client")
+            for header in (
+                b"X-Crawlera-Foo",
+                b"X-Crawlera-Client",
+                b"Zyte-Foo",
+                b"Zyte-Client",
+            )
             for value in (b"Bar",)
         ),
         # SPM → ZAPI
@@ -1375,7 +1380,10 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
                 {},
                 {zyte_header: value},
                 {spm_header: value},
-                [f"Translating header {zyte_header.lower()!r} ({value!r}) to {spm_header.lower()!r}"],
+                [
+                    f"Translating header {zyte_header.lower()!r} ({value!r}) "
+                    f"to {spm_header.lower()!r}"
+                ],
             )
             for zyte_header, spm_header, value in (
                 (b"Zyte-Device", b"X-Crawlera-Profile", b"desktop"),
@@ -1405,7 +1413,12 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
                 {header: value},
                 [],
             )
-            for header in (b"X-Crawlera-Foo", b"X-Crawlera-Device", b"Zyte-Foo", b"Zyte-Device")
+            for header in (
+                b"X-Crawlera-Foo",
+                b"X-Crawlera-Device",
+                b"Zyte-Foo",
+                b"Zyte-Device",
+            )
             for value in (b"mobile",)
             for settings in (
                 {"ZYTE_SMARTPROXY_ENABLED": False},
@@ -1421,7 +1434,10 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
             [],
         ),
         (
-            {"ZYTE_SMARTPROXY_DEFAULT_HEADERS": {"X-Crawlera-Profile": "desktop"}, "ZYTE_SMARTPROXY_URL": "http://apikey:@api.zyte.com:8011"},
+            {
+                "ZYTE_SMARTPROXY_DEFAULT_HEADERS": {"X-Crawlera-Profile": "desktop"},
+                "ZYTE_SMARTPROXY_URL": "http://apikey:@api.zyte.com:8011",
+            },
             {},
             {b"X-Crawlera-Profile": b"desktop"},  # Not translated to Zyte-Device
             ["Keeping deprecated header"],
@@ -1446,13 +1462,19 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
                 "ZYTE_SMARTPROXY_URL": "http://apikey:@api.zyte.com:8011",
             },
             {},
-            {b"X-Crawlera-Cookies": b"disable"},  # Not translated to Zyte-Cookie-Management
+            {
+                b"X-Crawlera-Cookies": b"disable"
+            },  # Not translated to Zyte-Cookie-Management
             ["Keeping deprecated header"],
         ),
     ),
 )
 def test_request_headers(settings, input_headers, output_headers, warnings, caplog):
-    settings = {"ZYTE_SMARTPROXY_APIKEY": "apikey", "ZYTE_SMARTPROXY_ENABLED": True, **settings}
+    settings = {
+        "ZYTE_SMARTPROXY_APIKEY": "apikey",
+        "ZYTE_SMARTPROXY_ENABLED": True,
+        **settings,
+    }
     crawler = get_crawler(settings_dict=settings)
     mw = ZyteSmartProxyMiddleware.from_crawler(crawler)
     spider = Spider("foo")
@@ -1462,7 +1484,11 @@ def test_request_headers(settings, input_headers, output_headers, warnings, capl
     caplog.clear()
     with caplog.at_level("WARNING"):
         assert mw.process_request(request, spider) is None
-    actual_headers = {k: b"".join(vs) for k, vs in request.headers.items() if k not in {b"X-Crawlera-Client", b"Zyte-Client"}}
+    actual_headers = {
+        k: b"".join(vs)
+        for k, vs in request.headers.items()
+        if k not in {b"X-Crawlera-Client", b"Zyte-Client"}
+    }
     assert actual_headers == output_headers
 
     if warnings:
