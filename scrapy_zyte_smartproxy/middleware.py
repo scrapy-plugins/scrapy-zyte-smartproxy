@@ -102,7 +102,7 @@ class ZyteSmartProxyMiddleware(object):
                 "authentication, but %s.%s.get_proxyauth() returned %r"
                 % (self.__module__, self.__class__.__name__, auth)
             )
-        user_and_colon = urlsafe_b64decode(auth[6:].strip()).decode()
+        user_and_colon = urlsafe_b64decode(auth[6:].strip()).decode("utf-8")
         netloc = user_and_colon + "@" + parsed_url.netloc.split("@")[-1]
         parsed_url = parsed_url._replace(netloc=netloc)
         return urlunparse(parsed_url)
@@ -320,7 +320,7 @@ class ZyteSmartProxyMiddleware(object):
             "X-Crawlera-Error"
         )
         if response.status in {429, 503} and error and error != b"banned":
-            return error.decode()
+            return error.decode("utf-8")
         return None
 
     def _process_error(self, response):
@@ -597,7 +597,9 @@ class ZyteSmartProxyMiddleware(object):
             if value is None:
                 continue
             request.headers.setdefault(header, value)
-        lower_case_headers = [header.decode().lower() for header in request.headers]
+        lower_case_headers = [
+            header.decode("utf-8").lower() for header in request.headers
+        ]
         if all(h.lower() in lower_case_headers for h in self.conflicting_headers):
             # Send a general warning once,
             # and specific urls if LOG_LEVEL = DEBUG
