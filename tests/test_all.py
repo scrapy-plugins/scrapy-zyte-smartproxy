@@ -1326,7 +1326,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
                 {},
                 [f"Dropping header {header!r} ({value!r})"],
             )
-            for header in (b"X-Crawlera-Foo", b"Zyte-Foo")
+            for header in (b"X-Crawlera-Foo", b"X-Crawlera-Client", b"Zyte-Foo", b"Zyte-Client")
             for value in (b"Bar",)
         ),
         # SPM → ZAPI
@@ -1397,10 +1397,6 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
                 (b"Zyte-Foo", b"Bar"),
             )
         ),
-
-        # TODO: Cover scenario where the middleware is disabled, so no
-        # translation should happen in either direction, and instead all
-        # headers should be dropped by default.
 
         # TODO: Implement a setting to allow keeping all or specific headers
         # instead of dropping them, and test it.
