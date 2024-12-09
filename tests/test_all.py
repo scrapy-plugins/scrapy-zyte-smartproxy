@@ -1,3 +1,5 @@
+# -*- coding: UTF-8 -*-
+
 import binascii
 import os
 from copy import copy
@@ -1297,136 +1299,159 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         self.assertEqual(request.headers[b"Proxy-Authorization"], auth_header)
 
 
+def _merge_dicts(d1, d2):
+    d1.update(d2)
+    return d1
+
+
 @pytest.mark.parametrize(
     ("settings", "input_headers", "output_headers", "warnings"),
-    (
-        # Baseline
-        *(
-            (
-                settings,
-                {b"Foo": b"Bar"},
-                {b"Foo": b"Bar"},
-                [],
-            )
-            for settings in (
-                {"ZYTE_SMARTPROXY_ENABLED": False},  # Plugin disabled
-                {},  # SPM
-                {"ZYTE_SMARTPROXY_URL": "http://api.zyte.com:8011"},  # Zyte API
-            )
-        ),
-        # Plugin disabled
-        #
-        # When the plugin is disabled, by default all headers prefixed with
-        # X-Crawlera- or Zyte-, regardless of whether or not they are
-        # recognized, are dropped.
-        *(
-            (
-                {"ZYTE_SMARTPROXY_ENABLED": False},
-                {header: value},
-                {},
-                [f"Dropping header {header!r} ({value!r})"],
-            )
-            for header in (
-                b"X-Crawlera-Foo",
-                b"X-Crawlera-Client",
-                b"Zyte-Foo",
-                b"Zyte-Client",
-            )
-            for value in (b"Bar",)
-        ),
-        # SPM → ZAPI
-        #
-        # Backward-compatible headers are kept as is, to let Zyte API do the
-        # best translation possible, which is specially important in cases
-        # where translation may not be 1:1 (X-Crawlera-Cookies,
-        # X-Crawlera-Session).
-        *(
-            (
-                {"ZYTE_SMARTPROXY_URL": "http://api.zyte.com:8011"},
-                {header: value},
-                {header: value},
-                [f"Keeping deprecated header {header!r}"],
-            )
-            for header, value in (
-                (b"X-Crawlera-Cookies", b"enable"),
-                (b"X-Crawlera-Jobid", b"00000/0/0"),
-                (b"X-Crawlera-Profile", b"desktop"),
-                (b"X-Crawlera-Profile-Pass", b"User-Agent"),
-                (b"X-Crawlera-Region", b"US"),
-                (b"X-Crawlera-Session", b"create"),
-            )
-        ),
-        # Other headers, known or made up, are dropped with a warning.
-        *(
-            (
-                {"ZYTE_SMARTPROXY_URL": "http://api.zyte.com:8011"},
-                {header: value},
-                {},
-                [f"Dropping header {header!r} ({value!r})"],
-            )
-            for header, value in (
-                (b"X-Crawlera-Timeout", b"40000"),
-                (b"X-Crawlera-Foo", b"Bar"),
-            )
-        ),
-        # ZAPI → SPM
-        #
-        # We support some ZAPI → SPM translations, just because it was trivial
-        # to implement them originally. But there are no plans to extend them
-        # with more translations. There is no good reason for someone to send
-        # Zyte API proxy mode headers to SPM.
-        *(
-            (
-                {},
-                {zyte_header: value},
-                {spm_header: value},
-                [
-                    f"Translating header {zyte_header.lower()!r} ({value!r}) "
-                    f"to {spm_header.lower()!r}"
-                ],
-            )
-            for zyte_header, spm_header, value in (
-                (b"Zyte-Device", b"X-Crawlera-Profile", b"desktop"),
-                (b"Zyte-Geolocation", b"X-Crawlera-Region", b"US"),
-                (b"Zyte-Jobid", b"X-Crawlera-Jobid", b"00000/0/0"),
-                (b"Zyte-Override-Headers", b"X-Crawlera-Profile-Pass", b"User-Agent"),
-            )
-        ),
-        # Other headers, known or made up, are dropped with a warning.
-        *(
-            (
-                {},
-                {header: value},
-                {},
-                [f"Dropping header {header!r} ({value!r})"],
-            )
-            for header, value in (
-                (b"Zyte-Cookie-Management", b"enable"),
-                (b"Zyte-Foo", b"Bar"),
-            )
-        ),
-        # ZYTE_SMARTPROXY_KEEP_HEADERS
-        *(
-            (
-                {"ZYTE_SMARTPROXY_KEEP_HEADERS": True, **settings},
-                {header: value},
-                {header: value},
-                [],
-            )
-            for header in (
-                b"X-Crawlera-Foo",
-                b"X-Crawlera-Device",
-                b"Zyte-Foo",
-                b"Zyte-Device",
-            )
-            for value in (b"mobile",)
-            for settings in (
-                {"ZYTE_SMARTPROXY_ENABLED": False},
-                {"ZYTE_SMARTPROXY_URL": "http://api.zyte.com:8011"},
-                {},
-            )
-        ),
-        # ZYTE_SMARTPROXY_DEFAULT_HEADERS
+    # Baseline
+    tuple(
+        (
+            settings,
+            {b"Foo": b"Bar"},
+            {b"Foo": b"Bar"},
+            [],
+        )
+        for settings in (
+            {"ZYTE_SMARTPROXY_ENABLED": False},  # Plugin disabled
+            {},  # SPM
+            {"ZYTE_SMARTPROXY_URL": "http://api.zyte.com:8011"},  # Zyte API
+        )
+    )
+    # Plugin disabled
+    #
+    # When the plugin is disabled, by default all headers prefixed with
+    # X-Crawlera- or Zyte-, regardless of whether or not they are
+    # recognized, are dropped.
+    + tuple(
+        (
+            {"ZYTE_SMARTPROXY_ENABLED": False},
+            {header: value},
+            {},
+            [
+                "Dropping header {header!r} ({value!r})".format(
+                    header=header, value=value
+                )
+            ],
+        )
+        for header in (
+            b"X-Crawlera-Foo",
+            b"X-Crawlera-Client",
+            b"Zyte-Foo",
+            b"Zyte-Client",
+        )
+        for value in (b"Bar",)
+    )
+    # SPM → ZAPI
+    #
+    # Backward-compatible headers are kept as is, to let Zyte API do the
+    # best translation possible, which is specially important in cases
+    # where translation may not be 1:1 (X-Crawlera-Cookies,
+    # X-Crawlera-Session).
+    + tuple(
+        (
+            {"ZYTE_SMARTPROXY_URL": "http://api.zyte.com:8011"},
+            {header: value},
+            {header: value},
+            ["Keeping deprecated header {header!r}".format(header=header)],
+        )
+        for header, value in (
+            (b"X-Crawlera-Cookies", b"enable"),
+            (b"X-Crawlera-Jobid", b"00000/0/0"),
+            (b"X-Crawlera-Profile", b"desktop"),
+            (b"X-Crawlera-Profile-Pass", b"User-Agent"),
+            (b"X-Crawlera-Region", b"US"),
+            (b"X-Crawlera-Session", b"create"),
+        )
+    )
+    # Other headers, known or made up, are dropped with a warning.
+    + tuple(
+        (
+            {"ZYTE_SMARTPROXY_URL": "http://api.zyte.com:8011"},
+            {header: value},
+            {},
+            [
+                "Dropping header {header!r} ({value!r})".format(
+                    header=header, value=value
+                )
+            ],
+        )
+        for header, value in (
+            (b"X-Crawlera-Timeout", b"40000"),
+            (b"X-Crawlera-Foo", b"Bar"),
+        )
+    )
+    # ZAPI → SPM
+    #
+    # We support some ZAPI → SPM translations, just because it was trivial
+    # to implement them originally. But there are no plans to extend them
+    # with more translations. There is no good reason for someone to send
+    # Zyte API proxy mode headers to SPM.
+    + tuple(
+        (
+            {},
+            {zyte_header: value},
+            {spm_header: value},
+            [
+                (
+                    "Translating header {zyte_header!r} ({value!r}) "
+                    "to {spm_header!r}"
+                ).format(
+                    zyte_header=zyte_header.lower(),
+                    value=value,
+                    spm_header=spm_header.lower(),
+                )
+            ],
+        )
+        for zyte_header, spm_header, value in (
+            (b"Zyte-Device", b"X-Crawlera-Profile", b"desktop"),
+            (b"Zyte-Geolocation", b"X-Crawlera-Region", b"US"),
+            (b"Zyte-Jobid", b"X-Crawlera-Jobid", b"00000/0/0"),
+            (b"Zyte-Override-Headers", b"X-Crawlera-Profile-Pass", b"User-Agent"),
+        )
+    )
+    # Other headers, known or made up, are dropped with a warning.
+    + tuple(
+        (
+            {},
+            {header: value},
+            {},
+            [
+                "Dropping header {header!r} ({value!r})".format(
+                    header=header, value=value
+                )
+            ],
+        )
+        for header, value in (
+            (b"Zyte-Cookie-Management", b"enable"),
+            (b"Zyte-Foo", b"Bar"),
+        )
+    )
+    # ZYTE_SMARTPROXY_KEEP_HEADERS
+    + tuple(
+        (
+            _merge_dicts({"ZYTE_SMARTPROXY_KEEP_HEADERS": True}, settings),
+            {header: value},
+            {header: value},
+            [],
+        )
+        for header in (
+            b"X-Crawlera-Foo",
+            b"X-Crawlera-Device",
+            b"Zyte-Foo",
+            b"Zyte-Device",
+        )
+        for value in (b"mobile",)
+        for settings in (
+            {"ZYTE_SMARTPROXY_ENABLED": False},
+            {"ZYTE_SMARTPROXY_URL": "http://api.zyte.com:8011"},
+            {},
+        )
+    )
+    # ZYTE_SMARTPROXY_DEFAULT_HEADERS
+    + (
         (
             {"ZYTE_SMARTPROXY_DEFAULT_HEADERS": {"X-Crawlera-Profile": "desktop"}},
             {},
@@ -1470,11 +1495,13 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
     ),
 )
 def test_request_headers(settings, input_headers, output_headers, warnings, caplog):
-    settings = {
-        "ZYTE_SMARTPROXY_APIKEY": "apikey",
-        "ZYTE_SMARTPROXY_ENABLED": True,
-        **settings,
-    }
+    settings = _merge_dicts(
+        {
+            "ZYTE_SMARTPROXY_APIKEY": "apikey",
+            "ZYTE_SMARTPROXY_ENABLED": True,
+        },
+        settings,
+    )
     crawler = get_crawler(settings_dict=settings)
     mw = ZyteSmartProxyMiddleware.from_crawler(crawler)
     spider = Spider("foo")

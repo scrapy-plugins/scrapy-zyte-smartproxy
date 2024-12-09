@@ -556,12 +556,18 @@ class ZyteSmartProxyMiddleware(object):
                 )
             else:
                 logger.warning(
-                    f"Dropping header {header!r} ({value!r}) from request "
-                    f"{request!r}, as this request is not handled by "
-                    f"scrapy-zyte-smartproxy. If you are sure that you need "
-                    f"to send this header in a request not handled by "
-                    f"scrapy-zyte-smartproxy, use the "
-                    f"ZYTE_SMARTPROXY_KEEP_HEADERS setting."
+                    (
+                        "Dropping header {header!r} ({value!r}) from request "
+                        "{request!r}, as this request is not handled by "
+                        "scrapy-zyte-smartproxy. If you are sure that you need "
+                        "to send this header in a request not handled by "
+                        "scrapy-zyte-smartproxy, use the "
+                        "ZYTE_SMARTPROXY_KEEP_HEADERS setting."
+                    ).format(
+                        header=header,
+                        value=value,
+                        request=request,
+                    )
                 )
 
     def _drop_header(self, header_name, prefixes):
@@ -578,7 +584,11 @@ class ZyteSmartProxyMiddleware(object):
             and len(prefixes) <= 1
             and header_name_lowercase in self.spm_bc_headers
         ):
-            logger.warning(f"Keeping deprecated header {header_name!r}.")
+            logger.warning(
+                "Keeping deprecated header {header_name!r}.".format(
+                    header_name=header_name
+                )
+            )
             return False
         return has_drop_prefix
 
