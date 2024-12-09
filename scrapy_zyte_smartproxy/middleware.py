@@ -83,6 +83,7 @@ class ZyteSmartProxyMiddleware(object):
             b"x-crawlera-region",
             b"x-crawlera-session",
         ]
+        self._keep_headers = crawler.settings.getbool("ZYTE_SMARTPROXY_KEEP_HEADERS", False)
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -292,11 +293,12 @@ class ZyteSmartProxyMiddleware(object):
                 "request/method/{}".format(request.method),
                 targets_zyte_api=targets_zyte_api,
             )
-            self._translate_headers(request, targets_zyte_api=targets_zyte_api)
-            self._clean_zyte_smartproxy_headers(
-                request, targets_zyte_api=targets_zyte_api
-            )
-        else:
+            if not self._keep_headers:
+                self._translate_headers(request, targets_zyte_api=targets_zyte_api)
+                self._clean_zyte_smartproxy_headers(
+                    request, targets_zyte_api=targets_zyte_api
+                )
+        elif not self._keep_headers:
             self._clean_zyte_smartproxy_headers(request)
 
     def _is_banned(self, response):

@@ -1397,9 +1397,22 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
                 (b"Zyte-Foo", b"Bar"),
             )
         ),
-
-        # TODO: Implement a setting to allow keeping all or specific headers
-        # instead of dropping them, and test it.
+        # ZYTE_SMARTPROXY_KEEP_HEADERS
+        *(
+            (
+                {"ZYTE_SMARTPROXY_KEEP_HEADERS": True, **settings},
+                {header: value},
+                {header: value},
+                [],
+            )
+            for header in (b"X-Crawlera-Foo", b"X-Crawlera-Device", b"Zyte-Foo", b"Zyte-Device")
+            for value in (b"mobile",)
+            for settings in (
+                {"ZYTE_SMARTPROXY_ENABLED": False},
+                {"ZYTE_SMARTPROXY_URL": "http://api.zyte.com:8011"},
+                {},
+            )
+        ),
 
     # def test_clean_headers_when_disabled(self):
     #     req = self._make_fake_request(self.spider, zyte_smartproxy_enabled=False)
