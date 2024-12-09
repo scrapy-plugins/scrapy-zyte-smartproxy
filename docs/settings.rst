@@ -85,3 +85,10 @@ service for the corresponding domain.
 When a response with one of these HTTP status codes is received after an
 unproxied request, the request is retried with your Zyte proxy service, and any
 new request to the same domain is also proxied.
+
+ZYTE_SMARTPROXY_KEEP_HEADERS
+----------------------------
+
+Default: ``False``
+
+If ``True``, header dropping and translation is disabled.
