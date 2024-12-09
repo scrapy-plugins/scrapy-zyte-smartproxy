@@ -1449,7 +1449,6 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
             {b"X-Crawlera-Cookies": b"disable"},  # Not translated to Zyte-Cookie-Management
             ["Keeping deprecated header"],
         ),
-        # TODO: Complete test coverage.
     ),
 )
 def test_request_headers(settings, input_headers, output_headers, warnings, caplog):
