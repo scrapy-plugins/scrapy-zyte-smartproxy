@@ -576,10 +576,7 @@ class ZyteSmartProxyMiddleware(object):
             and len(prefixes) <= 1
             and header_name_lowercase in self.spm_bc_headers
         ):
-            logger.warning(
-                f"Keeping deprecated header {header_name!r} due to the value "
-                f"of the ZYTE_SMARTPROXY_KEEP_HEADERS setting."
-            )
+            logger.warning(f"Keeping deprecated header {header_name!r}.")
             return False
         return has_drop_prefix
 

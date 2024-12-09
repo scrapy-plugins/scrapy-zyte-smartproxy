@@ -1413,81 +1413,43 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
                 {},
             )
         ),
-
-    # def test_clean_headers_when_disabled(self):
-    #     req = self._make_fake_request(self.spider, zyte_smartproxy_enabled=False)
-    #
-    #     self.assertNotIn(b"X-Crawlera-Debug", req.headers)
-    #     self.assertNotIn(b"X-Crawlera-Foo", req.headers)
-    #     self.assertNotIn(b"X-Crawlera-Profile", req.headers)
-    #     self.assertNotIn(b"Zyte-Bar", req.headers)
-    #     self.assertNotIn(b"Zyte-BrowserHtml", req.headers)
-    #     self.assertNotIn(b"Zyte-Geolocation", req.headers)
-    #     self.assertIn(b"User-Agent", req.headers)
-    #
-    # def test_clean_headers_when_enabled_spm(self):
-    #     req = self._make_fake_request(self.spider, zyte_smartproxy_enabled=True)
-    #     self.assertEqual(req.headers[b"X-Crawlera-Debug"], b"True")
-    #     self.assertEqual(req.headers[b"X-Crawlera-Foo"], b"foo")
-    #     self.assertEqual(req.headers[b"X-Crawlera-Profile"], b"desktop")
-    #     self.assertNotIn(b"Zyte-Bar", req.headers)
-    #     self.assertNotIn(b"Zyte-BrowserHtml", req.headers)
-    #     self.assertNotIn(b"Zyte-Geolocation", req.headers)
-    #     self.assertEqual(req.headers[b"X-Crawlera-Region"], b"foo")
-    #     self.assertIn(b"User-Agent", req.headers)
-    #
-    # def test_clean_headers_when_enabled_zyte_api(self):
-    #     meta = {"proxy": "http://apikey:@api.zyte.com:8011"}
-    #     req = self._make_fake_request(
-    #         self.spider, zyte_smartproxy_enabled=True, meta=meta
-    #     )
-    #     self.assertNotIn(b"X-Crawlera-Debug", req.headers)
-    #     self.assertNotIn(b"X-Crawlera-Foo", req.headers)
-    #     self.assertNotIn(b"X-Crawlera-Profile", req.headers)
-    #     self.assertEqual(req.headers[b"Zyte-Bar"], b"bar")
-    #     self.assertEqual(req.headers[b"Zyte-BrowserHtml"], b"True")
-    #     self.assertEqual(req.headers[b"Zyte-Device"], b"desktop")
-    #     self.assertEqual(req.headers[b"Zyte-Geolocation"], b"foo")
-    #     self.assertIn(b"User-Agent", req.headers)
-
-    # def test_zyte_smartproxy_default_headers(self):
-    #     spider = self.spider
-    #     self.spider.zyte_smartproxy_enabled = True
-    #
-    #     self.settings["ZYTE_SMARTPROXY_DEFAULT_HEADERS"] = {
-    #         "X-Crawlera-Profile": "desktop",
-    #     }
-    #     crawler = self._mock_crawler(spider, self.settings)
-    #     mw = self.mwcls.from_crawler(crawler)
-    #     mw.open_spider(spider)
-    #     req = Request("http://example.com/other")
-    #     assert mw.process_request(req, spider) is None
-    #     self.assertEqual(req.headers["X-Crawlera-Profile"], b"desktop")
-    #     self.assertNotIn("Zyte-Device", req.headers)
-    #
-    #     # Header translation
-    #     req = Request(
-    #         "http://example.com/other",
-    #         meta={"proxy": "http://apikey:@api.zyte.com:8011"},
-    #     )
-    #     assert mw.process_request(req, spider) is None
-    #     self.assertNotIn("X-Crawlera-Profile", req.headers)
-    #     self.assertEqual(req.headers["Zyte-Device"], b"desktop")
-    #
-    #     # test ignore None headers
-    #     self.settings["ZYTE_SMARTPROXY_DEFAULT_HEADERS"] = {
-    #         "X-Crawlera-Profile": None,
-    #         "X-Crawlera-Cookies": "disable",
-    #     }
-    #     crawler = self._mock_crawler(spider, self.settings)
-    #     mw = self.mwcls.from_crawler(crawler)
-    #     mw.open_spider(spider)
-    #     req = Request("http://example.com/other")
-    #     assert mw.process_request(req, spider) is None
-    #     self.assertEqual(req.headers["X-Crawlera-Cookies"], b"disable")
-    #     self.assertNotIn("X-Crawlera-Profile", req.headers)
-
-    # TODO: Complete test coverage.
+        # ZYTE_SMARTPROXY_DEFAULT_HEADERS
+        (
+            {"ZYTE_SMARTPROXY_DEFAULT_HEADERS": {"X-Crawlera-Profile": "desktop"}},
+            {},
+            {b"X-Crawlera-Profile": b"desktop"},
+            [],
+        ),
+        (
+            {"ZYTE_SMARTPROXY_DEFAULT_HEADERS": {"X-Crawlera-Profile": "desktop"}, "ZYTE_SMARTPROXY_URL": "http://apikey:@api.zyte.com:8011"},
+            {},
+            {b"X-Crawlera-Profile": b"desktop"},  # Not translated to Zyte-Device
+            ["Keeping deprecated header"],
+        ),
+        (
+            {
+                "ZYTE_SMARTPROXY_DEFAULT_HEADERS": {
+                    "X-Crawlera-Profile": None,  # ignored
+                    "X-Crawlera-Cookies": "disable",
+                },
+            },
+            {},
+            {b"X-Crawlera-Cookies": b"disable"},
+            [],
+        ),
+        (
+            {
+                "ZYTE_SMARTPROXY_DEFAULT_HEADERS": {
+                    "X-Crawlera-Profile": None,  # ignored
+                    "X-Crawlera-Cookies": "disable",
+                },
+                "ZYTE_SMARTPROXY_URL": "http://apikey:@api.zyte.com:8011",
+            },
+            {},
+            {b"X-Crawlera-Cookies": b"disable"},  # Not translated to Zyte-Cookie-Management
+            ["Keeping deprecated header"],
+        ),
+        # TODO: Complete test coverage.
     ),
 )
 def test_request_headers(settings, input_headers, output_headers, warnings, caplog):
