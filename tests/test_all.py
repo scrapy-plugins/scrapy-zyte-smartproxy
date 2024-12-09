@@ -1319,9 +1319,6 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         # When the plugin is disabled, by default all headers prefixed with
         # X-Crawlera- or Zyte-, regardless of whether or not they are
         # recognized, are dropped.
-        #
-        # TODO: Figure out why the first test here fails when all tests are
-        # executed, but not when this specific test is singled out.
         *(
             (
                 {"ZYTE_SMARTPROXY_ENABLED": False},
@@ -1496,7 +1493,7 @@ def test_request_headers(settings, input_headers, output_headers, warnings, capl
     with caplog.at_level("WARNING"):
         assert mw.process_request(request, spider) is None
     actual_headers = {k: b"".join(vs) for k, vs in request.headers.items() if k not in {b"X-Crawlera-Client", b"Zyte-Client"}}
-    assert actual_headers == output_headers, f"{dict(crawler.settings)}"
+    assert actual_headers == output_headers
 
     if warnings:
         for warning in warnings:

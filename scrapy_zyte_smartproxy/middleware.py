@@ -39,40 +39,11 @@ class ZyteSmartProxyMiddleware(object):
     header_prefix = "X-Crawlera-"  # Deprecated
     header_lowercase_prefixes = (b"zyte-", b"x-crawlera-")
     conflicting_headers = ("X-Crawlera-Profile", "X-Crawlera-UA")
-    # SPM headers that can be used with Zyte API proxy mode
-    # https://docs.zyte.com/zyte-api/migration/zyte/smartproxy.html#parameter-mapping
-    spm_bc_headers = [
-        b"x-crawlera-cookies",
-        b"x-crawlera-jobid",
-        b"x-crawlera-profile",
-        b"x-crawlera-profile-pass",
-        b"x-crawlera-region",
-        b"x-crawlera-session",
-    ]
     backoff_step = 15
     backoff_max = 180
     exp_backoff = None
-    force_enable_on_http_codes = []  # type: List[int]
     max_auth_retry_times = 10
-    enabled_for_domain = {}  # type: Dict[str, bool]
     apikey = ""
-    zyte_api_to_spm_translations = {
-        b"zyte-device": b"x-crawlera-profile",
-        b"zyte-geolocation": b"x-crawlera-region",
-        b"zyte-jobid": b"x-crawlera-jobid",
-        b"zyte-override-headers": b"x-crawlera-profile-pass",
-    }
-
-    _settings = [
-        ("apikey", str),
-        ("url", str),
-        ("maxbans", int),
-        ("download_timeout", int),
-        ("preserve_delay", bool),
-        ("backoff_step", int),
-        ("backoff_max", int),
-        ("force_enable_on_http_codes", list),
-    ]
 
     def __init__(self, crawler):
         self.crawler = crawler
@@ -81,9 +52,37 @@ class ZyteSmartProxyMiddleware(object):
         self._bans = defaultdict(int)
         self._saved_delays = defaultdict(lambda: None)
         self._auth_url = None
+        self.enabled_for_domain = {}  # type: Dict[str, bool]
+        self.force_enable_on_http_codes = []  # type: List[int]
+        self.zyte_api_to_spm_translations = {
+            b"zyte-device": b"x-crawlera-profile",
+            b"zyte-geolocation": b"x-crawlera-region",
+            b"zyte-jobid": b"x-crawlera-jobid",
+            b"zyte-override-headers": b"x-crawlera-profile-pass",
+        }
+        self._settings = [
+            ("apikey", str),
+            ("url", str),
+            ("maxbans", int),
+            ("download_timeout", int),
+            ("preserve_delay", bool),
+            ("backoff_step", int),
+            ("backoff_max", int),
+            ("force_enable_on_http_codes", list),
+        ]
         # Keys are proxy URLs, values are booleans (True means Zyte API, False
         # means Zyte Smart Proxy Manager).
         self._targets = {}
+        # SPM headers that can be used with Zyte API proxy mode
+        # https://docs.zyte.com/zyte-api/migration/zyte/smartproxy.html#parameter-mapping
+        self.spm_bc_headers = [
+            b"x-crawlera-cookies",
+            b"x-crawlera-jobid",
+            b"x-crawlera-profile",
+            b"x-crawlera-profile-pass",
+            b"x-crawlera-region",
+            b"x-crawlera-session",
+        ]
 
     @classmethod
     def from_crawler(cls, crawler):
