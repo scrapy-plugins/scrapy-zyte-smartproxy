@@ -3,6 +3,22 @@
 Changes
 =======
 
+v2.4.0 (YYYY-MM-DD)
+-------------------
+
+Removed official support for Python 3.4, 3.5, 3.6, 3.7 and 3.8. Added official
+Python 3.13 support.
+
+`Backward-compatible
+<https://docs.zyte.com/zyte-api/migration/zyte/smartproxy.html#spm-migrate-map>`__
+``X-Crawlera``-prefixed headers are no longer translated into their matching
+`Zyte API proxy mode headers
+<https://docs.zyte.com/zyte-api/usage/proxy-mode.html#zapi-proxy-headers>`_,
+Zyte API now handles their translation on the server side.
+
+Added a new ``ZYTE_SMARTPROXY_KEEP_HEADERS`` setting that allows disabling
+header dropping and translation.
+
 v2.3.5 (2024-08-05)
 -------------------
 
