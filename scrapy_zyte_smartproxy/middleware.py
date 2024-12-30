@@ -37,35 +37,13 @@ class ZyteSmartProxyMiddleware(object):
     connection_refused_delay = 90
     preserve_delay = False
     header_prefix = "X-Crawlera-"  # Deprecated
-    header_lowercase_prefixes = ("zyte-", "x-crawlera-")
+    header_lowercase_prefixes = (b"zyte-", b"x-crawlera-")
     conflicting_headers = ("X-Crawlera-Profile", "X-Crawlera-UA")
     backoff_step = 15
     backoff_max = 180
     exp_backoff = None
-    force_enable_on_http_codes = []  # type: List[int]
     max_auth_retry_times = 10
-    enabled_for_domain = {}  # type: Dict[str, bool]
     apikey = ""
-    zyte_api_to_spm_translations = {
-        b"zyte-device": b"x-crawlera-profile",
-        b"zyte-geolocation": b"x-crawlera-region",
-        b"zyte-jobid": b"x-crawlera-jobid",
-        b"zyte-override-headers": b"x-crawlera-profile-pass",
-    }
-    spm_to_zyte_api_translations = {
-        v: k for k, v in zyte_api_to_spm_translations.items()
-    }
-
-    _settings = [
-        ("apikey", str),
-        ("url", str),
-        ("maxbans", int),
-        ("download_timeout", int),
-        ("preserve_delay", bool),
-        ("backoff_step", int),
-        ("backoff_max", int),
-        ("force_enable_on_http_codes", list),
-    ]
 
     def __init__(self, crawler):
         self.crawler = crawler
@@ -74,9 +52,40 @@ class ZyteSmartProxyMiddleware(object):
         self._bans = defaultdict(int)
         self._saved_delays = defaultdict(lambda: None)
         self._auth_url = None
+        self.enabled_for_domain = {}  # type: Dict[str, bool]
+        self.force_enable_on_http_codes = []  # type: List[int]
+        self.zyte_api_to_spm_translations = {
+            b"zyte-device": b"x-crawlera-profile",
+            b"zyte-geolocation": b"x-crawlera-region",
+            b"zyte-jobid": b"x-crawlera-jobid",
+            b"zyte-override-headers": b"x-crawlera-profile-pass",
+        }
+        self._settings = [
+            ("apikey", str),
+            ("url", str),
+            ("maxbans", int),
+            ("download_timeout", int),
+            ("preserve_delay", bool),
+            ("backoff_step", int),
+            ("backoff_max", int),
+            ("force_enable_on_http_codes", list),
+        ]
         # Keys are proxy URLs, values are booleans (True means Zyte API, False
         # means Zyte Smart Proxy Manager).
         self._targets = {}
+        # SPM headers that can be used with Zyte API proxy mode
+        # https://docs.zyte.com/zyte-api/migration/zyte/smartproxy.html#parameter-mapping
+        self.spm_bc_headers = [
+            b"x-crawlera-cookies",
+            b"x-crawlera-jobid",
+            b"x-crawlera-profile",
+            b"x-crawlera-profile-pass",
+            b"x-crawlera-region",
+            b"x-crawlera-session",
+        ]
+        self._keep_headers = crawler.settings.getbool(
+            "ZYTE_SMARTPROXY_KEEP_HEADERS", False
+        )
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -230,15 +239,14 @@ class ZyteSmartProxyMiddleware(object):
         return targets_zyte_api
 
     def _translate_headers(self, request, targets_zyte_api):
-        translation_dict = (
-            self.spm_to_zyte_api_translations
-            if targets_zyte_api
-            else self.zyte_api_to_spm_translations
-        )
-        for header, translation in translation_dict.items():
+        if targets_zyte_api:
+            return
+        for header, translation in self.zyte_api_to_spm_translations.items():
             if header not in request.headers:
                 continue
-            request.headers[translation] = value = request.headers.pop(header)
+            values = request.headers.pop(header)
+            value = b"".join(values)
+            request.headers[translation] = value
             logger.warning(
                 "Translating header %r (%r) to %r on request %r",
                 header,
@@ -287,11 +295,12 @@ class ZyteSmartProxyMiddleware(object):
                 "request/method/{}".format(request.method),
                 targets_zyte_api=targets_zyte_api,
             )
-            self._translate_headers(request, targets_zyte_api=targets_zyte_api)
-            self._clean_zyte_smartproxy_headers(
-                request, targets_zyte_api=targets_zyte_api
-            )
-        else:
+            if not self._keep_headers:
+                self._translate_headers(request, targets_zyte_api=targets_zyte_api)
+                self._clean_zyte_smartproxy_headers(
+                    request, targets_zyte_api=targets_zyte_api
+                )
+        elif not self._keep_headers:
             self._clean_zyte_smartproxy_headers(request)
 
     def _is_banned(self, response):
@@ -311,7 +320,7 @@ class ZyteSmartProxyMiddleware(object):
             "X-Crawlera-Error"
         )
         if response.status in {429, 503} and error and error != b"banned":
-            return error.decode()
+            return error.decode("utf-8")
         return None
 
     def _process_error(self, response):
@@ -513,16 +522,15 @@ class ZyteSmartProxyMiddleware(object):
         if targets_zyte_api is None:
             prefixes = self.header_lowercase_prefixes
         elif targets_zyte_api:
-            prefixes = ("x-crawlera-",)
+            prefixes = (b"x-crawlera-",)
         else:
-            prefixes = ("zyte-",)
+            prefixes = (b"zyte-",)
         targets = [
-            header
-            for header in request.headers
-            if self._is_zyte_smartproxy_header(header, prefixes)
+            header for header in request.headers if self._drop_header(header, prefixes)
         ]
         for header in targets:
-            value = request.headers.pop(header, None)
+            values = request.headers.pop(header, None)
+            value = b"".join(values)
             if targets_zyte_api is not None:
                 actual_target, header_target = (
                     ("Zyte API", "Zyte Smart Proxy Manager")
@@ -546,12 +554,43 @@ class ZyteSmartProxyMiddleware(object):
                     actual_target,
                     header_target,
                 )
+            else:
+                logger.warning(
+                    (
+                        "Dropping header {header!r} ({value!r}) from request "
+                        "{request!r}, as this request is not handled by "
+                        "scrapy-zyte-smartproxy. If you are sure that you need "
+                        "to send this header in a request not handled by "
+                        "scrapy-zyte-smartproxy, use the "
+                        "ZYTE_SMARTPROXY_KEEP_HEADERS setting."
+                    ).format(
+                        header=header,
+                        value=value,
+                        request=request,
+                    )
+                )
 
-    def _is_zyte_smartproxy_header(self, header_name, prefixes):
+    def _drop_header(self, header_name, prefixes):
         if not header_name:
             return False
-        header_name = header_name.decode("utf-8").lower()
-        return any(header_name.startswith(prefix) for prefix in prefixes)
+        header_name_lowercase = header_name.lower()
+        has_drop_prefix = any(
+            header_name_lowercase.startswith(prefix) for prefix in prefixes
+        )
+        if (
+            has_drop_prefix
+            # When dropping all prefixes, always drop matching headers, i.e.
+            # ignore self.spm_bc_headers.
+            and len(prefixes) <= 1
+            and header_name_lowercase in self.spm_bc_headers
+        ):
+            logger.warning(
+                "Keeping deprecated header {header_name!r}.".format(
+                    header_name=header_name
+                )
+            )
+            return False
+        return has_drop_prefix
 
     def _set_zyte_smartproxy_default_headers(self, request):
         for header, value in self._headers:
