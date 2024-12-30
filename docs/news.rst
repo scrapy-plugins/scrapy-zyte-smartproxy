@@ -3,7 +3,7 @@
 Changes
 =======
 
-v2.4.0 (YYYY-MM-DD)
+v2.4.0 (2024-12-30)
 -------------------
 
 Removed official support for Python 3.4, 3.5, 3.6, 3.7 and 3.8. Added official
