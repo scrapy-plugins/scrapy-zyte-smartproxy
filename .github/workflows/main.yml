@@ -62,6 +62,8 @@ jobs:
         run: tox
       - name: Upload coverage.xml to codecov
         uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
   pre-commit:
     runs-on: ubuntu-latest
     steps:
