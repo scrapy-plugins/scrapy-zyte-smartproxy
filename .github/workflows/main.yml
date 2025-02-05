@@ -61,7 +61,7 @@ jobs:
         env: ${{ matrix.env }}
         run: tox
       - name: Upload coverage.xml to codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v5
   pre-commit:
     runs-on: ubuntu-latest
     steps:
