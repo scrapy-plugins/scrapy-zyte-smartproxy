@@ -307,7 +307,7 @@ class ZyteSmartProxyMiddleware(object):
         return (
             response.status == self.ban_code
             and response.headers.get("X-Crawlera-Error") == b"banned"
-        ) or (response.status in {520, 521} and response.headers.get("Zyte-Error"))
+        ) or (response.status in {520, 521} and response.headers.get("Zyte-Error-Type"))
 
     def _is_auth_error(self, response):
         return (
@@ -316,7 +316,7 @@ class ZyteSmartProxyMiddleware(object):
         )
 
     def _throttle_error(self, response):
-        error = response.headers.get("Zyte-Error") or response.headers.get(
+        error = response.headers.get("Zyte-Error-Type") or response.headers.get(
             "X-Crawlera-Error"
         )
         if response.status in {429, 503} and error and error != b"banned":
@@ -324,13 +324,13 @@ class ZyteSmartProxyMiddleware(object):
         return None
 
     def _process_error(self, response):
-        if "Zyte-Error" in response.headers:
-            value = response.headers.get("Zyte-Error")
+        if "Zyte-Error-Type" in response.headers:
+            value = response.headers.get("Zyte-Error-Type")
             response.headers["X-Crawlera-Error"] = value
             return value
         if "X-Crawlera-Error" in response.headers:
             value = response.headers.get("X-Crawlera-Error")
-            response.headers["Zyte-Error"] = value
+            response.headers["Zyte-Error-Type"] = value
             return value
         return None
 
@@ -480,10 +480,10 @@ class ZyteSmartProxyMiddleware(object):
         return parsed.netloc
 
     def _is_zyte_smartproxy_or_zapi_response(self, response):
+        """Check if is Smart Proxy Manager or Zyte API proxy mode response"""
         return (
             "X-Crawlera-Version" in response.headers
             or "Zyte-Request-Id" in response.headers
-            or "zyte-error-type" in response.headers
         )
 
     def _get_slot_key(self, request):

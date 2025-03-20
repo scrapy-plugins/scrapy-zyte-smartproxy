@@ -29,7 +29,6 @@ RESPONSE_IDENTIFYING_HEADERS = (
     ("X-Crawlera-Version", ""),
     ("X-Crawlera-Version", "1.36.3-cd5e44"),
     ("Zyte-Request-Id", "123456789"),
-    ("zyte-error-type", "foo"),
 )
 
 
@@ -160,7 +159,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
             )
             assert mw.process_response(req, res, spider) is res
             assert res.headers["X-Crawlera-Error"] == b"banned"
-            assert res.headers["Zyte-Error"] == b"banned"
+            assert res.headers["Zyte-Error-Type"] == b"banned"
 
         # max bans reached and close_spider called
         self.assertEqual(crawler.engine.fake_spider_closed_result, (spider, "banned"))
@@ -482,7 +481,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         )
 
         res = self._mock_zyte_smartproxy_response(
-            req.url, status=mw.ban_code, headers={"Zyte-Error": "somethingbad"}
+            req.url, status=mw.ban_code, headers={"Zyte-Error-Type": "somethingbad"}
         )
         assert mw.process_response(req, res, spider) is res
         self.assertEqual(crawler.stats.get_value("{}/response".format(prefix)), 2)
@@ -497,7 +496,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
             crawler.stats.get_value("{}/response/error/somethingbad".format(prefix)), 1
         )
         self.assertEqual(res.headers["X-Crawlera-Error"], b"somethingbad")
-        self.assertEqual(res.headers["Zyte-Error"], b"somethingbad")
+        self.assertEqual(res.headers["Zyte-Error-Type"], b"somethingbad")
 
         res = self._mock_zyte_smartproxy_response(
             req.url,
@@ -516,7 +515,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
             crawler.stats.get_value("{}/response/banned".format(prefix)), 1
         )
         self.assertEqual(res.headers["X-Crawlera-Error"], b"banned")
-        self.assertEqual(res.headers["Zyte-Error"], b"banned")
+        self.assertEqual(res.headers["Zyte-Error-Type"], b"banned")
 
         res = self._mock_zyte_smartproxy_response(
             req.url,
@@ -672,7 +671,10 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         res = Response(
             req.url,
             status=503,
-            headers={"Zyte-Error": "/limits/over-global-limit"},
+            headers={
+                "Zyte-Request-Id": "123456789",
+                "Zyte-Error-Type": "/limits/over-global-limit",
+            },
         )
         res = mw.process_response(req, res, self.spider)
         self.assertFalse(mw._is_banned(res))
@@ -681,16 +683,26 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         res = mw.process_response(req, res, self.spider)
         self.assertTrue(mw._is_banned(res))
         res = Response(
-            req.url, status=520, headers={"Zyte-Error": "/download/temporary-error"}
+            req.url,
+            status=520,
+            headers={
+                "Zyte-Request-Id": "123456789",
+                "Zyte-Error-Type": "/download/temporary-error",
+            },
         )
         res = mw.process_response(req, res, self.spider)
+        assert mw.crawler.stats.get_value("zyte_smartproxy/response/banned") == 1
         self.assertTrue(mw._is_banned(res))
         res = Response(
             req.url,
             status=521,
-            headers={"Zyte-Error": "/download/internal-error"},
+            headers={
+                "Zyte-Request-Id": "123456789",
+                "Zyte-Error-Type": "/download/internal-error",
+            },
         )
         res = mw.process_response(req, res, self.spider)
+        assert mw.crawler.stats.get_value("zyte_smartproxy/response/banned") == 2
         self.assertTrue(mw._is_banned(res))
 
     @patch("random.uniform")
@@ -733,7 +745,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         over_use_limit_response = self._mock_zyte_smartproxy_response(
             ban_url,
             status=429,
-            headers={"Zyte-Error": "/limits/over-user-limit"},
+            headers={"Zyte-Error-Type": "/limits/over-user-limit"},
         )
         mw.process_response(noslaves_req, over_use_limit_response, self.spider)
         self.assertEqual(slot.delay, backoff_step * 2**1)
@@ -741,7 +753,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         over_domain_limit_response = self._mock_zyte_smartproxy_response(
             ban_url,
             status=429,
-            headers={"Zyte-Error": "/limits/over-domain-limit"},
+            headers={"Zyte-Error-Type": "/limits/over-domain-limit"},
         )
         mw.process_response(noslaves_req, over_domain_limit_response, self.spider)
         self.assertEqual(slot.delay, backoff_step * 2**2)
@@ -749,7 +761,7 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         over_global_limit_response = self._mock_zyte_smartproxy_response(
             ban_url,
             status=503,
-            headers={"Zyte-Error": "/limits/over-global-limit"},
+            headers={"Zyte-Error-Type": "/limits/over-global-limit"},
         )
         mw.process_response(noslaves_req, over_global_limit_response, self.spider)
         self.assertEqual(slot.delay, max_delay)
