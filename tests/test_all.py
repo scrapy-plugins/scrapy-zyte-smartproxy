@@ -680,7 +680,9 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         res = mw.process_response(req, res, self.spider)
         self.assertTrue(mw._is_banned(res))
         res = Response(
-            req.url, status=520, headers={"Zyte-Error-Type": "/download/temporary-error"}
+            req.url,
+            status=520,
+            headers={"Zyte-Error-Type": "/download/temporary-error"},
         )
         assert mw.crawler.stats.get_value("zyte_smartproxy/response/banned") == 1
         res = mw.process_response(req, res, self.spider)
