@@ -316,7 +316,7 @@ class ZyteSmartProxyMiddleware(object):
         )
 
     def _throttle_error(self, response):
-        error = response.headers.get("Zyte-Error") or response.headers.get(
+        error = response.headers.get("Zyte-Error-Type") or response.headers.get(
             "X-Crawlera-Error"
         )
         if response.status in {429, 503} and error and error != b"banned":
