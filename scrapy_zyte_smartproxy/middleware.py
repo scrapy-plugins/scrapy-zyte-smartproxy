@@ -480,6 +480,7 @@ class ZyteSmartProxyMiddleware(object):
         return parsed.netloc
 
     def _is_zyte_smartproxy_or_zapi_response(self, response):
+        """Check if is Smart Proxy Manager or Zyte API proxy mode response"""
         return (
             "X-Crawlera-Version" in response.headers
             or "Zyte-Request-Id" in response.headers
