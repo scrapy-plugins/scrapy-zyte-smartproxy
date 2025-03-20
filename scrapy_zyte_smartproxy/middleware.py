@@ -483,7 +483,6 @@ class ZyteSmartProxyMiddleware(object):
         return (
             "X-Crawlera-Version" in response.headers
             or "Zyte-Request-Id" in response.headers
-            or "Zyte-Error-Type" in response.headers
         )
 
     def _get_slot_key(self, request):
