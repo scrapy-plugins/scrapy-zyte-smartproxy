@@ -671,7 +671,10 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         res = Response(
             req.url,
             status=503,
-            headers={"Zyte-Error-Type": "/limits/over-global-limit"},
+            headers={
+                "Zyte-Request-Id": "123456789",
+                "Zyte-Error-Type": "/limits/over-global-limit",
+            },
         )
         res = mw.process_response(req, res, self.spider)
         self.assertFalse(mw._is_banned(res))
@@ -682,18 +685,24 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         res = Response(
             req.url,
             status=520,
-            headers={"Zyte-Error-Type": "/download/temporary-error"},
+            headers={
+                "Zyte-Request-Id": "123456789",
+                "Zyte-Error-Type": "/download/temporary-error",
+            },
         )
-        assert mw.crawler.stats.get_value("zyte_smartproxy/response/banned") == 1
         res = mw.process_response(req, res, self.spider)
+        assert mw.crawler.stats.get_value("zyte_smartproxy/response/banned") == 1
         self.assertTrue(mw._is_banned(res))
         res = Response(
             req.url,
             status=521,
-            headers={"Zyte-Error-Type": "/download/internal-error"},
+            headers={
+                "Zyte-Request-Id": "123456789",
+                "Zyte-Error-Type": "/download/internal-error",
+            },
         )
         res = mw.process_response(req, res, self.spider)
-        assert mw.crawler.stats.get_value("zyte_smartproxy/response/banned") == 3
+        assert mw.crawler.stats.get_value("zyte_smartproxy/response/banned") == 2
         self.assertTrue(mw._is_banned(res))
 
     @patch("random.uniform")
