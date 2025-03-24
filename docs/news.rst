@@ -3,7 +3,7 @@
 Changes
 =======
 
-v2.4.1 (unreleased)
+v2.4.1 (2025-03-24)
 -------------------
 
 Stop expecting a ``Zyte-Error`` header in responses from `Zyte API`_ `proxy
