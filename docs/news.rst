@@ -3,6 +3,12 @@
 Changes
 =======
 
+v2.4.1 (unreleased)
+-------------------
+
+Stop expecting a ``Zyte-Error`` header in responses from `Zyte API`_ `proxy
+mode`_, it is named ``Zyte-Error-Type``.
+
 v2.4.0 (2024-12-30)
 -------------------
 
