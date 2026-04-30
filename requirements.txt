@@ -1,3 +1,0 @@
-scrapy>=1.4
-six
-w3lib

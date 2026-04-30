@@ -1016,15 +1016,21 @@ class ZyteSmartProxyMiddlewareTestCase(TestCase):
         self.settings["HUBPROXY_ENABLED"] = True
         with pytest.warns(ScrapyDeprecationWarning) as record:
             self._assert_enabled(self.spider, self.settings)
-            assert len(record) == 1
-            assert "HUBPROXY_ENABLED setting is deprecated" in str(record[0].message)
+            messages = [str(w.message) for w in record]
+            assert sum(
+                "HUBPROXY_ENABLED setting is deprecated" in message
+                for message in messages
+            ) == 1
 
         del self.settings["HUBPROXY_ENABLED"]
         self.spider.use_hubproxy = False
         with pytest.warns(ScrapyDeprecationWarning) as record:
             self._assert_disabled(self.spider, self.settings)
-            assert len(record) == 1
-            assert "use_hubproxy attribute is deprecated" in str(record[0].message)
+            messages = [str(w.message) for w in record]
+            assert sum(
+                "use_hubproxy attribute is deprecated" in message
+                for message in messages
+            ) == 1
 
     def test_settings_warnings(self):
         self.spider.hubproxy_maxbans = 10

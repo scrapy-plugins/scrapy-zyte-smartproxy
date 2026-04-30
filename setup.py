@@ -23,8 +23,6 @@ setup(
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
@@ -36,5 +34,6 @@ setup(
         "Topic :: Software Development :: Libraries :: Application Frameworks",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
-    install_requires=["scrapy>=1.4.0", "six", "w3lib"],
+    python_requires=">=3.10",
+    install_requires=["scrapy>=1.7.1", "w3lib>=1.19.0"],
 )

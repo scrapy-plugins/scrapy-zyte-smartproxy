@@ -4,16 +4,12 @@ import warnings
 from base64 import urlsafe_b64decode
 from collections import defaultdict
 from typing import Dict, List  # noqa
-
-try:
-    from urllib.request import _parse_proxy  # type: ignore
-except ImportError:
-    from urllib2 import _parse_proxy  # type: ignore
+from urllib.parse import urlparse, urlunparse
+from urllib.request import _parse_proxy  # type: ignore
 
 from scrapy import signals
 from scrapy.exceptions import ScrapyDeprecationWarning
 from scrapy.resolver import dnscache
-from six.moves.urllib.parse import urlparse, urlunparse
 from twisted.internet.error import ConnectionDone, ConnectionRefusedError
 from w3lib.http import basic_auth_header
 
