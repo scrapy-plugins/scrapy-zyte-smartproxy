@@ -13,6 +13,9 @@ jobs:
         include:
         - python-version: "3.10"
           env:
+            TOXENV: min
+        - python-version: "3.10"
+          env:
             TOXENV: py
         - python-version: "3.10"
           env:
