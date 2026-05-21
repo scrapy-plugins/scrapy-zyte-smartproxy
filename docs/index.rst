@@ -65,6 +65,16 @@ Configuration
         .. tip:: This URL is logged, so that you can tell which value was used
             from crawl logs.
 
+        Include ``520`` and ``521`` in ``RETRY_HTTP_CODES`` when using this
+        endpoint, so temporary Zyte API proxy mode errors are retried.
+
+        .. code-block:: python
+            :caption: settings.py
+
+                from scrapy.settings.default_settings import RETRY_HTTP_CODES
+
+                RETRY_HTTP_CODES = [*RETRY_HTTP_CODES, 520, 521]
+
     -   To use the default Zyte Smart Proxy Manager endpoint, leave it unset.
 
     -   To use a custom Zyte Smart Proxy Manager endpoint, in case you have a
